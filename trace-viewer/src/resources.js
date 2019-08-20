@@ -1,0 +1,12 @@
+/** @import { TraceModel, TraceFrame, ImageResult } from "./types.js" */
+
+export const IMAGE_ERROR = "Captured SVG could not be displayed. Terminal text and cell metadata are still available.";
+
+/** Browser-only evidence resources; captured SVG is never inserted into the page DOM.
+ * @param {TraceModel} model
+ */
+export function createResources(model) {
+  /** @type {string[]} */
+  const urls = [];
+  /** @param {Blob} blob */
+  function url(blob) {
