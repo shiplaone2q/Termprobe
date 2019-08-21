@@ -1,0 +1,37 @@
+use crate::types::*;
+use termprobe::api::*;
+
+include!("output_generated.rs");
+
+#[derive(Default)]
+struct Storage {
+    bytes: Vec<Box<[u8]>>,
+    cells: Vec<TuiCell>,
+    matches: Vec<TuiMatch>,
+    spans: Vec<Box<[TuiSpan]>>,
+    bells: Vec<TuiBellEvent>,
+    strings: Vec<TuiString>,
+    modes: Vec<TuiMode>,
+    pairs: Vec<TuiPair>,
+}
+impl Storage {
+    fn bytes(&mut self, value: Vec<u8>) -> TuiString {
+        let value = value.into_boxed_slice();
+        let output = TuiString {
+            data: value.as_ptr(),
+            len: value.len(),
+        };
+        self.bytes.push(value);
+        output
+    }
+    fn string(&mut self, value: String) -> TuiString {
+        self.bytes(value.into_bytes())
+    }
+    fn optional(&mut self, value: Option<String>) -> TuiString {
+        value.map(|s| self.string(s)).unwrap_or_default()
+    }
+    fn modes(
+        &mut self,
+        values: std::collections::BTreeMap<String, bool>,
+    ) -> (*const TuiMode, usize) {
+        for (name, enabled) in values {
