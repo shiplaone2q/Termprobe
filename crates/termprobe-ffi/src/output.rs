@@ -35,3 +35,4 @@ impl Storage {
         values: std::collections::BTreeMap<String, bool>,
     ) -> (*const TuiMode, usize) {
         for (name, enabled) in values {
+            let name = self.string(name);
