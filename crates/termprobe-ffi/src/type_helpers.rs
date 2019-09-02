@@ -14,3 +14,7 @@ pub struct TuiString {
 pub struct TuiOptionalU64 {
     pub present: bool,
     pub value: u64,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiOptionalI32 {
