@@ -1,0 +1,15 @@
+# What every profile gets unless it says otherwise.
+[recording]
+directory = "./artifacts"
+
+[recording.style]
+font_size = 17
+canvas_background = "#101014"
+canvas_padding = 30
+
+[recording.style.window]
+background = "#1a1a22"
+foreground = "#d8d8e8"
+divider = "#2a2a36"
+
+# Docs: record somewhere else, in bigger type.
