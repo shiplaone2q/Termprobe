@@ -11,3 +11,7 @@ export type {
   LocatorWaitOptions,
   Locator,
   RelativeStyleSelectorOptions,
+  RelativeTextSelectorOptions,
+  StyleSelectorOptions,
+  TextSelectorOptions,
+  TextStyleExpectation,
