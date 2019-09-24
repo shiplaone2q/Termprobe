@@ -117,3 +117,6 @@ impl Recorder {
         let automatic = writer.is_some();
         let (sender, receiver) = mpsc::channel();
         let worker = std::thread::spawn(move || worker_loop(receiver, writer, logger, cols, rows));
+        Ok(Self {
+            sender,
+            worker: Some(worker),
