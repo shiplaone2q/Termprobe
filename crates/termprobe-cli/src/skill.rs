@@ -60,3 +60,7 @@ fn localize_links(document: &str, references: &[(&str, &str)]) -> String {
 
 fn first_heading_anchor(document: &str) -> Option<String> {
     let heading = document.lines().find_map(|line| line.strip_prefix("# "))?;
+    let anchor = heading
+        .chars()
+        .filter_map(|character| {
+            if character.is_ascii_alphanumeric() {
