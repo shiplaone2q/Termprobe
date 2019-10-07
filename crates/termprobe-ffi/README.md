@@ -27,3 +27,5 @@ On musl Linux, disable static CRT linkage so Rust can produce the shared library
 ```sh
 RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" \
   env -u CARGO_TARGET_DIR cargo build --locked -p termprobe-ffi
+```
+

@@ -1,0 +1,61 @@
+import type {
+  BellEvent as NativeBellEvent,
+  Cell as NativeCell,
+  Cursor as NativeCursor,
+  Viewport as NativeViewport,
+  EffectiveTimeouts as NativeEffectiveTimeouts,
+  OpenResult as NativeOpenResult,
+  Size as NativeSize,
+  State as NativeState,
+  TextMatch as NativeTextMatch,
+  Timeouts as NativeTimeouts,
+} from "../native/index.js";
+
+export type Color = "default" | number | string;
+export type Backend = "alacritty" | "ghostty" | "rio" | "xtermjs";
+
+/** `"none"` is a value, not an absence: an un-underlined cell reports it. */
+export type UnderlineStyle =
+  | "none"
+  | "single"
+  | "double"
+  | "curly"
+  | "dotted"
+  | "dashed";
+
+export type Shell =
+  | "bash"
+  | "powershell"
+  | "pwsh"
+  | "cmd"
+  | "fish"
+  | "zsh"
+  | "xonsh"
+  | "elvish"
+  | "nushell";
+
+export type Cursor = NativeCursor;
+export type Viewport = NativeViewport;
+
+export type Size = NativeSize;
+
+export interface Cell extends Omit<NativeCell, "fg" | "bg" | "underline_style" | "underline_color"> {
+  /** The cell's grapheme; `" "` when blank, `""` for the second column of a double-width character. */
+  fg: Color;
+  bg: Color;
+  /** Always `false` from the alacritty and rio backends, which cannot report blink. */
+  /** Shorthand for `underline_style !== "none"`. */
+  underline_style: UnderlineStyle;
+  /**
+   * `"default"` means the underline follows the text color. Tracked
+   * independently of `underline_style`, so a cell that set SGR 58 without an
+   * underline still reports the color it would use.
+   */
+  underline_color: Color;
+}
+
+export type EffectiveTimeouts = NativeEffectiveTimeouts;
+
+export type BellEvent = NativeBellEvent;
+
+export type State = NativeState;

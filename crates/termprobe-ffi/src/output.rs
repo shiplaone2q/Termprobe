@@ -36,3 +36,4 @@ impl Storage {
     ) -> (*const TuiMode, usize) {
         for (name, enabled) in values {
             let name = self.string(name);
+            self.modes.push(TuiMode { name, enabled });
