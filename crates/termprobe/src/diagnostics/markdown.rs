@@ -133,3 +133,7 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
                 ),
             };
             return Explanation {
+                title: title.into(),
+                expected,
+                actual: format!(
+                    "{} candidates before occurrence selection; stage {} had {} selector matches and {} style matches.",
