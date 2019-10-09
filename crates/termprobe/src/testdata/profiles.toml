@@ -13,3 +13,5 @@ foreground = "#d8d8e8"
 divider = "#2a2a36"
 
 # Docs: record somewhere else, in bigger type.
+[profiles.docs.recording]
+directory = "./docs/media"
