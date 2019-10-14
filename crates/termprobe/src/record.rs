@@ -120,3 +120,5 @@ impl Recorder {
         Ok(Self {
             sender,
             worker: Some(worker),
+            automatic,
+        })
