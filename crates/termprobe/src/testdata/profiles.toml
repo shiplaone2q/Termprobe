@@ -15,3 +15,6 @@ divider = "#2a2a36"
 # Docs: record somewhere else, in bigger type.
 [profiles.docs.recording]
 directory = "./docs/media"
+
+[profiles.docs.recording.style]
+font_size = 24
