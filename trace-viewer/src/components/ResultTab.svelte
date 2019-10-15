@@ -7,3 +7,6 @@
 <div class="error-heading">
   <h1 id="operation" class:passed={!hasFailure}>{result.title}</h1><span id="failure-timing" class="muted">{result.timing}</span>
 </div>
+<LocatorBlock id="error-locator" locator={result.locator} />
+<div id="comparison" class="comparison" hidden={!hasFailure}>
+  <div class="expected"><h2>Expected</h2><pre id="expected">{result.expected}</pre></div>
