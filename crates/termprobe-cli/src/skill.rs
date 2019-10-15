@@ -64,3 +64,4 @@ fn first_heading_anchor(document: &str) -> Option<String> {
         .chars()
         .filter_map(|character| {
             if character.is_ascii_alphanumeric() {
+                Some(character.to_ascii_lowercase())
