@@ -9,3 +9,4 @@ if (positionals.length !== 1) throw new Error("Usage: test-go-embedded.mjs <pack
 const packagePath = path.resolve(positionals[0]);
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const target = path.join(root, "target");
+fs.mkdirSync(target, { recursive: true });
