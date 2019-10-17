@@ -1,0 +1,7 @@
+:root { color-scheme: light dark; --bg: #fff; --panel: #f8f9fa; --border: #d9dde3; --text: #24292f; --muted: #57616e; --blue: #0969da; --selected: #e9f2ff; --red: #b42332; --error-bg: #fff3f3; --green: #18713c; font: 13px/1.45 system-ui, sans-serif; color: var(--text); background: var(--bg); }
+@media (prefers-color-scheme: dark) { :root { --bg: #202124; --panel: #292a2d; --border: #43464d; --text: #e5e7eb; --muted: #adb4c0; --blue: #8ab4f8; --selected: #293e5d; --red: #ff9b9b; --error-bg: #3a2529; --green: #8bd3a4; } }
+* { box-sizing: border-box; }
+body { margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+#workbench { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+button, input, select { font: inherit; color: inherit; }
+button, select { background: var(--bg); border: 1px solid var(--border); padding: 4px 8px; border-radius: 3px; }

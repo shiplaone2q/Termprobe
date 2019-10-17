@@ -1,0 +1,29 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { test } from "node:test";
+
+import * as sdk from "../dist/index.js";
+import { Termprobe } from "../dist/index.js";
+
+const BIN = process.env.TERMPROBE__BIN || "termprobe";
+
+function agentContext() {
+  const out = execFileSync(BIN, ["agent-context"], { encoding: "utf8" });
+  return JSON.parse(out);
+}
+
+let schema;
+try {
+  schema = agentContext();
+} catch {
+  schema = null;
+}
+
+const MAPPING = {
+  open: [["client", "open"]],
+  run: [["client", "run"]],
+  restart: [["client", "restart"]],
+  close: [["client", "close"], ["module", "closeAll"]],
+  sessions: [["module", "sessions"]],
+  state: [["client", "state"]],
+  text: [["client", "text"]],

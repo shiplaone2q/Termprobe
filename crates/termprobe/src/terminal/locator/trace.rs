@@ -105,3 +105,6 @@ impl Trace {
             .map_or(MAX_SAMPLE, |stage| {
                 if stage.mismatches_truncated {
                     0
+                } else {
+                    MAX_SAMPLE.saturating_sub(stage.mismatches.len())
+                }
