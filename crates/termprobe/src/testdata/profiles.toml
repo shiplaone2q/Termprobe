@@ -18,3 +18,5 @@ directory = "./docs/media"
 
 [profiles.docs.recording.style]
 font_size = 24
+
+# CI: keep the file's directory, strip the chrome so artifacts stay small.
