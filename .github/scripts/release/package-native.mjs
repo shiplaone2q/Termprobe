@@ -47,3 +47,7 @@ export function validateLibrary(data, target) {
 
 export function archiveBytes(entries) {
   const blocks = [];
+  for (const [name, data] of [...entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
+    const header = new Header({
+      path: name, size: data.length, mode: 0o644, uid: 0, gid: 0,
+      mtime: new Date(0), type: "File", uname: "", gname: "",

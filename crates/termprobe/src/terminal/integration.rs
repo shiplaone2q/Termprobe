@@ -73,3 +73,5 @@ impl CommandTracker {
     }
 
     pub fn finished_count(&self) -> u64 {
+        self.state.finished_count
+    }
