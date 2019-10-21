@@ -27,3 +27,7 @@ const MAPPING = {
   sessions: [["module", "sessions"]],
   state: [["client", "state"]],
   text: [["client", "text"]],
+  screenshot: [["client", "screenshot"]],
+  record: [["client", "startRecording"], ["client", "stopRecording"]],
+  cells: [["client", "cells"]],
+  get: [
