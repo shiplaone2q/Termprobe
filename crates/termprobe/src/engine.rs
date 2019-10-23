@@ -1104,3 +1104,6 @@ impl Engine {
                         directory: options.directory.to_string_lossy().into_owned(),
                         manifest: None,
                         report: None,
+                        report_html: None,
+                        timeline: None,
+                        screen_text: None,

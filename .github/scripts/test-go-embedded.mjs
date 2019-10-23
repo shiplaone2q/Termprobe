@@ -10,3 +10,7 @@ const packagePath = path.resolve(positionals[0]);
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const target = path.join(root, "target");
 fs.mkdirSync(target, { recursive: true });
+const directory = fs.mkdtempSync(path.join(target, "go-consumer-"));
+try {
+  const goroot = execFileSync("go", ["env", "GOROOT"], { encoding: "utf8" }).trim();
+  const go = path.join(goroot, "bin", process.platform === "win32" ? "go.exe" : "go");
