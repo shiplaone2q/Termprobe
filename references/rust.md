@@ -8,3 +8,4 @@ Use `termprobe-rs` from Rust code and tests.
 cargo add termprobe-rs@0.1.1
 ```
 
+```rust
