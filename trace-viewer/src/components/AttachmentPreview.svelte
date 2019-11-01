@@ -5,3 +5,4 @@
 
 <div id="attachment-preview">
   {#if !file}
+    <p class="muted">Select an attachment to preview it.</p>
