@@ -2,3 +2,5 @@
 /generated-traces
 *.pyc
 *.trace
+__pycache__/
+.github/scripts/node_modules/
