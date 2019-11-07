@@ -10,3 +10,4 @@
 <LocatorBlock id="error-locator" locator={result.locator} />
 <div id="comparison" class="comparison" hidden={!hasFailure}>
   <div class="expected"><h2>Expected</h2><pre id="expected">{result.expected}</pre></div>
+  <div class="actual"><h2>Observed</h2><pre id="actual">{result.actual}</pre></div>
