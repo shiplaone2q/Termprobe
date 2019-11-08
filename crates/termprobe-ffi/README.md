@@ -29,3 +29,7 @@ RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" \
   env -u CARGO_TARGET_DIR cargo build --locked -p termprobe-ffi
 ```
 
+Keep this flag for release builds and explicit musl targets.
+For example, after you install `cargo-zigbuild` and the Rust target:
+
+```sh

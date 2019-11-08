@@ -5,3 +5,6 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 
+const packageRoot = process.env.TERMPROBE__TEST_PACKAGE_ROOT;
+
+if (packageRoot) {

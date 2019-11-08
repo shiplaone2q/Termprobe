@@ -51,3 +51,5 @@ export function archiveBytes(entries) {
     const header = new Header({
       path: name, size: data.length, mode: 0o644, uid: 0, gid: 0,
       mtime: new Date(0), type: "File", uname: "", gname: "",
+    });
+    if (header.encode()) throw new Error(`Archive path requires extended headers: ${name}`);
