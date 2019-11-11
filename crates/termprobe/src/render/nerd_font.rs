@@ -73,3 +73,6 @@ impl NerdFont {
 
         let face = Face::parse(FONT_DATA, 0).expect("bundled Nerd Font must be valid");
         let mut glyphs = BTreeMap::new();
+        for c in chars {
+            let Some(glyph_id) = face.glyph_index(c) else {
+                continue;
