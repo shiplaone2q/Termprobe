@@ -1,0 +1,4 @@
+[package]
+name = "termprobe-ffi"
+version.workspace = true
+edition.workspace = true

@@ -14,3 +14,6 @@ const directory = fs.mkdtempSync(path.join(target, "go-consumer-"));
 try {
   const goroot = execFileSync("go", ["env", "GOROOT"], { encoding: "utf8" }).trim();
   const go = path.join(goroot, "bin", process.platform === "win32" ? "go.exe" : "go");
+  const environment = { ...process.env, CGO_ENABLED: "0", GOWORK: "off", GOTOOLCHAIN: "local", GOROOT: goroot };
+  // Windows environment names are case-insensitive, including Path/PATH.
+  for (const name of Object.keys(environment)) {

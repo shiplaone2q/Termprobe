@@ -35,3 +35,6 @@ func readOpenResult(result *abiResult) (OpenResult, error) {
 		converted.ShellPID = pointerTo(uint32(opened.shellPID.value))
 	}
 	return converted, nil
+}
+
+func nativeInt(value abiOptionalI32) *int32 {
