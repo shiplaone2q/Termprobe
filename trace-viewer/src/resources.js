@@ -10,3 +10,7 @@ export function createResources(model) {
   const urls = [];
   /** @param {Blob} blob */
   function url(blob) {
+    const value = URL.createObjectURL(blob);
+    urls.push(value);
+    return value;
+  }
