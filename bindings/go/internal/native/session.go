@@ -129,3 +129,4 @@ func (runtime *Session) Text(full bool) (string, error) {
 	memory := nativeMemory{}
 	defer memory.release()
 	result := nativeFunctions.Text(memory.text(runtime.name), full)
+	defer nativeFunctions.ResultFree(result)
