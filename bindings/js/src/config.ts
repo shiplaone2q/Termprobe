@@ -52,3 +52,4 @@ const COLOR_FIELDS = new Map([
   ["brightBlack", "bright_black"],
   ["brightRed", "bright_red"],
   ["brightGreen", "bright_green"],
+  ["brightYellow", "bright_yellow"],
