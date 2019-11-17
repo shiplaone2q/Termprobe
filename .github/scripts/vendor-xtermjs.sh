@@ -8,3 +8,7 @@
 # neither Node nor a network. This script is how they are updated.
 set -euo pipefail
 
+assets="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/crates/termprobe/assets/xtermjs"
+pinned="$assets/pinned.json"
+
+if [ "${1:-}" = "--latest" ]; then

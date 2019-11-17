@@ -75,3 +75,7 @@ impl CommandTracker {
     pub fn finished_count(&self) -> u64 {
         self.state.finished_count
     }
+
+    /// The last reported command status, cleared when a new command starts.
+    pub fn last_exit(&self) -> Option<i32> {
+        self.state.last_exit
