@@ -47,3 +47,7 @@ func (client *Client) GetByText(text string, options TextSelectorOptions) *Locat
 }
 
 func (client *Client) GetByStyle(style TextStyle, options StyleSelectorOptions) *Locator {
+	return newStyleLocator(client, nil, style, options)
+}
+
+func (client *Client) GetByLink(uri string, options LinkSelectorOptions) *Locator {

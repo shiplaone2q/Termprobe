@@ -74,3 +74,6 @@ pub(super) fn fill_antialiased_rect(
     paint.set_color_rgba8(color.r, color.g, color.b, 255);
     pixmap.fill_rect(rect, &paint, Transform::identity(), None);
 }
+
+pub(super) fn fill_pixel_rect(
+    pixmap: &mut Pixmap,
