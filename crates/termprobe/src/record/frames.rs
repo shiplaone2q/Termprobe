@@ -88,3 +88,4 @@ impl FrameCapture {
         validate_options(&options)?;
         let mut clock = TimelineClock::default();
         clock.advance(0.0, &options)?;
+        Ok(Self {
