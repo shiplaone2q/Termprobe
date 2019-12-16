@@ -79,3 +79,7 @@ impl CommandTracker {
     /// The last reported command status, cleared when a new command starts.
     pub fn last_exit(&self) -> Option<i32> {
         self.state.last_exit
+    }
+
+    pub fn cwd(&self) -> Option<&str> {
+        self.state.cwd.as_deref()
