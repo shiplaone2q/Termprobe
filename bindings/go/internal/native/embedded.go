@@ -37,3 +37,5 @@ func nativeLibraryPath(libraries map[string]bundledLibrary) (string, error) {
 		return "", fmt.Errorf("no bundled native engine for %s: install a released Go module or set TERMPROBE__NATIVE_LIBRARY to a library from the same source revision", target)
 	}
 	cache, err := os.UserCacheDir()
+	if err != nil {
+		return "", fmt.Errorf("locate native engine cache: %w", err)
