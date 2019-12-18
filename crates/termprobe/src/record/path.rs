@@ -30,3 +30,4 @@ impl ProtectedFile {
     fn check(&self, path: &Path, identity: Option<(u64, u64)>) -> io::Result<()> {
         if path == self.path || self.identity.is_some() && self.identity == identity {
             Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
