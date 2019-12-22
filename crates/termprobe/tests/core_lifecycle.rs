@@ -228,3 +228,7 @@ fn named_wait_allows_concurrent_input_resize_and_submit() {
         Operation::State,
     ] {
         let started = Instant::now();
+        session.execute(operation).unwrap();
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+    assert!(finished_rx.try_recv().is_err());
