@@ -72,3 +72,6 @@ pub struct InputDetails {
 }
 
 impl InputDetails {
+    pub(crate) fn capture(operation: &Operation) -> Option<Self> {
+        let size = match operation {
+            Operation::Write { data } => data.len(),

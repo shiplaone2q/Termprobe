@@ -26,3 +26,5 @@ func TestRetryTerminalProcess(t *testing.T) {
 		fmt.Print("\x1b]133;B\x07retry-ready\r\n")
 	}
 	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		fmt.Printf("received:%s\r\n", scanner.Text())

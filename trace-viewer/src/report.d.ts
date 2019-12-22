@@ -1,0 +1,84 @@
+import type { Size, EffectiveTimeouts } from "../../bindings/js/src/types.js";
+
+export type FailureReason =
+  | "completed"
+  | "test_failed"
+  | "timed_out"
+  | "session_exited"
+  | "cancelled"
+  | "locator_no_match"
+  | "locator_ambiguous"
+  | "unexpected_match"
+  | "match_not_actionable"
+  | "scalar_mismatch"
+  | "snapshot_mismatch"
+  | "emulator_fault"
+  | "internal_failure";
+
+export type LocatorFailureReason =
+  | "anchor_not_found"
+  | "anchor_ambiguous"
+  | "relative_region_no_match"
+  | "style_filter_removed_all"
+  | "link_filter_removed_all"
+  | "intersection_empty"
+  | "union_empty"
+  | "filter_removed_all"
+  | "nth_out_of_range"
+  | "outside_viewport"
+  | "matched_no_cells"
+  | "no_match"
+  | "ambiguous";
+
+export type FailureMatchOccurrence =
+  | "any"
+  | "unique"
+  | "first"
+  | "last"
+  | { readonly nth: number };
+
+export interface FailureTextPosition {
+  readonly row: number;
+  readonly column: number;
+}
+
+export interface FailureTextSpan {
+  readonly row: number;
+  readonly start: number;
+  readonly end: number;
+}
+
+export interface FailureTextMatch {
+  readonly text: string;
+  readonly start: FailureTextPosition;
+  readonly end: FailureTextPosition;
+  readonly spans: readonly FailureTextSpan[];
+}
+
+export interface FailureTextStyle {
+  readonly foreground?: string | null;
+  readonly background?: string | null;
+  readonly bold?: boolean | null;
+  readonly dim?: boolean | null;
+  readonly italic?: boolean | null;
+  readonly underline_style?: string | null;
+  readonly underline_color?: string | null;
+  readonly inverse?: boolean | null;
+  readonly hidden?: boolean | null;
+  readonly strikethrough?: boolean | null;
+  readonly blink?: boolean | null;
+}
+
+export interface FailureTextAnchor {
+  readonly text: string;
+  readonly regex: boolean;
+  readonly occurrence: FailureMatchOccurrence;
+}
+
+export interface FailureTextSelector {
+  readonly text: string;
+  readonly regex: boolean;
+  readonly full: boolean;
+  readonly whitespace: "exact" | "normalize";
+  readonly scope: {
+    readonly after?: FailureTextAnchor | null;
