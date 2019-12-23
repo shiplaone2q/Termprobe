@@ -38,3 +38,5 @@ func readOpenResult(result *abiResult) (OpenResult, error) {
 }
 
 func nativeInt(value abiOptionalI32) *int32 {
+	if !value.present {
+		return nil
