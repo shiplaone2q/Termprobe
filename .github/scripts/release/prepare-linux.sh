@@ -8,3 +8,4 @@ curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs |
 version=0.16.0
 case "$(uname -m)" in
   x86_64|amd64)
+    arch=x86_64
