@@ -294,3 +294,7 @@ impl Session {
                 }
                 Ok(None) => {
                     std::thread::sleep(Duration::from_millis(crate::config::POLL_DELAY_MS));
+                }
+                Err(error) => {
+                    let error = error.to_string();
+                    watcher_logger.event(&format!("process wait failed error={error}"));

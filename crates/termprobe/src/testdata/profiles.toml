@@ -20,3 +20,7 @@ directory = "./docs/media"
 font_size = 24
 
 # CI: keep the file's directory, strip the chrome so artifacts stay small.
+[profiles.ci.recording.style]
+canvas_padding = 8
+
+[profiles.ci.recording.style.window]
