@@ -19,3 +19,6 @@ neither Node nor a network. `pinned.json` records the versions they came from.
 The headless bundle ships only the Unicode 6 width tables, which measure astral
 emoji as one column. alacritty measures them as two, so without this a line
 containing an emoji reports every following cell in a different column on the
+two backends.
+
+Newer is not better here. Measured cursor column after each sequence:

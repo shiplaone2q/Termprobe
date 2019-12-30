@@ -51,3 +51,7 @@ func (client *Client) GetByStyle(style TextStyle, options StyleSelectorOptions) 
 }
 
 func (client *Client) GetByLink(uri string, options LinkSelectorOptions) *Locator {
+	return newLinkLocator(client, nil, uri, options)
+}
+
+func cloneLocatorQuery(source locatorQuery) locatorQuery {
