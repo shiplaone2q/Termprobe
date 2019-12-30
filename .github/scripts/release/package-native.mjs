@@ -53,3 +53,5 @@ export function archiveBytes(entries) {
       mtime: new Date(0), type: "File", uname: "", gname: "",
     });
     if (header.encode()) throw new Error(`Archive path requires extended headers: ${name}`);
+    blocks.push(header.block, data, Buffer.alloc((512 - data.length % 512) % 512));
+  }
