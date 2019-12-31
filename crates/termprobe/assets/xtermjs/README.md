@@ -22,3 +22,5 @@ containing an emoji reports every following cell in a different column on the
 two backends.
 
 Newer is not better here. Measured cursor column after each sequence:
+
+| Input | alacritty | v6 | **v11** | v15 | v15-graphemes |
