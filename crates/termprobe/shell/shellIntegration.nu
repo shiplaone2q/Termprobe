@@ -1,0 +1,6 @@
+# Keep Nushell's native semantic-prompt integration, but emit OSC 7 ourselves
+# to encode literal percent signs and other URI-reserved characters in paths.
+$env.config = ($env.config | default {})
+$env.config.shell_integration = ($env.config.shell_integration | default {})
+$env.config.shell_integration.osc133 = true
+$env.config.shell_integration.osc7 = false
