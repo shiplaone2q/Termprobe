@@ -12,3 +12,7 @@ pub(crate) struct ConsoleInput {
 impl ConsoleInput {
     pub(crate) fn new() -> Self {
         Self {
+            handle: unsafe { GetStdHandle(STD_INPUT_HANDLE) },
+            bytes: Cursor::new(Vec::new()),
+            high_surrogate: None,
+        }

@@ -141,3 +141,7 @@ fn ts_type(ty: &str) -> Result<String> {
 }
 
 fn parameter(mut f: Field) -> Field {
+    f.name = match f.name.as_str() {
+        "query" => "expression",
+        "options" if f.ty == "MouseOptions" => "button",
+        other => other,
