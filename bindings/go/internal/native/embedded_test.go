@@ -57,3 +57,5 @@ func TestBundleTarget(t *testing.T) {
 			}
 		})
 	}
+}
+

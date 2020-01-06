@@ -232,3 +232,5 @@ pub enum Request {
         background: Option<termprobe::CaptureBackground>,
     },
     StopRecording,
+    FlushRecording,
+    Monitor {

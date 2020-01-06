@@ -192,3 +192,7 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         3
     ];
     row.push(EmuCell::blank());
+
+    for zoom in [1.02, 1.25] {
+        let content = frame_with_cursor(vec![row.clone()], Some((3, 0)));
+        let cursor = content

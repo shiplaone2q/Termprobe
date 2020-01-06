@@ -84,3 +84,7 @@ TextSpan: {
 "row": ["row", "u32"],
 "start": ["start", "u16"],
 "end": ["end", "u16"],
+},
+TextMatch: {
+"text": ["text", "String"],
+"start": ["start", "TextPosition"],
