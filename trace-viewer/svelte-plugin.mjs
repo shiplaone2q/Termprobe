@@ -8,3 +8,4 @@ export function sveltePlugin(generate = "client") {
     name: "svelte-5",
     setup(build) {
       build.onLoad({ filter: /\.svelte$/ }, async ({ path: filename }) => {
+        const source = (await readFile(filename, "utf8")).replace(/\r\n/g, "\n");
