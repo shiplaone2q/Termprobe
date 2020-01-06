@@ -1,0 +1,205 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish (for example, 0.1.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - run: |
+          rustup toolchain install stable --profile default
+          rustup default stable
+
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Verify release tag
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+            echo "Release tag must match <major>.<minor>.<patch> or <major>.<minor>.<patch>-beta.<number>." >&2
+            exit 1
+          fi
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Verify release versions
+        shell: bash
+        run: |
+          version="$RELEASE_TAG"
+          version_files=(
+            Cargo.toml
+            bindings/js/package.json
+            bindings/js/package-lock.json
+            bindings/js/src/version.ts
+            bindings/python/pyproject.toml
+            bindings/python/src/termprobe/_config.py
+          )
+          diff -u \
+            <(printf '%s\n' "${version_files[@]}" | sort) \
+            <(rg -l --path-separator / --fixed-strings "$version" \
+              "${version_files[@]}" | sort)
+          node .github/scripts/release/verify-go-version.mjs "$version"
+
+      - name: Verify termprobe-rs crate package
+        run: cargo publish --locked --package termprobe-rs --dry-run
+
+  build-cli:
+    needs: verify
+    if: github.event_name == 'push'
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-22.04
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-22.04
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - run: |
+          rustup toolchain install stable --profile default
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: "0.16.0"
+          cache-key: ${{ matrix.target }}
+
+      - if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - uses: taiki-e/install-action@a4d3f3f761dcd95cce1b72cb61cb6d1963438177 # v2.87.30
+        if: contains(matrix.target, 'musl')
+        with:
+          tool: cargo-zigbuild
+
+      - if: "!contains(matrix.target, 'musl')"
+        run: cargo build --release --locked -p termprobe-cli --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - if: contains(matrix.target, 'musl')
+        run: cargo zigbuild --release --locked -p termprobe-cli --target ${{ matrix.target }}
+
+      - if: runner.os != 'Windows'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../termprobe-${{ matrix.target }}.tar.gz termprobe
+          cd -
+
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "target/${{ matrix.target }}/release/termprobe.exe" -DestinationPath "termprobe-${{ matrix.target }}.zip"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: termprobe-${{ matrix.target }}
+          path: |
+            termprobe-*.tar.gz
+            termprobe-*.zip
+
+  build-native:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            args: --target x86_64-unknown-linux-gnu -x
+            zigbuild: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            args: --target aarch64-unknown-linux-gnu -x
+            zigbuild: true
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            args: --target x86_64-unknown-linux-musl -x
+            zigbuild: true
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            args: --target aarch64-unknown-linux-musl -x
+            zigbuild: true
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            args: --target x86_64-apple-darwin
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            args: --target aarch64-apple-darwin
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            args: --target x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/js/package-lock.json
+
+      - if: "!endsWith(matrix.target, '-gnu')"
+        run: |
+          rustup toolchain install stable --profile default
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        if: "!endsWith(matrix.target, '-gnu')"
+        with:
+          version: "0.16.0"
+          cache-key: ${{ matrix.target }}
+
+      - uses: taiki-e/install-action@a4d3f3f761dcd95cce1b72cb61cb6d1963438177 # v2.87.30
+        if: matrix.zigbuild && !endsWith(matrix.target, '-gnu')
+        with:
+          tool: cargo-zigbuild
+
+      - run: npm ci
+        working-directory: bindings/js
