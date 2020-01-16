@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+import asyncio
+import atexit
+import re
+import threading
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, replace
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Set,
+)
+
+from ._config import IS_MACOS, IS_WINDOWS
+from ._ephemeral import unique_session
+from .client import TuiTest
+from .errors import UsageError
+from .types import AutomaticRecording, Backend, Profile, Timeouts, TraceOptions
+
+__all__ = [
+    "TerminalOptions",
+    "DEFAULT_SHELL",
+    "create_terminal",
+    "terminal",
+    "set_terminal_defaults",
+    "reset_terminal_defaults",
+    "track_terminal",
+    "untrack_terminal",
+    "tracked_count",
+    "close_all_tracked",
+    "terminal_snapshot",
+]
+
+DEFAULT_SHELL = "powershell" if IS_WINDOWS else "zsh" if IS_MACOS else "bash"
+
+
+@dataclass
+class TerminalOptions:
+    backend: Optional[Backend] = None
+    shell: Optional[str] = None
+    program: Optional[Sequence[str]] = None
+    cols: Optional[int] = None
+    rows: Optional[int] = None
+    cwd: Optional[str] = None
+    env: Optional[Any] = None
