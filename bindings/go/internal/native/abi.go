@@ -48,3 +48,6 @@ type abiMode struct {
 	enabled bool
 }
 type abiColor struct {
+	_     structs.HostLayout
+	kind  uint32
+	index uint8
