@@ -9,3 +9,7 @@
   const width = $derived(!frame ? undefined : zoom === "fit"
     ? `min(${frame.width}px, 100cqw, ${100 * frame.width / frame.height}cqh)`
     : `${frame.width * Number(zoom)}px`);
+
+  function inspect(event: MouseEvent, terminal: HTMLButtonElement) {
+    if (!frame) return;
+    if (event.detail === 0) {

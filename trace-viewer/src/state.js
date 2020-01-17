@@ -18,3 +18,6 @@ export function initialState(model, hash = "") {
 /** @param {TraceModel} model @param {ViewerState} state @param {number | undefined} frameIndex
  * @param {number} [actionId] @param {number} [missingScreen] @returns {ViewerState}
  */
+function select(model, state, frameIndex, actionId, missingScreen) {
+  const next = { ...state, frameIndex, actionId, missingScreen, playback: undefined };
+  const { frame, action, mismatches } = selection(model, next);
