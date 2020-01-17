@@ -32,3 +32,7 @@
     return () => window.clearInterval(timer);
   });
 
+  function pagehide(event: PageTransitionEvent) {
+    send({ type: "pause" });
+    if (!event.persisted) resources.dispose();
+  }
