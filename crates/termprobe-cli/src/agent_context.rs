@@ -1,0 +1,44 @@
+//! Machine-readable description of the full cli surface, generated from the
+//! clap command model so it can never drift from the real implementation.
+//! Printed by `termprobe agent-context`.
+
+use clap::{Arg, ArgAction, Command, CommandFactory};
+use serde_json::{json, Map, Value};
+
+use crate::cli::Cli;
+
+const SCHEMA_VERSION: &str = "1";
+
+/// Render the agent-context document as pretty JSON.
+pub fn render() -> String {
+    let cmd = Cli::command();
+
+    let mut global_flags = Vec::new();
+    for arg in cmd.get_arguments() {
+        if arg.is_global_set() {
+            global_flags.push(arg_json(arg));
+        }
+    }
+
+    let doc = json!({
+        "schema_version": SCHEMA_VERSION,
+        "name": cmd.get_name(),
+        "version": env!("CARGO_PKG_VERSION"),
+        "about": cmd.get_about().map(|s| s.to_string()),
+        "exit_codes": exit_codes(),
+        "global_flags": global_flags,
+        "commands": commands_json(&cmd),
+    });
+
+    serde_json::to_string_pretty(&doc).unwrap_or_default()
+}
+
+fn exit_codes() -> Value {
+    json!({
+        "0": "success",
+        "1": "assertion or wait condition not met",
+        "2": "usage / invalid argument",
+        "3": "no active session (run `open` or `run` first)",
+        "4": "daemon or IPC error",
+        "5": "internal error",
+    })
