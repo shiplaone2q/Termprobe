@@ -65,3 +65,5 @@ fn first_heading_anchor(document: &str) -> Option<String> {
         .filter_map(|character| {
             if character.is_ascii_alphanumeric() {
                 Some(character.to_ascii_lowercase())
+            } else if matches!(character, ' ' | '-') {
+                Some('-')
