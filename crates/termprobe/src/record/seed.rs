@@ -77,3 +77,7 @@ impl State {
         if self.controls.saved_blink {
             output.push_str("\x1b[5m");
         }
+        output.push_str("\x1b7");
+
+        let origin = if modes.contains(TermMode::ORIGIN) {
+            output.push_str("\x1b[?6h");

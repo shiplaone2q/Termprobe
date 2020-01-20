@@ -465,3 +465,5 @@ macro_rules! emulator_conformance_tests {
         fn conformance_tab_advances_to_stop() {
             let mut e = conformance_emu(20, 2, 100);
             e.process(b"a\tb");
+            let rows = e.viewable_rows();
+            assert_eq!(rows[0][0].ch, "a");
