@@ -29,3 +29,6 @@ impl TuiOptionalBool {
 // Every exported entrypoint is unsafe: the caller must provide valid readable
 // buffers for the duration of the call. Null/length and UTF-8 checks catch
 // representable usage mistakes, but cannot prove foreign pointer validity.
+pub(crate) unsafe fn slice<'a, T>(data: *const T, len: usize) -> Result<&'a [T]> {
+    if len == 0 {
+        return Ok(&[]);

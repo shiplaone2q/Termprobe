@@ -9,3 +9,4 @@ pub(crate) struct SessionInput {
     pub artifact_include_recording: bool,
     pub trace_mode: Option<String>,
     pub trace_directory: Option<String>,
+    pub screen_history_limit: Option<u16>,
