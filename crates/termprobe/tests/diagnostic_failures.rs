@@ -54,3 +54,7 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
     std::fs::create_dir_all(root.join("__snapshots__")).unwrap();
     std::fs::write(
         root.join("__snapshots__").join("diagnostic.snap"),
+        "different baseline\n",
+    )
+    .unwrap();
+    let mismatch = session.execute(snapshot(&root, false)).unwrap_err();

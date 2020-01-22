@@ -9,3 +9,4 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 	palette := []abiPair{{key: memory.text("1"), value: memory.text("#123456")}}
 	memory.pinner.Pin(&modes[0])
 	memory.pinner.Pin(&palette[0])
+	state := nativeState(abiState{
