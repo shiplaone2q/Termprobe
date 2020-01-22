@@ -100,3 +100,6 @@ row: "uint32_t",
 start: "uint16_t",
 end: "uint16_t",
 });
+types.TuiMatch = koffi.struct({
+text: types.TuiString,
+start: types.TuiPosition,
