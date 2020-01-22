@@ -17,3 +17,4 @@ try {
   const environment = { ...process.env, CGO_ENABLED: "0", GOWORK: "off", GOTOOLCHAIN: "local", GOROOT: goroot };
   // Windows environment names are case-insensitive, including Path/PATH.
   for (const name of Object.keys(environment)) {
+    if (["PATH", "TERMPROBE__NATIVE_LIBRARY", "GOFLAGS", "GOOS", "GOARCH"].includes(name.toUpperCase())) delete environment[name];
