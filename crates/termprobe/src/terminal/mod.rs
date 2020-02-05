@@ -5,3 +5,4 @@ pub mod cell;
 pub mod conformance;
 pub mod emu;
 #[cfg(feature = "ghostty")]
+pub mod ghostty;
