@@ -76,3 +76,7 @@ fn shift(prev: &EmuCell, cur: &EmuCell) -> Map<String, Value> {
     }
     m
 }
+
+fn baseline() -> EmuCell {
+    EmuCell::blank()
+}

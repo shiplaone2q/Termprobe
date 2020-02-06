@@ -4,3 +4,4 @@
 *.trace
 __pycache__/
 .github/scripts/node_modules/
+*.node
