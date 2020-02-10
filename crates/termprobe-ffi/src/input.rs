@@ -32,3 +32,4 @@ impl TuiOptionalBool {
 pub(crate) unsafe fn slice<'a, T>(data: *const T, len: usize) -> Result<&'a [T]> {
     if len == 0 {
         return Ok(&[]);
+    }
