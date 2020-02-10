@@ -15,3 +15,7 @@ export type {
   StyleSelectorOptions,
   TextSelectorOptions,
   TextStyleExpectation,
+  MouseButton,
+  MouseButtonOptions,
+  MouseClickOptions,
+  TitleOptions,

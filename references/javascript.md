@@ -24,3 +24,5 @@ try {
 ```
 
 ## Locators
+
+```js

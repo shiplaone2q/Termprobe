@@ -122,3 +122,5 @@ impl Recorder {
             worker: Some(worker),
             automatic,
         })
+    }
+
