@@ -33,3 +33,7 @@ Keep this flag for release builds and explicit musl targets.
 For example, after you install `cargo-zigbuild` and the Rust target:
 
 ```sh
+RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" \
+  env -u CARGO_TARGET_DIR cargo zigbuild --locked -p termprobe-ffi --target x86_64-unknown-linux-musl
+```
+
