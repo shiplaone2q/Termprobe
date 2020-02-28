@@ -32,3 +32,5 @@ class Cursor(TypedDict):
     shape: str
     color: str
 
+
+@dataclass

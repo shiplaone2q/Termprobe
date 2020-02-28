@@ -445,3 +445,4 @@ pub enum RecordingStatus {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordingDiagnostics {
+    pub mode: AutomaticRecordingMode,
