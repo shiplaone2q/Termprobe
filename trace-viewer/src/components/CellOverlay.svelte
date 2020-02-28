@@ -5,3 +5,5 @@
     frame: TraceFrame; geometry: Geometry; mismatches: readonly CellMismatch[]; cell?: { x: number; y: number };
   } = $props();
   const locations = $derived([...new Set(mismatches.filter((entry) => cellAt(frame, entry.x, entry.y)).map((entry) => `${entry.x},${entry.y}`))]);
+</script>
+
