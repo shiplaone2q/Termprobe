@@ -207,3 +207,7 @@ fn build_catalog(font: &FontFamilies) -> anyhow::Result<Catalog> {
         .filter(|face| {
             face.families
                 .iter()
+                .any(|(family, _)| family.contains("Nerd Font"))
+        })
+        .map(|face| face.id)
+        .collect();
