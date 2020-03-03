@@ -6,3 +6,5 @@
 
   function navigate(event: KeyboardEvent, index: number) {
     const offsets: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, Home: -index, End: tabs.length - 1 - index };
+    if (offsets[event.key] === undefined) return;
+    event.preventDefault();
