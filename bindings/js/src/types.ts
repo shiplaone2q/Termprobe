@@ -59,3 +59,4 @@ export type EffectiveTimeouts = NativeEffectiveTimeouts;
 export type BellEvent = NativeBellEvent;
 
 export type State = NativeState;
+
