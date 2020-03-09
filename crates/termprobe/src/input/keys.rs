@@ -278,3 +278,7 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
     let mut sequence = String::new();
     match key {
         ControlKey::Enter => {
+            if mods.alt {
+                sequence.push_str(ESC);
+            }
+            sequence.push('\r');
