@@ -17,3 +17,5 @@ type Options struct {
 	Args    []string
 	Prefix  string
 }
+
+// New opens a unique terminal and registers cleanup even if spawning fails.

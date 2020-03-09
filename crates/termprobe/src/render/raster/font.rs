@@ -19,3 +19,6 @@ pub(super) struct GlyphOutline {
     pub units_per_em: u16,
     pub synthetic_bold: bool,
     pub synthetic_italic: bool,
+    pub powerline: bool,
+}
+
