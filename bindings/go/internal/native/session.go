@@ -133,3 +133,7 @@ func (runtime *Session) Text(full bool) (string, error) {
 	if err := nativeError(result); err != nil {
 		return "", err
 	}
+	return nativeText(result.text), nil
+}
+
+func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error) {
