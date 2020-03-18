@@ -40,3 +40,7 @@ class DefaultShellTests(unittest.TestCase):
             expected = "powershell"
         elif sys.platform == "darwin":
             expected = "zsh"
+        else:
+            expected = "bash"
+        self.assertEqual(testing.DEFAULT_SHELL, expected)
+

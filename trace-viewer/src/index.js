@@ -8,3 +8,6 @@ import { createResources } from "./resources.js";
 function showError(message) {
   const error = document.getElementById("report-error");
   if (!error) throw new Error(message);
+  error.textContent = `Report viewer error: ${message}. Captured evidence remains in the embedded report-data block.`;
+  error.hidden = false;
+}
