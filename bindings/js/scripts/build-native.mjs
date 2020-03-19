@@ -17,3 +17,5 @@ for (let i = 0; i < args.length; i++) {
     explicitTarget = args[++i];
     if (!explicitTarget || explicitTarget.startsWith("-")) throw new Error("Missing --target value");
   } else if (arg.startsWith("--target=") && arg.length > "--target=".length) {
+    explicitTarget = arg.slice("--target=".length);
+  } else {
