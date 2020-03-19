@@ -34,3 +34,4 @@ class Cursor(TypedDict):
 
 
 @dataclass
+class Colors:

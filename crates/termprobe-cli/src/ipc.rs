@@ -61,3 +61,6 @@ pub fn exchange(conn: Stream, req: &Request) -> anyhow::Result<Response> {
     reader.get_mut().flush()?;
 
     let mut response = String::new();
+    reader.read_line(&mut response)?;
+    let resp: Response = serde_json::from_str(response.trim())?;
+    Ok(resp)
