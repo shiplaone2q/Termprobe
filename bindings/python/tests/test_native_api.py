@@ -1,0 +1,66 @@
+import asyncio
+import inspect
+import json
+import unittest
+from pathlib import Path
+from typing import get_type_hints
+
+from tui_test import Cursor, Locator, NoSessionError, State, TuiTest, UsageError, _native, unique_session
+
+
+INVALID_CAPTURE_BACKGROUNDS = (
+    "", "#12", "#ff00zz", "#12345678", "#12é34", "256,0,0", "rgb(-1,0,0)",
+)
+
+
+class CaptureBackgroundTests(unittest.TestCase):
+    def test_invalid_background_errors_come_from_native_awaitables(self):
+        async def scenario():
+            session = _native.NativeSession(unique_session("invalid-native-background"))
+            for background in INVALID_CAPTURE_BACKGROUNDS:
+                for capture in (
+                    lambda: session.screenshot("screen.svg", False, background=background),
+                    lambda: session.start_recording(
+                        "recording.gif", None, None, None, None, background=background
+                    ),
+                ):
+                    with self.subTest(background=background):
+                        awaitable = capture()
+                        self.assertTrue(inspect.isawaitable(awaitable))
+                        with self.assertRaisesRegex(_native.NativeUsageError, "color"):
+                            await awaitable
+
+        asyncio.run(scenario())
+
+    def test_invalid_backgrounds_raise_public_usage_errors(self):
+        async def scenario():
+            terminal = TuiTest(unique_session("invalid-background"))
+            for background in INVALID_CAPTURE_BACKGROUNDS:
+                for capture in (
+                    lambda: terminal.screenshot("screen.svg", background=background),
+                    lambda: terminal.start_recording("recording.gif", background=background),
+                ):
+                    with self.subTest(background=background):
+                        with self.assertRaisesRegex(UsageError, "color"):
+                            await capture()
+
+        asyncio.run(scenario())
+
+
+class _IndexValue:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+
+class NativeSurfaceTests(unittest.TestCase):
+    def test_public_client_omits_one_shot_text_methods(self):
+        for name in ("find_text", "wait_text", "expect_text"):
+            self.assertFalse(hasattr(TuiTest, name), name)
+        for method in (
+            TuiTest.get_by_text,
+            TuiTest.get_by_style,
+            Locator.get_by_text,
+            Locator.get_by_style,

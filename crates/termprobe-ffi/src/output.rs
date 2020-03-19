@@ -37,3 +37,6 @@ impl Storage {
         for (name, enabled) in values {
             let name = self.string(name);
             self.modes.push(TuiMode { name, enabled });
+        }
+        (self.modes.as_ptr(), self.modes.len())
+    }
