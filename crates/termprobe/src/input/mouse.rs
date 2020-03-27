@@ -23,3 +23,5 @@ pub fn up(x: u16, y: u16, options: MouseOptions) -> String {
         u32::from(y) + 1
     )
 }
+
+/// SGR motion at (x, y), 0-based (button-motion bit set).

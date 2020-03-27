@@ -16,3 +16,5 @@
       Foreground: `${cell.fg} -> ${cell.resolved_fg}`, Background: `${cell.bg} -> ${cell.resolved_bg}`,
       Underline: `${cell.underline_style} / ${cell.underline_color} -> ${cell.resolved_underline_color}`,
       Hyperlink: cell.link || "none", "Link ID": cell.link_id || "none",
+    });
+    for (const flag of ["bold", "dim", "italic", "inverse", "invisible", "strike", "blink"]) properties[flag] = cell.flags.includes(flag);
