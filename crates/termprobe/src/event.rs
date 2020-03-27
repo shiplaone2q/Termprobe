@@ -23,3 +23,5 @@ struct BellState {
     count: u64,
     sequence: u64,
     events: VecDeque<BellEvent>,
+}
+

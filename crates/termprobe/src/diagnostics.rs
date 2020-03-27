@@ -446,3 +446,7 @@ pub enum RecordingStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordingDiagnostics {
     pub mode: AutomaticRecordingMode,
+    pub status: RecordingStatus,
+    pub failure_offset_ms: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_committed_ms: Option<u64>,
