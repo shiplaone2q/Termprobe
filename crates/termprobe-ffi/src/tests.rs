@@ -90,3 +90,4 @@ unsafe fn error_kind(result: *mut TuiResult) -> u32 {
 #[test]
 fn missing_sessions_retain_structured_errors_and_owned_messages() {
     for _ in 0..128 {
+        let result = unsafe { tui_state(text(r#"{"name":"go-abi-missing-session"}"#)) };
