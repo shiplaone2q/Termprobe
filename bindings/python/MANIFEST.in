@@ -1,2 +1,3 @@
 include README.md
 include setup.py
+recursive-include src *.py *.pyi py.typed
