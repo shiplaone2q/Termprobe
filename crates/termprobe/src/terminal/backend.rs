@@ -27,3 +27,4 @@ pub enum Backend {
     Rio,
     #[cfg(feature = "xtermjs")]
     Xtermjs,
+}

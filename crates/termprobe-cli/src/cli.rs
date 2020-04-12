@@ -486,3 +486,4 @@ pub enum RecordCmd {
         idle_time_limit: Option<f64>,
         /// Scale image/video dimensions while keeping the same terminal cells.
         #[arg(long)]
+        zoom: Option<f64>,
