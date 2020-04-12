@@ -189,3 +189,7 @@ impl ShadowStyle {
 /// One number covers every side. A table sets individual sides.
 /// Omitted sides inherit file settings, then the canvas or content defaults.
 ///
+/// ```toml
+/// canvas_padding = 24
+///
+/// # or
