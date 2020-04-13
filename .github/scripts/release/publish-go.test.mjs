@@ -23,3 +23,7 @@ function publicationFixture(t) {
   git(["init", "-q", "-b", "main"]);
   const identity = script.split("\n").filter(line => line.startsWith("git config user.")).join("\n");
   assert.ok(identity, "workflow automation identity is missing");
+  execFileSync("bash", ["-ec", identity], { cwd: fixture.root });
+  git(["config", "commit.gpgsign", "false"]);
+  git(["add", "bindings", "LICENSE", ".github"]);
+  git(["commit", "-q", "-s", "-m", "Source release fixture"]);

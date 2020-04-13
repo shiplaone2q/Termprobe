@@ -219,3 +219,7 @@ fn mp4_timeline(frames: &[Frame], fps: u8) -> anyhow::Result<Vec<Mp4Step>> {
         } else if let Some(previous) = output.last_mut() {
             previous.frame = last_frame;
         }
+    }
+    Ok(output)
+}
+
