@@ -81,3 +81,6 @@ impl State {
 
         let origin = if modes.contains(TermMode::ORIGIN) {
             output.push_str("\x1b[?6h");
+            top - 1
+        } else {
+            0

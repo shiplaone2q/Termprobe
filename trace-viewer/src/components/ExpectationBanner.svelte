@@ -7,3 +7,4 @@
       outcome: "failed", summary: expectation ? `Failed: ${expectation}` : `Expected ${result.expected}`, observed: result.actual,
     };
     if (expectation && !action?.unavailableExpectation) return {
+      outcome: action?.failed ? "failed" : "passed",
