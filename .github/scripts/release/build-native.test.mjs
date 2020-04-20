@@ -20,3 +20,5 @@ function build(t, args, host = "x86_64-unknown-linux-gnu") {
   fs.writeFileSync(mock, `
 import childProcess from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
+import { syncBuiltinESMExports } from "node:module";

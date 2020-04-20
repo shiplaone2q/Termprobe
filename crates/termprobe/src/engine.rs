@@ -1107,3 +1107,7 @@ impl Engine {
                         report_html: None,
                         timeline: None,
                         screen_text: None,
+                        screen_svg: None,
+                        recording: None,
+                        errors: vec![format!(
+                            "failed to allocate failure artifact directory: {error}"
