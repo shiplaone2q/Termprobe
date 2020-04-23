@@ -129,3 +129,6 @@ def _text(value):
     return C.string_at(value.data, value.len).decode("utf-8")
 
 
+def _copy(value):
+    """Copy every borrowed field before the result allocation is released."""
+    if isinstance(value, abi.TuiString):

@@ -150,3 +150,5 @@ impl TerminalMode {
             TerminalMode::BracketedPaste => b"\x1b[?2004h",
             TerminalMode::AlternateScreen => b"\x1b[?1049h",
             TerminalMode::CursorVisible => b"\x1b[?25h",
+        }
+    }

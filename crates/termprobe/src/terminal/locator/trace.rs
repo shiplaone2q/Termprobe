@@ -108,3 +108,6 @@ impl Trace {
                 } else {
                     MAX_SAMPLE.saturating_sub(stage.mismatches.len())
                 }
+            })
+    }
+
