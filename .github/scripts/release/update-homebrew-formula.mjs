@@ -16,3 +16,7 @@ const sha256 = (name) => {
 
 const macosArm = sha256("termprobe-aarch64-apple-darwin.tar.gz");
 const macosIntel = sha256("termprobe-x86_64-apple-darwin.tar.gz");
+const linuxArm = sha256("termprobe-aarch64-unknown-linux-gnu.tar.gz");
+const linuxIntel = sha256("termprobe-x86_64-unknown-linux-gnu.tar.gz");
+
+const formula = `class Termprobe < Formula

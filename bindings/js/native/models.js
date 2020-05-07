@@ -88,3 +88,5 @@ TextSpan: {
 TextMatch: {
 "text": ["text", "String"],
 "start": ["start", "TextPosition"],
+"end": ["end", "TextPosition"],
+"spans": ["spans", "Vec<TextSpan>"],

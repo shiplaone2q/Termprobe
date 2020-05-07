@@ -10,3 +10,7 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 	memory.pinner.Pin(&modes[0])
 	memory.pinner.Pin(&palette[0])
 	state := nativeState(abiState{
+		cursor:     abiCursor{x: 3, y: 4, visible: true, shape: memory.text("bar"), color: memory.text("#abcdef")},
+		exitSignal: memory.text("KILL"),
+		modes:      &modes[0], modesLen: 1,
+		mouseMode: memory.text("drag"),

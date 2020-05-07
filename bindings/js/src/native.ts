@@ -156,3 +156,5 @@ export function mapNativeError(error: unknown): TermprobeError {
   const message = errorMessage(error);
   const encodedAt = message.indexOf(ERROR_PREFIX);
   if (encodedAt >= 0) {
+    const encoded = message.slice(encodedAt + ERROR_PREFIX.length);
+    try {
