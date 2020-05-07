@@ -31,3 +31,7 @@ const MAPPING = {
   record: [["client", "startRecording"], ["client", "stopRecording"]],
   cells: [["client", "cells"]],
   get: [
+    ["client", "getCommand"],
+    ["client", "getOutput"],
+    ["client", "getExitCode"],
+    ["client", "getCwd"],

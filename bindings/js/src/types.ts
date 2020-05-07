@@ -60,3 +60,7 @@ export type BellEvent = NativeBellEvent;
 
 export type State = NativeState;
 
+export type TextMatch = NativeTextMatch;
+
+export type OpenResult = NativeOpenResult;
+
