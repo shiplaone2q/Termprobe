@@ -13,3 +13,6 @@ const sha256 = (name) => {
   }
   return digest.slice("sha256:".length);
 };
+
+const macosArm = sha256("termprobe-aarch64-apple-darwin.tar.gz");
+const macosIntel = sha256("termprobe-x86_64-apple-darwin.tar.gz");
