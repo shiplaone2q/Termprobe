@@ -64,3 +64,6 @@ class NativeSurfaceTests(unittest.TestCase):
             TuiTest.get_by_style,
             Locator.get_by_text,
             Locator.get_by_style,
+        ):
+            self.assertNotIn("occurrence", inspect.signature(method).parameters)
+        self.assertNotIn(

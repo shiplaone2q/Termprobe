@@ -3,3 +3,4 @@
   let { id, values, colors = {} }: { id: string; values: Properties; colors?: Readonly<Record<string, string>> } = $props();
 </script>
 
+<dl {id}>
