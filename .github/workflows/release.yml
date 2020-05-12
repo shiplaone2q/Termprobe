@@ -203,3 +203,5 @@ jobs:
 
       - run: npm ci
         working-directory: bindings/js
+
+      - name: Install maintenance script dependencies

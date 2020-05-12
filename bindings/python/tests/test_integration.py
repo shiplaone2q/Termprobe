@@ -234,3 +234,4 @@ class IntegrationTests(unittest.TestCase):
                                 int.from_bytes(data[16:20], "big"), 278
                             )
                             self.assertEqual(
+                                int.from_bytes(data[20:24], "big"), 188
