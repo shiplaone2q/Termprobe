@@ -5,3 +5,4 @@
 __pycache__/
 .github/scripts/node_modules/
 *.node
+bindings/js/native/*.so

@@ -178,3 +178,6 @@ test("mouse helpers encode named buttons and modifiers", async () => {
       onText: "OK",
       button: "right",
       alt: true,
+      ctrl: true,
+      shift: true,
+      clicks: 2,
