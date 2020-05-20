@@ -1,0 +1,12 @@
+[package]
+name = "termprobe-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "The termprobe command-line interface and per-session daemon"
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "termprobe"

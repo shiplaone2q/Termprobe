@@ -14,3 +14,5 @@ export function libraryFixture(target) {
   const arm = target.startsWith("aarch64");
   if (target.includes("linux")) {
     data.write("\x7fELF\x02\x01", 0, "binary");
+    data.writeUInt16LE(3, 16);
+    data.writeUInt16LE(arm ? 183 : 62, 18);
