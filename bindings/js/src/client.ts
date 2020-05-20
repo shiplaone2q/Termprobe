@@ -234,3 +234,4 @@ class Keyboard {
     this.#runtime = runtime;
   }
 
+  async press(...keys: string[]): Promise<void> {
