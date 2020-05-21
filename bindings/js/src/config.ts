@@ -57,3 +57,4 @@ const COLOR_FIELDS = new Map([
   ["brightMagenta", "bright_magenta"],
   ["brightCyan", "bright_cyan"],
   ["brightWhite", "bright_white"],
+]);

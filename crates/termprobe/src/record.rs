@@ -124,3 +124,5 @@ impl Recorder {
         })
     }
 
+    pub fn automatic_enabled(&self) -> bool {
+        self.automatic
