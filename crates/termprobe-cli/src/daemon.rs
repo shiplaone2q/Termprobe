@@ -129,3 +129,5 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
                     error.kind(),
                     std::io::ErrorKind::Interrupted
                         | std::io::ErrorKind::ConnectionAborted
+                        | std::io::ErrorKind::ConnectionReset
+                ) => {}

@@ -1,0 +1,16 @@
+{
+  "name": "@microsoft/termprobe",
+  "version": "0.1.1",
+  "description": "Node bindings for the termprobe terminal engine",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./test": {
+      "types": "./dist/test/index.d.ts",
+      "default": "./dist/test/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
