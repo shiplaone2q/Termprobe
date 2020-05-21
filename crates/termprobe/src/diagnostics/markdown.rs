@@ -137,3 +137,6 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
                 expected,
                 actual: format!(
                     "{} candidates before occurrence selection; stage {} had {} selector matches and {} style matches.",
+                    locator.final_candidate_count,
+                    stage.stage_index,
+                    stage.raw_candidate_count,
