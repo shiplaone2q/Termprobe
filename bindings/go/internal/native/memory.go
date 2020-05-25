@@ -12,3 +12,4 @@ func (memory *nativeMemory) release() {
 	memory.pinner.Unpin()
 }
 
+func (memory *nativeMemory) text(value string) abiString {

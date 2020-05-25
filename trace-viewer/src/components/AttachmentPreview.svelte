@@ -8,3 +8,5 @@
     <p class="muted">Select an attachment to preview it.</p>
   {:else}
     <h2>{file.name}</h2>
+    {#if failed}
+      <p class="notice error">Captured SVG could not be displayed. Download retains the original attachment bytes.</p>
