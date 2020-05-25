@@ -600,3 +600,4 @@ fn map_wait(what: WaitCmd) -> Request {
     }
 }
 
+fn map_occurrence(

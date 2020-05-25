@@ -211,3 +211,4 @@ fn build_catalog(font: &FontFamilies) -> anyhow::Result<Catalog> {
         })
         .map(|face| face.id)
         .collect();
+    Ok(Catalog {
