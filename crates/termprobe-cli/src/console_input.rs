@@ -16,3 +16,4 @@ impl ConsoleInput {
             bytes: Cursor::new(Vec::new()),
             high_surrogate: None,
         }
+    }

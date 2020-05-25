@@ -181,3 +181,5 @@ test("mouse helpers encode named buttons and modifiers", async () => {
       ctrl: true,
       shift: true,
       clicks: 2,
+    });
+    await su.mouse.down(1, 2, { button: "middle", ctrl: true });
