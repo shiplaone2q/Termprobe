@@ -39,3 +39,6 @@ func nativeLibraryPath(libraries map[string]bundledLibrary) (string, error) {
 	cache, err := os.UserCacheDir()
 	if err != nil {
 		return "", fmt.Errorf("locate native engine cache: %w", err)
+	}
+	return cacheLibrary(cache, library)
+}

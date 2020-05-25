@@ -43,3 +43,4 @@ elseif ($version -eq "beta") {
 
     $releases = Invoke-RestMethod `
         -Uri "https://api.github.com/repos/$repository/releases?per_page=100" `
+        -Headers $headers `
