@@ -118,3 +118,4 @@ impl CastWriter {
         let elapsed = at.saturating_duration_since(self.start);
         serde_json::to_writer(&mut self.sink, &(elapsed.as_secs_f64(), code, data))
             .map_err(json_error)?;
+        self.sink.write_all(b"\n")?;

@@ -67,3 +67,7 @@ class OwnershipTests(unittest.TestCase):
         result.error_artifact = native._string('{"directory":"artifacts"}')
         library = Mock()
         library.tui_expect_locator.return_value = C.pointer(result)
+        with patch.object(native, "_load", return_value=library):
+            with self.assertRaises(native.NativeAssertionError) as caught:
+                native._invoke("expect_locator", ())
+        envelope = json.loads(caught.exception._tui_test_error_json)

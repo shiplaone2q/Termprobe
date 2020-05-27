@@ -64,3 +64,4 @@ export type TextMatch = NativeTextMatch;
 
 export type OpenResult = NativeOpenResult;
 
+export interface Colors {
