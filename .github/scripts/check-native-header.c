@@ -2,3 +2,4 @@
 
 int main(void) {
     TuiWaitOptions options = {0};
+    options.not_ = true;

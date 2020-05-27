@@ -14,3 +14,6 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 		exitSignal: memory.text("KILL"),
 		modes:      &modes[0], modesLen: 1,
 		mouseMode: memory.text("drag"),
+		colors: abiTerminalColors{
+			foreground: memory.text("#ffffff"), background: memory.text("#000000"), cursor: memory.text("#abcdef"),
+			palette: &palette[0], paletteLen: 1,
