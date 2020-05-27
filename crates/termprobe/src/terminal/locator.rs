@@ -406,3 +406,5 @@ where
                                 break;
                             }
                             stats.mismatch(CellMismatch {
+                                location: TextPosition {
+                                    column: cell.x.min(u16::MAX as usize) as u16,

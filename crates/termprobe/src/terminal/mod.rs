@@ -7,3 +7,4 @@ pub mod emu;
 #[cfg(feature = "ghostty")]
 pub mod ghostty;
 pub mod integration;
+pub mod locator;
