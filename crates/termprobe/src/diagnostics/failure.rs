@@ -73,3 +73,6 @@ impl FailureReport {
         }
         details.locator = self.locator.as_ref().map(|locator| {
             let stage = locator
+                .failure_stage
+                .and_then(|index| {
+                    locator
