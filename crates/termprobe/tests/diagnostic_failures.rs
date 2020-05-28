@@ -58,3 +58,4 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
     )
     .unwrap();
     let mismatch = session.execute(snapshot(&root, false)).unwrap_err();
+    let scalar = session

@@ -75,3 +75,7 @@ export interface Cell {
   bold: boolean
   dim: boolean
   italic: boolean
+  inverse: boolean
+  invisible: boolean
+  strike: boolean
+  blink: boolean
