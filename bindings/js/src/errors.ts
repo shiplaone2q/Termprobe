@@ -17,3 +17,5 @@ export class TermprobeError extends Error {
     this.kind = kind;
     this.exitCode = exitCode;
   }
+}
+

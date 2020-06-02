@@ -32,3 +32,5 @@ export interface CreateTerminalOptions {
   timeouts?: Timeouts;
   screenHistoryLimit?: number;
   profile?: Profile;
+  artifacts?: ArtifactOptions;
+  recording?: AutomaticRecording;
