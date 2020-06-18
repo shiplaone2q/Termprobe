@@ -13,3 +13,6 @@
   <div class="actual"><h2>Observed</h2><pre id="actual">{result.actual}</pre></div>
 </div>
 <p id="explanation-note" class="muted">{result.note}</p>
+<ul id="hints">{#each result.hints as hint}<li>{hint}</li>{/each}</ul>
+<details>
+  <summary id="raw-details-heading">{hasFailure ? "Original error and locator evidence" : "Raw trace evidence"}</summary>

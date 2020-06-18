@@ -149,3 +149,5 @@ struct ColorState {
 impl ColorState {
     fn new(profile: &Profile) -> Self {
         Self {
+            profile: *profile,
+            overrides: Arc::new(Mutex::new([None; COLOR_COUNT])),
