@@ -58,3 +58,5 @@ const COLOR_FIELDS = new Map([
   ["brightCyan", "bright_cyan"],
   ["brightWhite", "bright_white"],
 ]);
+
+export function resolveTimeout(

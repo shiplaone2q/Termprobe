@@ -101,3 +101,5 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 | `[Symbol.asyncDispose]()` | Close from `await using`. |
 
 `open()` options are `shell`, `backend`, `cols`, `rows`, `cwd`, `env`, `waitReady`, `restart`, `retries`, `profile`, `timeouts`, and `screenHistoryLimit`. `run()` accepts the same options except `shell`.
+
+The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, and 30 seconds for command, exit, and ready.
