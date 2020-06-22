@@ -1,0 +1,3 @@
+[package]
+name = "termprobe-bindgen"
+version.workspace = true

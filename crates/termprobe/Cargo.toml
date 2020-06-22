@@ -13,3 +13,7 @@ name = "termprobe"
 path = "src/lib.rs"
 
 [features]
+default = []
+ghostty = ["dep:ghostty-vt"]
+rio = ["dep:rio-vt"]
+xtermjs = ["dep:rquickjs"]
