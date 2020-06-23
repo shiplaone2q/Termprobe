@@ -8,3 +8,4 @@ pub mod emu;
 pub mod ghostty;
 pub mod integration;
 pub mod locator;
+pub mod pty;

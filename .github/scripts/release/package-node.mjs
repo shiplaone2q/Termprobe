@@ -11,3 +11,4 @@ const rootPackage = JSON.parse(originalPackage);
 rootPackage.optionalDependencies = {};
 
 const runNpm = (args) => execFileSync("npm", args, { stdio: "inherit" });
+
