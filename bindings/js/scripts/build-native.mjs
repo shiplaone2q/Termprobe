@@ -23,3 +23,7 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 const target = explicitTarget ?? execFileSync("rustc", ["-vV"], { encoding: "utf8" })
+  .match(/^host: (.+)$/m)?.[1];
+const tags = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).nativeTargets;
+const tag = tags[target];
+if (!tag) throw new Error(`Unsupported native target: ${target}`);
