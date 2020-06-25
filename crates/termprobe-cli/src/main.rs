@@ -603,3 +603,7 @@ fn map_wait(what: WaitCmd) -> Request {
 fn map_occurrence(
     mode: Option<MatchArg>,
     nth: Option<usize>,
+    default: MatchOccurrence,
+) -> MatchOccurrence {
+    if let Some(index) = nth {
+        return MatchOccurrence::Nth(index);
