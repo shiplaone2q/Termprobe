@@ -9,3 +9,5 @@ import (
 )
 
 type nativeLibraryHandle struct{ library uintptr }
+
+func openNativeLibrary(path string) (*nativeLibraryHandle, error) {

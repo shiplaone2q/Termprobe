@@ -19,3 +19,7 @@ func TestHelperChild(t *testing.T) {
 	fmt.Println("helper-ready")
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
+		if scanner.Text() == "quit" {
+			os.Exit(0)
+		}
+	}

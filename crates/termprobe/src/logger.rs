@@ -27,3 +27,7 @@ impl Logger {
     /// Create a logger that truncates and writes to `path`.
     pub fn to_file(path: &Path) -> std::io::Result<Self> {
         let file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(path)?;

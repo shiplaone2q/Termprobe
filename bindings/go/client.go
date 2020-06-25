@@ -89,3 +89,4 @@ func validateArtifactOptions(options *ArtifactOptions) error {
 		case "", ArtifactAll, ArtifactHTML, ArtifactText, ArtifactNone:
 		default:
 			return &Error{Kind: UsageError, Message: "unknown artifact mode: " + string(options.OnFailure)}
+		}
