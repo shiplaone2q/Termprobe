@@ -14,3 +14,7 @@ func (memory *nativeMemory) release() {
 
 func (memory *nativeMemory) text(value string) abiString {
 	buffer := make([]byte, len(value)+1)
+	copy(buffer, value)
+	pointer := &buffer[0]
+	memory.pinner.Pin(pointer)
+	return abiString{data: pointer, len: uintptr(len(value))}

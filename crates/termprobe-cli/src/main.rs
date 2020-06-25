@@ -601,3 +601,5 @@ fn map_wait(what: WaitCmd) -> Request {
 }
 
 fn map_occurrence(
+    mode: Option<MatchArg>,
+    nth: Option<usize>,

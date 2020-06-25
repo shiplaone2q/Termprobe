@@ -11,3 +11,5 @@ fn __su_uri_path {|p|
     } else {
       printf "%%%02X" $n
     }
+  }
+}
