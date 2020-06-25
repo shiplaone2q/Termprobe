@@ -26,3 +26,5 @@ try {
 ## Locators
 
 ```js
+const locator = terminal
+  .getByText("Settings")

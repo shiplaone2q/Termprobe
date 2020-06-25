@@ -193,3 +193,5 @@ impl ShadowStyle {
 /// canvas_padding = 24
 ///
 /// # or
+/// [recording.style.canvas_padding]
+/// bottom = 48

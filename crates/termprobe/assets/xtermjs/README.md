@@ -24,3 +24,5 @@ two backends.
 Newer is not better here. Measured cursor column after each sequence:
 
 | Input | alacritty | v6 | **v11** | v15 | v15-graphemes |
+| ----- | --------- | -- | ------- | --- | ------------- |
+| `🙂X` | 3 | 2 | **3** | 3 | 3 |
