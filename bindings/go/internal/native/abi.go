@@ -51,3 +51,4 @@ type abiColor struct {
 	_     structs.HostLayout
 	kind  uint32
 	index uint8
+	red   uint8

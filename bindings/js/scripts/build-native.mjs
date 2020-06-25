@@ -19,3 +19,7 @@ for (let i = 0; i < args.length; i++) {
   } else if (arg.startsWith("--target=") && arg.length > "--target=".length) {
     explicitTarget = arg.slice("--target=".length);
   } else {
+    throw new Error(`Unknown build option: ${arg}`);
+  }
+}
+const target = explicitTarget ?? execFileSync("rustc", ["-vV"], { encoding: "utf8" })

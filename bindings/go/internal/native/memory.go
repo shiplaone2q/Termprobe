@@ -13,3 +13,4 @@ func (memory *nativeMemory) release() {
 }
 
 func (memory *nativeMemory) text(value string) abiString {
+	buffer := make([]byte, len(value)+1)
