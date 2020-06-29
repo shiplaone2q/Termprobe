@@ -35,3 +35,4 @@ const MAPPING = {
     ["client", "getOutput"],
     ["client", "getExitCode"],
     ["client", "getCwd"],
+    ["client", "getCursor"],

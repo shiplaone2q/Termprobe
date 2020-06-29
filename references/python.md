@@ -20,3 +20,7 @@ async with Termprobe.ephemeral() as terminal:
 ```
 
 ## Locators
+
+```python
+locator = (
+    terminal
