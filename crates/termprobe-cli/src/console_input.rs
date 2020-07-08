@@ -17,3 +17,4 @@ impl ConsoleInput {
             high_surrogate: None,
         }
     }
+}
