@@ -82,3 +82,5 @@ fn main() -> Result<()> {
         .generate()
         .map_err(|error| anyhow::anyhow!("{error}"))?
         .write(&mut header);
+    emit(
+        &root,
