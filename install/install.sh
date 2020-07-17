@@ -43,3 +43,5 @@ trap cleanup EXIT HUP INT TERM
 download() {
   url="$1"
   destination="$2"
+
+  if command -v curl >/dev/null 2>&1; then

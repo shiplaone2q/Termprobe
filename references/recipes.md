@@ -34,3 +34,7 @@ await (
     .unique()
     .click()
 )
+```
+
+```js
+await terminal
