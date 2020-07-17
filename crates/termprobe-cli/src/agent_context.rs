@@ -42,3 +42,6 @@ fn exit_codes() -> Value {
         "4": "daemon or IPC error",
         "5": "internal error",
     })
+}
+
+/// Build a `{ name: {...} }` map of a command's visible subcommands.
