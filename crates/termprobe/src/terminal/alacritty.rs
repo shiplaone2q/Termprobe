@@ -220,3 +220,7 @@ impl EventListener for CaptureProxy {
     }
 }
 
+impl CaptureProxy {
+    fn push_reply(&self, reply: Reply, color_query: bool) {
+        if let Ok(mut queue) = self.pending.lock() {
+            queue.push(reply);
