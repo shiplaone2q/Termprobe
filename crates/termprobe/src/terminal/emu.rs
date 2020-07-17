@@ -152,3 +152,6 @@ impl TerminalMode {
             TerminalMode::CursorVisible => b"\x1b[?25h",
         }
     }
+
+    /// The sequence that turns this mode off.
+    ///
