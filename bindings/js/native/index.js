@@ -11,3 +11,6 @@ export {
 } from "./models.js";
 
 function libraryPath() {
+  if (process.env.TERMPROBE__NATIVE_LIBRARY) return process.env.TERMPROBE__NATIVE_LIBRARY;
+  const platform = process.platform;
+  const arch = process.arch;
