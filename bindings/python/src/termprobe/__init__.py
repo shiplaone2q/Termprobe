@@ -20,3 +20,5 @@ from .types import (
     AutomaticRecording,
     TraceMode,
     TraceOptions,
+    Backend,
+    BellEvent,

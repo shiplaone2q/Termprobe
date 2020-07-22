@@ -145,3 +145,5 @@ fn parameter(mut f: Field) -> Field {
         "query" => "expression",
         "options" if f.ty == "MouseOptions" => "button",
         other => other,
+    }
+    .into();
