@@ -36,3 +36,7 @@ pub(crate) unsafe fn slice<'a, T>(data: *const T, len: usize) -> Result<&'a [T]>
     if data.is_null() || len > isize::MAX as usize / std::mem::size_of::<T>() {
         return Err(TermprobeError::usage(
             "invalid native array pointer or length",
+        ));
+    }
+    Ok(unsafe { std::slice::from_raw_parts(data, len) })
+}

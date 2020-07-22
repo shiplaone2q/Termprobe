@@ -27,3 +27,4 @@ function publicationFixture(t) {
   git(["config", "commit.gpgsign", "false"]);
   git(["add", "bindings", "LICENSE", ".github"]);
   git(["commit", "-q", "-s", "-m", "Source release fixture"]);
+  fixture.revision = git(["rev-parse", "HEAD"]).trim();
