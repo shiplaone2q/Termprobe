@@ -89,3 +89,7 @@ impl FrameCapture {
         let mut clock = TimelineClock::default();
         clock.advance(0.0, &options)?;
         Ok(Self {
+            started,
+            collector: FrameCollector::new(Duration::from_secs_f64(1.0 / f64::from(options.fps))),
+            options,
+            clock,

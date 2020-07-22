@@ -80,3 +80,6 @@ fn shift(prev: &EmuCell, cur: &EmuCell) -> Map<String, Value> {
 fn baseline() -> EmuCell {
     EmuCell::blank()
 }
+
+/// Serialize a grid into a boxed text view, optionally followed by attributes.
+///

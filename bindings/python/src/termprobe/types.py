@@ -35,3 +35,6 @@ class Cursor(TypedDict):
 
 @dataclass
 class Colors:
+    foreground: Optional[str] = None
+    background: Optional[str] = None
+    cursor: Optional[str] = None
