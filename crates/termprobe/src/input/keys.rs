@@ -282,3 +282,4 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
                 sequence.push_str(ESC);
             }
             sequence.push('\r');
+        }

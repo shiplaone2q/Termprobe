@@ -70,3 +70,5 @@ type Direction string
 const (
 	Within Direction = "within"
 	After  Direction = "after"
+	Before Direction = "before"
+)

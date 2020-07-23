@@ -31,3 +31,7 @@ impl Logger {
             .write(true)
             .truncate(true)
             .open(path)?;
+        Ok(Logger {
+            sink: Some(Mutex::new(BufWriter::new(file))),
+        })
+    }
