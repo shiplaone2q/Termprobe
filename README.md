@@ -107,3 +107,6 @@ try {
 ```
 
 [JavaScript API reference](bindings/js/README.md)
+
+### Rust
+

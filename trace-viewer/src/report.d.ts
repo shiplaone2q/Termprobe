@@ -82,3 +82,6 @@ export interface FailureTextSelector {
   readonly whitespace: "exact" | "normalize";
   readonly scope: {
     readonly after?: FailureTextAnchor | null;
+    readonly before?: FailureTextAnchor | null;
+  };
+}
