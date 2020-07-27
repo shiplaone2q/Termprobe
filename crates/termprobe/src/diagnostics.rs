@@ -450,3 +450,7 @@ pub struct RecordingDiagnostics {
     pub failure_offset_ms: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_committed_ms: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u64>,
