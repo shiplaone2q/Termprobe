@@ -48,3 +48,4 @@ class TerminalOptions:
     rows: Optional[int] = None
     cwd: Optional[str] = None
     env: Optional[Any] = None
+    session: Optional[str] = None

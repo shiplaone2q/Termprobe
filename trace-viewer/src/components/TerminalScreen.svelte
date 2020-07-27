@@ -13,3 +13,5 @@
   function inspect(event: MouseEvent, terminal: HTMLButtonElement) {
     if (!frame) return;
     if (event.detail === 0) {
+      oninspect(cell?.x ?? Math.min(frame.cursor.x, frame.columns - 1), cell?.y ?? Math.min(frame.cursor.y, frame.rows - 1));
+      return;

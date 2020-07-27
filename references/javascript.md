@@ -28,3 +28,6 @@ try {
 ```js
 const locator = terminal
   .getByText("Settings")
+  .getByText("Save", { direction: "after" })
+  .unique();
+```
