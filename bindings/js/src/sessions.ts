@@ -5,3 +5,4 @@ export async function sessions(): Promise<string[]> {
   return native.sessions();
 }
 
+export async function closeAll(): Promise<void> {

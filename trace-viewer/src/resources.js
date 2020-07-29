@@ -14,3 +14,4 @@ export function createResources(model) {
     urls.push(value);
     return value;
   }
+  /** @param {TraceFrame} frame @returns {ImageResult} */
