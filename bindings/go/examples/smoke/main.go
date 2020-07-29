@@ -12,3 +12,5 @@ import (
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "--child" {
+		fmt.Println("go-binding-ready")
+		scanner := bufio.NewScanner(os.Stdin)

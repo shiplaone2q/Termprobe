@@ -90,3 +90,6 @@ TextMatch: {
 "start": ["start", "TextPosition"],
 "end": ["end", "TextPosition"],
 "spans": ["spans", "Vec<TextSpan>"],
+},
+PackedScreen: {
+"cols": ["cols", "u16"],

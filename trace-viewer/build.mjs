@@ -29,3 +29,6 @@ const licenses = await Promise.all(runtimePackages.map(async (name) => {
 }));
 const options = {
   absWorkingDir: source, entryPoints: ["src/index.js"], outfile: "report.min.js",
+  bundle: true, minify: true, treeShaking: true, charset: "ascii", legalComments: "none",
+  target: "es2023", format: "iife", platform: "browser", write: false, metafile: true,
+  supported: { "template-literal": false },
