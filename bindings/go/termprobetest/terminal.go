@@ -19,3 +19,6 @@ type Options struct {
 }
 
 // New opens a unique terminal and registers cleanup even if spawning fails.
+// Test failures are reported through Close so the engine can retain configured traces.
+func New(tb testing.TB, options Options) *termprobe.Client {
+	tb.Helper()

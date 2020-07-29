@@ -102,3 +102,4 @@ func newClient(t *testing.T, options termprobe.ClientOptions) *termprobe.Client 
 	t.Cleanup(func() {
 		if err := terminal.Close(); err != nil {
 			t.Errorf("close terminal: %v", err)
+		}
