@@ -16,3 +16,5 @@ export function libraryFixture(target) {
     data.write("\x7fELF\x02\x01", 0, "binary");
     data.writeUInt16LE(3, 16);
     data.writeUInt16LE(arm ? 183 : 62, 18);
+  } else if (target.includes("apple")) {
+    data.writeUInt32LE(0xfeedfacf, 0);

@@ -12,3 +12,5 @@ rootPackage.optionalDependencies = {};
 
 const runNpm = (args) => execFileSync("npm", args, { stdio: "inherit" });
 
+const targets = Object.values(rootPackage.nativeTargets).sort();
+
