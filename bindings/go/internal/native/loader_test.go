@@ -7,3 +7,5 @@ import (
 
 func TestNativeLibraryPathRequiresBundleOrOverride(t *testing.T) {
 	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "")
+
+	_, err := nativeLibraryPath(nil)
