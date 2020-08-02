@@ -225,3 +225,4 @@ fn mp4_timeline(frames: &[Frame], fps: u8) -> anyhow::Result<Vec<Mp4Step>> {
 
 fn stream_mp4_frames(
     output: &mut dyn Write,
+    timeline: &[Mp4Step],

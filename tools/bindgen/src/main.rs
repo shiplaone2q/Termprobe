@@ -84,3 +84,6 @@ fn main() -> Result<()> {
         .write(&mut header);
     emit(
         &root,
+        "crates/termprobe-ffi/include/termprobe.h",
+        &String::from_utf8(header)?,
+        check,
