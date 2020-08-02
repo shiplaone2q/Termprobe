@@ -7,3 +7,4 @@
   const locations = $derived([...new Set(mismatches.filter((entry) => cellAt(frame, entry.x, entry.y)).map((entry) => `${entry.x},${entry.y}`))]);
 </script>
 
+<svg id="overlay" aria-hidden="true" viewBox={frame.viewBox}>
