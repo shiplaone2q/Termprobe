@@ -57,3 +57,7 @@ func nativeSessions() ([]string, error) {
 func nativeCloseAll() error { return engineError(native.CloseAll()) }
 func nativeRecording(session string) (string, error) {
 	value, err := native.Recording(session)
+	return value, engineError(err)
+}
+func (runtime *nativeRuntime) close(failed *bool) error {
+	return engineError(runtime.session.Close(failed))

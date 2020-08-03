@@ -11,3 +11,6 @@ function showError(message) {
   error.textContent = `Report viewer error: ${message}. Captured evidence remains in the embedded report-data block.`;
   error.hidden = false;
 }
+
+window.addEventListener("error", (event) => showError(event.message));
+window.addEventListener("unhandledrejection", (event) => showError(String(event.reason)));

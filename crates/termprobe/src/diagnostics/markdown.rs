@@ -140,3 +140,6 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
                     locator.final_candidate_count,
                     stage.stage_index,
                     stage.raw_candidate_count,
+                    stage.style_candidate_count
+                ),
+                note: format!("Expression: {}. {}", stage.expression_path, details.summary),
