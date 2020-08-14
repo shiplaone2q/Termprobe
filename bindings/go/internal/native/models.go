@@ -69,3 +69,4 @@ const (
 	Before Direction = "before"
 )
 
+type Whitespace string

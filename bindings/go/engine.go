@@ -61,3 +61,7 @@ func nativeRecording(session string) (string, error) {
 }
 func (runtime *nativeRuntime) close(failed *bool) error {
 	return engineError(runtime.session.Close(failed))
+}
+func (runtime *nativeRuntime) restart(gracefulTimeout time.Duration) (OpenResult, error) {
+	value, err := runtime.session.Restart(gracefulTimeout)
+	return OpenResult(value), engineError(err)

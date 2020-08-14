@@ -12,3 +12,4 @@ assets="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/crates/termprobe/ass
 pinned="$assets/pinned.json"
 
 if [ "${1:-}" = "--latest" ]; then
+  headless="$(npm view @xterm/headless version)"

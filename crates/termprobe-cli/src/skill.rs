@@ -67,3 +67,5 @@ fn first_heading_anchor(document: &str) -> Option<String> {
                 Some(character.to_ascii_lowercase())
             } else if matches!(character, ' ' | '-') {
                 Some('-')
+            } else {
+                None
