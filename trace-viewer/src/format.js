@@ -48,3 +48,5 @@ export function describeLocator(query) {
     throw new Error("Unknown locator expression");
   }
   if ("full" in selector.selector && selector.selector.full) description += " in full scrollback";
+  const style = styleDescription(query.style);
+  if (style) description += ` with ${style}`;

@@ -196,3 +196,7 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
     for zoom in [1.02, 1.25] {
         let content = frame_with_cursor(vec![row.clone()], Some((3, 0)));
         let cursor = content
+            .render_state
+            .color(crate::profile::ColorSlot::Cursor);
+        let mut renderer = GridRenderer::with_zoom(4, 1, zoom, Style::default()).unwrap();
+        let image = renderer.render(&content).unwrap();
