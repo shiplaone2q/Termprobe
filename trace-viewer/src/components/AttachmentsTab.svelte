@@ -11,3 +11,4 @@
 <p class="muted">Every available file below is embedded in this HTML. Preview or download it without the original directory. Captured output is untrusted test data; review it before sharing. The embedded JSON describes the evidence at report generation and excludes the HTML's own hash. A separately exported manifest also includes the final HTML hash.</p>
 <div class="attachment-layout">
   <div id="evidence-links">
+    {#each files as file (file.id)}
