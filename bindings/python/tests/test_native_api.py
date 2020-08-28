@@ -67,3 +67,7 @@ class NativeSurfaceTests(unittest.TestCase):
         ):
             self.assertNotIn("occurrence", inspect.signature(method).parameters)
         self.assertNotIn(
+            "style", inspect.signature(Locator.expect).parameters
+        )
+
+    def test_native_session_has_only_typed_terminal_methods(self):

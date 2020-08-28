@@ -408,3 +408,4 @@ where
                             stats.mismatch(CellMismatch {
                                 location: TextPosition {
                                     column: cell.x.min(u16::MAX as usize) as u16,
+                                    row: cell.y.min(u32::MAX as usize) as u32,

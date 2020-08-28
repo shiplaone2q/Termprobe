@@ -36,3 +36,5 @@ fn descriptor(ty: &Type) -> Result<String> {
 fn asynchronous(function: &ItemFn) -> bool {
     matches!(&function.sig.output, ReturnType::Type(_, ty) if matches!(ty.as_ref(), Type::Ptr(_)))
         && !function.sig.ident.to_string().ends_with("_ptr")
+}
+
