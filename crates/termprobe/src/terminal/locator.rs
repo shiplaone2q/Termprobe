@@ -409,3 +409,6 @@ where
                                 location: TextPosition {
                                     column: cell.x.min(u16::MAX as usize) as u16,
                                     row: cell.y.min(u32::MAX as usize) as u32,
+                                },
+                                grapheme: cell.cell.ch.to_string(),
+                                property: "link".into(),

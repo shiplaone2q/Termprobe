@@ -298,3 +298,6 @@ const fn build_xterm_256() -> [Rgb; 256] {
     }
 
     // 232-255: a gray ramp from 8 to 238 in steps of 10.
+    while i < 256 {
+        let v = (i - 232) as u8 * 10 + 8;
+        table[i] = Rgb::new(v, v, v);
