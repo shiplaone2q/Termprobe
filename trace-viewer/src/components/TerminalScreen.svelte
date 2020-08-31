@@ -15,3 +15,7 @@
     if (event.detail === 0) {
       oninspect(cell?.x ?? Math.min(frame.cursor.x, frame.columns - 1), cell?.y ?? Math.min(frame.cursor.y, frame.rows - 1));
       return;
+    }
+    const bounds = terminal.getBoundingClientRect();
+    oninspect(Math.floor((event.clientX - bounds.left) * frame.columns / bounds.width),
+      Math.floor((event.clientY - bounds.top) * frame.rows / bounds.height));

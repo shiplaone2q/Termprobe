@@ -76,3 +76,5 @@ impl NerdFont {
         for c in chars {
             let Some(glyph_id) = face.glyph_index(c) else {
                 continue;
+            };
+            let mut builder = SvgPathBuilder::default();
