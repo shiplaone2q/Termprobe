@@ -14,3 +14,5 @@ function libraryPath() {
   if (process.env.TERMPROBE__NATIVE_LIBRARY) return process.env.TERMPROBE__NATIVE_LIBRARY;
   const platform = process.platform;
   const arch = process.arch;
+  const libc = platform === "linux"
+    ? (process.report.getReport().header.glibcVersionRuntime ? "gnu" : "musl")

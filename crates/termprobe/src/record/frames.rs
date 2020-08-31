@@ -93,3 +93,6 @@ impl FrameCapture {
             collector: FrameCollector::new(Duration::from_secs_f64(1.0 / f64::from(options.fps))),
             options,
             clock,
+            pending: TimedGrid::capture(emulator, Duration::ZERO)?,
+            error: None,
+        })

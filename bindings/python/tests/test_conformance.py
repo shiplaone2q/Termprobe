@@ -20,3 +20,7 @@ MAPPING = {
     "record": [("client", "start_recording"), ("client", "stop_recording")],
     "cells": [("client", "cells")],
     "get": [
+        ("client", "get_command"),
+        ("client", "get_output"),
+        ("client", "get_exit_code"),
+        ("client", "get_cwd"),
