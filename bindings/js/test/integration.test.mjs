@@ -288,3 +288,6 @@ test("xterm.js clipboard rejects as InternalError", async () => {
     await su.open({ shell });
     await assert.rejects(
       () => su.getClipboard(),
+      (error) =>
+        error instanceof InternalError && error.message.includes("unavailable"),
+    );
