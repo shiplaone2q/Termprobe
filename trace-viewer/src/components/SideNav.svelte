@@ -8,3 +8,4 @@
   } = $props();
   const tabs: readonly { id: SidebarTab; label: string }[] = [{ id: "actions", label: "Actions" }, { id: "metadata", label: "Metadata" }];
 </script>
+
