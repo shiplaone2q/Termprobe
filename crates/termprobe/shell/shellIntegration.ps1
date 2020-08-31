@@ -21,3 +21,5 @@ function Global:Prompt() {
     # Capture $? before invoking anything.
     $ok = $global:?
 
+    # LASTEXITCODE may not exist yet; Get-History may return $null.
+    Set-StrictMode -Off

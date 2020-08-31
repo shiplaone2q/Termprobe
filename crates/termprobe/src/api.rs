@@ -443,3 +443,4 @@ pub enum LocatorSelector {
         input: Box<LocatorQuery>,
         has: Option<Box<LocatorQuery>>,
         has_not: Option<Box<LocatorQuery>>,
+    },
