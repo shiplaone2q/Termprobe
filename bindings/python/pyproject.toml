@@ -12,3 +12,6 @@ license = { text = "MIT" }
 authors = [{ name = "Microsoft" }]
 keywords = ["terminal", "pty", "automation", "testing", "tui", "termprobe"]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",

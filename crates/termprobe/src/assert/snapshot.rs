@@ -83,3 +83,4 @@ fn baseline() -> EmuCell {
 
 /// Serialize a grid into a boxed text view, optionally followed by attributes.
 ///
+/// The attributes are a JSON object carrying whatever the box itself cannot
