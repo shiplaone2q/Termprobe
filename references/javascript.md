@@ -31,3 +31,7 @@ const locator = terminal
   .getByText("Save", { direction: "after" })
   .unique();
 ```
+
+| Method | Use |
+| --- | --- |
+| `getByText(text, options?)` | Match text or regex. |
