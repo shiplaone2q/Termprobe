@@ -7,3 +7,4 @@ async function retainedBytes() {
   global.gc();
   await new Promise(setImmediate);
   global.gc();
+  return process.memoryUsage().arrayBuffers;

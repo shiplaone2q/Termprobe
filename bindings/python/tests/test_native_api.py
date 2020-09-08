@@ -71,3 +71,7 @@ class NativeSurfaceTests(unittest.TestCase):
         )
 
     def test_native_session_has_only_typed_terminal_methods(self):
+        session = _native.NativeSession(unique_session("surface"))
+        self.assertFalse(hasattr(session, "request"))
+        for name in (
+            "open",
