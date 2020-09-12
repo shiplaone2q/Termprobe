@@ -444,3 +444,6 @@ pub enum LocatorSelector {
         has: Option<Box<LocatorQuery>>,
         has_not: Option<Box<LocatorQuery>>,
     },
+}
+
+/// Select cells by their exact OSC 8 URI. An empty URI requires no link.

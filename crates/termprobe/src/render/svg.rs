@@ -365,3 +365,6 @@ fn write_cursor(
     rows: &[Vec<EmuCell>],
     (cx, cy): (u16, usize),
     colors: &dyn RenderColors,
+    nerd_font: &NerdFont,
+    style: &Style,
+) {
