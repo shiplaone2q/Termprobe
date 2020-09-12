@@ -147,3 +147,7 @@ fn parameter(mut f: Field) -> Field {
         other => other,
     }
     .into();
+    if f.ty == "bool" || matches!(f.name.as_str(), "w" | "h" | "clicks" | "amount" | "button") {
+        f.ty = format!("Option<{}>", f.ty);
+    }
+    f

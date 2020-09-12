@@ -20,3 +20,4 @@ try {
     if (["PATH", "TERMPROBE__NATIVE_LIBRARY", "GOFLAGS", "GOOS", "GOARCH"].includes(name.toUpperCase())) delete environment[name];
   }
   environment.PATH = "";
+  for (const args of [
