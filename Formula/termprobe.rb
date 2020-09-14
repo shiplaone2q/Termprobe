@@ -11,3 +11,5 @@ class TuiTest < Formula
     end
 
     on_intel do
+      url "https://github.com/microsoft/tui-test/releases/download/0.1.1/tui-test-x86_64-apple-darwin.tar.gz"
+      sha256 "298ae3d37549d4712a7795d388f4e871f3bf8b7863372c3441787870c747408d"

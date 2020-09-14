@@ -90,3 +90,4 @@ func validateArtifactOptions(options *ArtifactOptions) error {
 		default:
 			return &Error{Kind: UsageError, Message: "unknown artifact mode: " + string(options.OnFailure)}
 		}
+		if options.Dir == "" {
