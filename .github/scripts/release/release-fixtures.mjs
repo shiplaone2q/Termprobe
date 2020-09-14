@@ -18,3 +18,4 @@ export function libraryFixture(target) {
     data.writeUInt16LE(arm ? 183 : 62, 18);
   } else if (target.includes("apple")) {
     data.writeUInt32LE(0xfeedfacf, 0);
+    data.writeUInt32LE(arm ? 0x100000c : 0x1000007, 4);

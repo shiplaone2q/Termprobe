@@ -75,3 +75,4 @@ impl InputDetails {
     pub(crate) fn capture(operation: &Operation) -> Option<Self> {
         let size = match operation {
             Operation::Write { data } => data.len(),
+            Operation::Submit { data } => data.as_ref().map_or(0, String::len),
