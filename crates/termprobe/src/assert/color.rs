@@ -96,3 +96,5 @@ pub fn describe_cell(
     expected: &Expected,
     colors: &dyn Emulator,
     is_fg: bool,
+) -> String {
+    match expected {
