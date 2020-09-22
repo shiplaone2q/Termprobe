@@ -467,3 +467,7 @@ macro_rules! emulator_conformance_tests {
             e.process(b"a\tb");
             let rows = e.viewable_rows();
             assert_eq!(rows[0][0].ch, "a");
+            assert_eq!(rows[0][8].ch, "b", "next glyph lands on the 8-column stop");
+            assert_eq!(e.cursor(), (9, 0), "cursor sits just past the tab stop");
+        }
+
