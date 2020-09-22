@@ -12,3 +12,5 @@ elif [ -r ~/.profile ]; then
     . ~/.profile
 fi
 
+__su_osc() { builtin printf '\033]133;%s\007' "$1"; }
+__su_cwd() {
