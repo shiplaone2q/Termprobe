@@ -16,3 +16,5 @@ function libraryPath() {
   const arch = process.arch;
   const libc = platform === "linux"
     ? (process.report.getReport().header.glibcVersionRuntime ? "gnu" : "musl")
+    : undefined;
+  const tag = [platform, arch, platform === "win32" ? "msvc" : libc].filter(Boolean).join("-");

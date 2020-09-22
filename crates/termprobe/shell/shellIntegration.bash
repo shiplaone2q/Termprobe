@@ -14,3 +14,7 @@ fi
 
 __su_osc() { builtin printf '\033]133;%s\007' "$1"; }
 __su_cwd() {
+    # Iterate over UTF-8 bytes, not characters, when percent-encoding the URI.
+    local LC_ALL=C p=$PWD encoded='' byte c hex i
+    for ((i = 0; i < ${#p}; i++)); do
+        c=${p:i:1}
