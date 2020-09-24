@@ -49,3 +49,4 @@ class TerminalOptions:
     cwd: Optional[str] = None
     env: Optional[Any] = None
     session: Optional[str] = None
+    prefix: Optional[str] = None
