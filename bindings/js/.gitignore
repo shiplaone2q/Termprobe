@@ -2,3 +2,4 @@ node_modules/
 dist/
 *.tsbuildinfo
 native/*.node
+native/*.dylib

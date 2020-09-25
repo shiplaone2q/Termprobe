@@ -27,3 +27,5 @@ const target = explicitTarget ?? execFileSync("rustc", ["-vV"], { encoding: "utf
 const tags = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).nativeTargets;
 const tag = tags[target];
 if (!tag) throw new Error(`Unsupported native target: ${target}`);
+const env = { ...process.env };
+delete env.CARGO_TARGET_DIR;
