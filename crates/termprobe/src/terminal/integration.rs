@@ -85,3 +85,7 @@ impl CommandTracker {
         self.state.cwd.as_deref()
     }
 
+    pub fn last_command(&self) -> Option<&str> {
+        self.state.last_command.as_deref()
+    }
+

@@ -22,3 +22,7 @@ pub(super) struct GlyphOutline {
     pub powerline: bool,
 }
 
+pub(super) struct FontSystem {
+    catalog: std::sync::Arc<catalog::Catalog>,
+    glyphs: HashMap<GlyphKey, Option<GlyphOutline>>,
+}

@@ -97,3 +97,4 @@ PackedScreen: {
 "utf8": ["utf8", "Vec<u8>"],
 },
 Timeouts: {
+"text": ["text", "Option<u64>"],
