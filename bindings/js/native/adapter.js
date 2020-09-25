@@ -111,3 +111,6 @@ function string(value) { return bytes(value)?.toString("utf8") ?? null; }
 function array(type, pointer, length) {
   return length ? koffi.decode(pointer, types[type], Number(length)).map((value) => decode(type, value)) : [];
 }
+function decode(type, value) {
+  if (type === "TuiString") return string(value);
+  if (type.startsWith("TuiOptional")) return value.present ? Number(value.value) : null;

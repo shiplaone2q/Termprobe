@@ -119,3 +119,6 @@ impl CastWriter {
         serde_json::to_writer(&mut self.sink, &(elapsed.as_secs_f64(), code, data))
             .map_err(json_error)?;
         self.sink.write_all(b"\n")?;
+        self.sink.flush()?;
+        self.last_committed = Some(elapsed);
+        Ok(())

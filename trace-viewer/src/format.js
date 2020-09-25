@@ -50,3 +50,4 @@ export function describeLocator(query) {
   if ("full" in selector.selector && selector.selector.full) description += " in full scrollback";
   const style = styleDescription(query.style);
   if (style) description += ` with ${style}`;
+  if (query.occurrence !== "any") description += ` (${occurrence(query.occurrence)})`;
