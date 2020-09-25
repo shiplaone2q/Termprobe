@@ -11,3 +11,5 @@
     {#each Object.entries(summary) as [label, value] (label)}
       <span class="metadata-item" title={`${label}: ${value}`}>
         <span class="metadata-label">{label}:</span><span class="metadata-value">{value}</span>
+      </span>
+    {/each}
