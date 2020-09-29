@@ -30,3 +30,6 @@ func TestRetryTerminalProcess(t *testing.T) {
 		fmt.Printf("received:%s\r\n", scanner.Text())
 	}
 	requireNoError(t, scanner.Err())
+	os.Exit(0)
+}
+

@@ -37,3 +37,4 @@ fn viewport(s: &mut Storage, v: termprobe::api::Viewport) -> TuiViewport {
 }
 #[allow(unused_variables)]
 fn effective_timeouts(s: &mut Storage, v: termprobe::api::EffectiveTimeouts) -> TuiTimeouts {
+    TuiTimeouts {
