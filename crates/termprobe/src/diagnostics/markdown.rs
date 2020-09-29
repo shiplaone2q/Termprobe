@@ -143,3 +143,5 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
                     stage.style_candidate_count
                 ),
                 note: format!("Expression: {}. {}", stage.expression_path, details.summary),
+            };
+        }

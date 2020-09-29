@@ -35,3 +35,5 @@ const locator = terminal
 | Method | Use |
 | --- | --- |
 | `getByText(text, options?)` | Match text or regex. |
+| `getByStyle(style, options?)` | Match appearance; when chained, require it on the whole match. |
+| `getByLink(uri, options?)` | Match an OSC 8 target; when chained, require it on every cell. `""` means unlinked. |
