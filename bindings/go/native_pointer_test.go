@@ -12,3 +12,4 @@ func TestNativeOptionPointersPreserveValidation(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		if closeErr := terminal.Close(); closeErr != nil {
+			t.Error(closeErr)

@@ -16,3 +16,6 @@ unsafe fn open_input(
     mode: AutomaticRecordingMode,
 ) -> Result<OpenOptions> {
     Ok(OpenOptions {
+        backend,
+        shell,
+        profile,

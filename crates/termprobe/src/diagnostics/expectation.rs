@@ -51,3 +51,5 @@ impl OperationExpectation {
                 query: Box::new(query.clone()),
                 outcome: if *not {
                     LocatorExpectation::Hidden
+                } else {
+                    LocatorExpectation::Visible
