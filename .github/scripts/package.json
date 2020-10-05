@@ -2,3 +2,4 @@
   "name": "termprobe-maintenance-scripts",
   "private": true,
   "type": "module",
+  "scripts": {

@@ -16,3 +16,4 @@
 <ul id="hints">{#each result.hints as hint}<li>{hint}</li>{/each}</ul>
 <details>
   <summary id="raw-details-heading">{hasFailure ? "Original error and locator evidence" : "Raw trace evidence"}</summary>
+  <pre id="raw-error">{result.error}</pre><pre id="diagnosis">{result.evidence}</pre>
