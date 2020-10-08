@@ -55,3 +55,4 @@ export function archiveBytes(entries) {
     if (header.encode()) throw new Error(`Archive path requires extended headers: ${name}`);
     blocks.push(header.block, data, Buffer.alloc((512 - data.length % 512) % 512));
   }
+  blocks.push(Buffer.alloc(1024));

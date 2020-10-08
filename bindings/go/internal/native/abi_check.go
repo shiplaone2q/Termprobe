@@ -14,3 +14,5 @@ const nativeCompilerABIVersion = C.ABI_VERSION
 
 type nativeLayoutPair struct{ binding, compiler reflect.Type }
 
+// This opt-in check uses the shared header from a source checkout.
+func nativeLayoutPairs() []nativeLayoutPair {
