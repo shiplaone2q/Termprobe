@@ -19,3 +19,6 @@ export function libraryFixture(target) {
   } else if (target.includes("apple")) {
     data.writeUInt32LE(0xfeedfacf, 0);
     data.writeUInt32LE(arm ? 0x100000c : 0x1000007, 4);
+    data.writeUInt32LE(6, 12);
+  } else {
+    data.write("MZ");
