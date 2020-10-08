@@ -63,3 +63,7 @@ impl LocatorExpression {
                 node.right,
                 node.input,
                 node.has,
+                node.has_not,
+            ];
+            let mut depth = 1;
+            let mut size = 1;
