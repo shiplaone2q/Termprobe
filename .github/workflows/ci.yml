@@ -63,3 +63,4 @@ jobs:
 
       - run: cargo fmt --all -- --check
       - name: Verify generated native declarations
+        run: cargo run --locked -p termprobe-bindgen -- --check

@@ -9,3 +9,4 @@ version=0.16.0
 case "$(uname -m)" in
   x86_64|amd64)
     arch=x86_64
+    sha256=70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
