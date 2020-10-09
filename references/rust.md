@@ -11,3 +11,4 @@ cargo add termprobe-rs@0.1.1
 ```rust
 use termprobe::{OpenOptions, Session};
 
+fn main() -> Result<(), Box<dyn std::error::Error>> {

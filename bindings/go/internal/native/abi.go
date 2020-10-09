@@ -54,3 +54,5 @@ type abiColor struct {
 	red   uint8
 	green uint8
 	blue  uint8
+}
+type abiResult struct {
