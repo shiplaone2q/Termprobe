@@ -67,3 +67,4 @@ export type OpenResult = NativeOpenResult;
 export interface Colors {
   foreground?: string;
   background?: string;
+  cursor?: string;

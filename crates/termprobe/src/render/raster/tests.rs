@@ -200,3 +200,5 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
             .color(crate::profile::ColorSlot::Cursor);
         let mut renderer = GridRenderer::with_zoom(4, 1, zoom, Style::default()).unwrap();
         let image = renderer.render(&content).unwrap();
+        let (panel_width, panel_height) = crate::render::svg::pixel_size(4, 1, &Style::default());
+        let panel_width = super::scaled_dimension(panel_width, zoom, "test width").unwrap();
