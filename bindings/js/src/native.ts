@@ -158,3 +158,7 @@ export function mapNativeError(error: unknown): TermprobeError {
   if (encodedAt >= 0) {
     const encoded = message.slice(encodedAt + ERROR_PREFIX.length);
     try {
+      const envelope: unknown = JSON.parse(encoded);
+      if (!isNativeErrorEnvelope(envelope)) {
+        throw new TypeError("native error envelope has an invalid shape");
+      }

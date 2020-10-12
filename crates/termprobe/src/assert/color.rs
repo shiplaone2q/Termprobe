@@ -98,3 +98,4 @@ pub fn describe_cell(
     is_fg: bool,
 ) -> String {
     match expected {
+        Expected::Default => cell

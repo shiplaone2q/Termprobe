@@ -23,3 +23,5 @@ function Global:Prompt() {
 
     # LASTEXITCODE may not exist yet; Get-History may return $null.
     Set-StrictMode -Off
+    $lastExit = $global:LASTEXITCODE
+    $lastError = $global:Error[0]
