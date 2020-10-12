@@ -40,3 +40,4 @@ pub(crate) unsafe fn slice<'a, T>(data: *const T, len: usize) -> Result<&'a [T]>
     }
     Ok(unsafe { std::slice::from_raw_parts(data, len) })
 }
+impl TuiString {
