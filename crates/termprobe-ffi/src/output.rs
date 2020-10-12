@@ -40,3 +40,6 @@ impl Storage {
         }
         (self.modes.as_ptr(), self.modes.len())
     }
+    fn palette(
+        &mut self,
+        values: std::collections::BTreeMap<u8, String>,
