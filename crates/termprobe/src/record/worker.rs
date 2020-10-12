@@ -56,3 +56,6 @@ pub(super) fn worker_loop(
                     let result = recording.writer.write_output(at, &text);
                     remember_error(recording, result);
                 }
+            }
+            Message::Resize { at, cols, rows } => {
+                seed.resize(cols, rows);

@@ -85,3 +85,5 @@ export interface FailureTextSelector {
     readonly before?: FailureTextAnchor | null;
   };
 }
+
+export interface FailureStyleSelector {
