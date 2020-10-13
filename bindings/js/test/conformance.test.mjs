@@ -36,3 +36,6 @@ const MAPPING = {
     ["client", "getExitCode"],
     ["client", "getCwd"],
     ["client", "getCursor"],
+    ["client", "getSize"],
+    ["client", "getViewport"],
+    ["client", "getTitle"],
