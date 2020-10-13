@@ -18,3 +18,5 @@ __su_cwd() {
     local LC_ALL=C p=$PWD encoded='' byte c hex i
     for ((i = 0; i < ${#p}; i++)); do
         c=${p:i:1}
+        case "$c" in
+            [a-zA-Z0-9/._~:-]) encoded+=$c ;;

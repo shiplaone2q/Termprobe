@@ -301,3 +301,7 @@ const fn build_xterm_256() -> [Rgb; 256] {
     while i < 256 {
         let v = (i - 232) as u8 * 10 + 8;
         table[i] = Rgb::new(v, v, v);
+        i += 1;
+    }
+    table
+}

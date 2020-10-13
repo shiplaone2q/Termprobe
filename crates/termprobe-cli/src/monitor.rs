@@ -232,3 +232,6 @@ impl Style {
             if self.attrs.contains(attr) {
                 s.push(';');
                 s.push_str(code);
+            }
+        }
+        let sub = match self.underline {
