@@ -195,3 +195,5 @@ impl ShadowStyle {
 /// # or
 /// [recording.style.canvas_padding]
 /// bottom = 48
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

@@ -99,3 +99,5 @@ pub fn describe_cell(
 ) -> String {
     match expected {
         Expected::Default => cell
+            .map(|cell| cell.to_index().to_string())
+            .unwrap_or_else(|| DEFAULT.to_string()),

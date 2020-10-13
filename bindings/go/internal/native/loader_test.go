@@ -9,3 +9,5 @@ func TestNativeLibraryPathRequiresBundleOrOverride(t *testing.T) {
 	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "")
 
 	_, err := nativeLibraryPath(nil)
+	if err == nil || !strings.Contains(err.Error(), "no bundled native engine") {
+		t.Fatalf("unexpected error: %v", err)
