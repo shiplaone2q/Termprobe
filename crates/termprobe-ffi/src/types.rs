@@ -59,3 +59,6 @@ pub struct TuiColor {
     pub index: u8,
     pub red: u8,
     pub green: u8,
+    pub blue: u8,
+}
+/// The function called determines the populated success field. error_kind is

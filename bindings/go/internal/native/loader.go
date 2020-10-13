@@ -14,3 +14,7 @@ type nativeRegistration struct {
 }
 
 // Registered functions and the loaded library stay live for the process lifetime.
+var nativeFunctions nativeFunctionTable
+var loadNativeEngine = sync.OnceValue(initializeNativeEngine)
+
+func initializeNativeEngine() error {
