@@ -76,3 +76,4 @@ impl InputDetails {
         let size = match operation {
             Operation::Write { data } => data.len(),
             Operation::Submit { data } => data.as_ref().map_or(0, String::len),
+            Operation::Key { keys, .. } => keys.iter().fold(0usize, |size, key| {
