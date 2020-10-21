@@ -43,3 +43,6 @@ impl Storage {
     fn palette(
         &mut self,
         values: std::collections::BTreeMap<u8, String>,
+    ) -> (*const TuiPair, usize) {
+        for (index, color) in values {
+            let key = self.string(index.to_string());
