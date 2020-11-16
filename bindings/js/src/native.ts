@@ -162,3 +162,7 @@ export function mapNativeError(error: unknown): TermprobeError {
       if (!isNativeErrorEnvelope(envelope)) {
         throw new TypeError("native error envelope has an invalid shape");
       }
+      const mapped = makeError(envelope.kind, envelope.message);
+      attachStructuredFailure(mapped, envelope);
+      Object.defineProperty(mapped, "cause", {
+        configurable: true,

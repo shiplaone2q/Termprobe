@@ -38,3 +38,5 @@ await (
 
 ```js
 await terminal
+  .getByText("Settings")
+  .getByText("Save", { direction: "after" })
