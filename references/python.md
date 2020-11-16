@@ -24,3 +24,7 @@ async with Termprobe.ephemeral() as terminal:
 ```python
 locator = (
     terminal
+    .get_by_text("Settings")
+    .get_by_text("Save", direction="after")
+    .unique()
+)

@@ -71,3 +71,4 @@ class OwnershipTests(unittest.TestCase):
             with self.assertRaises(native.NativeAssertionError) as caught:
                 native._invoke("expect_locator", ())
         envelope = json.loads(caught.exception._tui_test_error_json)
+        self.assertEqual(envelope["details"], {"reason": "timeout"})
