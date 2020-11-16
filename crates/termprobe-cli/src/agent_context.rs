@@ -45,3 +45,4 @@ fn exit_codes() -> Value {
 }
 
 /// Build a `{ name: {...} }` map of a command's visible subcommands.
+fn commands_json(cmd: &Command) -> Value {
