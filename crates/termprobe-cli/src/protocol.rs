@@ -234,3 +234,5 @@ pub enum Request {
     StopRecording,
     FlushRecording,
     Monitor {
+        cols: u16,
+        rows: u16,
