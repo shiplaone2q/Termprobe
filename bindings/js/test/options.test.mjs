@@ -187,3 +187,6 @@ test("mouse helpers encode named buttons and modifiers", async () => {
     await su.mouse.drag(5, 6, 7, 8, { shift: true });
 
     assert.deepEqual(calls, [
+      [
+        "click",
+        {
