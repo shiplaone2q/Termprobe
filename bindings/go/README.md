@@ -42,3 +42,7 @@ Embedding a library does not make the executable statically linked.
 Native glibc builds select the GNU engine. Normal native Alpine builds select the musl engine.
 Neither needs a custom Go build tag.
 Cgo-enabled applications can require a newer libc than the bundled engine.
+
+Cross-compile for glibc Linux with:
+
+```sh
