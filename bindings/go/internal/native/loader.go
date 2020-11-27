@@ -18,3 +18,7 @@ var nativeFunctions nativeFunctionTable
 var loadNativeEngine = sync.OnceValue(initializeNativeEngine)
 
 func initializeNativeEngine() error {
+	path, err := nativeLibraryPath(bundledLibraries)
+	if err != nil {
+		return err
+	}

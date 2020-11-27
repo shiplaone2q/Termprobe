@@ -98,3 +98,4 @@ PackedScreen: {
 },
 Timeouts: {
 "text": ["text", "Option<u64>"],
+"idle": ["idle", "Option<u64>"],

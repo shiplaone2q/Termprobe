@@ -13,3 +13,5 @@ pinned="$assets/pinned.json"
 
 if [ "${1:-}" = "--latest" ]; then
   headless="$(npm view @xterm/headless version)"
+  unicode11="$(npm view @xterm/addon-unicode11 version)"
+  jq -n --arg h "$headless" --arg u "$unicode11" \
