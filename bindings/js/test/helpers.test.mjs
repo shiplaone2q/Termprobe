@@ -68,3 +68,5 @@ test("closeAllTracked closes and forgets every tracked terminal", async () => {
       closed.push(id);
     },
   });
+  const a = makeStub("a");
+  const b = makeStub("b");

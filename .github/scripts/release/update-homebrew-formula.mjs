@@ -20,3 +20,5 @@ const linuxArm = sha256("termprobe-aarch64-unknown-linux-gnu.tar.gz");
 const linuxIntel = sha256("termprobe-x86_64-unknown-linux-gnu.tar.gz");
 
 const formula = `class Termprobe < Formula
+  desc "Control, inspect, test, and record terminal sessions"
+  homepage "https://github.com/microsoft/termprobe"

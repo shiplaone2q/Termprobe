@@ -75,3 +75,5 @@ class NativeSurfaceTests(unittest.TestCase):
         self.assertFalse(hasattr(session, "request"))
         for name in (
             "open",
+            "run",
+            "restart",
