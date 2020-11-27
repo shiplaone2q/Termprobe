@@ -151,3 +151,7 @@ fn parameter(mut f: Field) -> Field {
         f.ty = format!("Option<{}>", f.ty);
     }
     f
+}
+
+fn parameters(models: &Models, method: &str, variant: &str) -> Result<Vec<Field>> {
+    let field = |name: &str, ty: &str| Field {
