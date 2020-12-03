@@ -56,3 +56,5 @@ type abiColor struct {
 	blue  uint8
 }
 type abiResult struct {
+	_             structs.HostLayout
+	errorKind     uint32

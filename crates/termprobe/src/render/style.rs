@@ -197,3 +197,5 @@ impl ShadowStyle {
 /// bottom = 48
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Padding {
