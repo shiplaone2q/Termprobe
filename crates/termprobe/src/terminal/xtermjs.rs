@@ -154,3 +154,5 @@ fn describe(ctx: &Ctx<'_>, method: &str, error: rquickjs::Error) -> String {
     let detail = match thrown.as_exception() {
         Some(exception) => match exception.stack() {
             Some(stack) if !stack.trim().is_empty() => {
+                format!("{exception}\n{}", stack.trim_end())
+            }

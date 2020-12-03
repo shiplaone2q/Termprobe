@@ -1111,3 +1111,5 @@ impl Engine {
                         recording: None,
                         errors: vec![format!(
                             "failed to allocate failure artifact directory: {error}"
+                        )],
+                    },
