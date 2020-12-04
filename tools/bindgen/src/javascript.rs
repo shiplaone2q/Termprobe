@@ -155,3 +155,6 @@ fn parameter(mut f: Field) -> Field {
 
 fn parameters(models: &Models, method: &str, variant: &str) -> Result<Vec<Field>> {
     let field = |name: &str, ty: &str| Field {
+        name: name.into(),
+        ty: ty.into(),
+    };

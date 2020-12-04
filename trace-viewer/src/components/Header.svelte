@@ -13,3 +13,6 @@
         <span class="metadata-label">{label}:</span><span class="metadata-value">{value}</span>
       </span>
     {/each}
+  </div>
+  <button id="failure" class="failure-button" disabled={!canJump} onclick={onjump}>
+    {hasFailure ? "Jump to failure" : "Jump to end"}
