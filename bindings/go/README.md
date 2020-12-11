@@ -46,3 +46,5 @@ Cgo-enabled applications can require a newer libc than the bundled engine.
 Cross-compile for glibc Linux with:
 
 ```sh
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
+```

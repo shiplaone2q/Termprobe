@@ -38,3 +38,5 @@ fn asynchronous(function: &ItemFn) -> bool {
         && !function.sig.ident.to_string().ends_with("_ptr")
 }
 
+pub fn generate(
+    root: &Path,
