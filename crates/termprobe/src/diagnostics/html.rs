@@ -167,3 +167,4 @@ fn timeline_with_limit(
                 let mut indices = Vec::with_capacity(row.len());
                 for (x, cell) in row.iter().enumerate() {
                     let width = if cell.ch == CONTINUATION {
+                        0

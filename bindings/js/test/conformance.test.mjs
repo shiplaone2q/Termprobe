@@ -39,3 +39,7 @@ const MAPPING = {
     ["client", "getSize"],
     ["client", "getViewport"],
     ["client", "getTitle"],
+    ["client", "getClipboard"],
+    ["client", "getBellCount"],
+    ["client", "getBellEvents"],
+  ],
