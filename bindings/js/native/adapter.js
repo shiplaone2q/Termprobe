@@ -114,3 +114,6 @@ function array(type, pointer, length) {
 function decode(type, value) {
   if (type === "TuiString") return string(value);
   if (type.startsWith("TuiOptional")) return value.present ? Number(value.value) : null;
+  if (type === "TuiColor") {
+    if (value.kind === 0) return "default";
+    if (value.kind === 1) return value.index;

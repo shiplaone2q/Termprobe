@@ -18,3 +18,7 @@ function libraryPath() {
     ? (process.report.getReport().header.glibcVersionRuntime ? "gnu" : "musl")
     : undefined;
   const tag = [platform, arch, platform === "win32" ? "msvc" : libc].filter(Boolean).join("-");
+  const extension = { darwin: "dylib", linux: "so", win32: "dll" }[platform];
+  if (!extension) throw new Error(`unsupported native platform: ${platform}`);
+  const local = fileURLToPath(new URL(`termprobe.${tag}.${extension}`, import.meta.url));
+  if (existsSync(local)) return local;

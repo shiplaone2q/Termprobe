@@ -7,3 +7,5 @@ try {
   ], { rows: 5, cols: 40 });
   await terminal.getByText("history-39").expect();
   const full = await terminal.text({ full: true });
+  console.log("Live screen:\n" + await terminal.text());
+  await terminal.scrollToTop();
