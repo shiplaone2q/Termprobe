@@ -6,3 +6,4 @@ export async function sessions(): Promise<string[]> {
 }
 
 export async function closeAll(): Promise<void> {
+  await native.closeAll();

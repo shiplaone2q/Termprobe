@@ -1113,3 +1113,4 @@ impl Engine {
                             "failed to allocate failure artifact directory: {error}"
                         )],
                     },
+                };
