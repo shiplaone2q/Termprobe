@@ -43,3 +43,7 @@ const MAPPING = {
     ["client", "getBellCount"],
     ["client", "getBellEvents"],
   ],
+  type: [["client", "type"]],
+  submit: [["client", "submit"]],
+  key: [["client", "keyboard"]],
+  press: [["client", "press"]],
