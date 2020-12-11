@@ -65,3 +65,4 @@ func (runtime *nativeRuntime) close(failed *bool) error {
 func (runtime *nativeRuntime) restart(gracefulTimeout time.Duration) (OpenResult, error) {
 	value, err := runtime.session.Restart(gracefulTimeout)
 	return OpenResult(value), engineError(err)
+}

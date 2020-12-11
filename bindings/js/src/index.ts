@@ -19,3 +19,5 @@ export type {
   MouseButtonOptions,
   MouseClickOptions,
   TitleOptions,
+  RecordingFormat,
+  RecordingOptions,
