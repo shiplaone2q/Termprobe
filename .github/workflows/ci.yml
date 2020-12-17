@@ -64,3 +64,5 @@ jobs:
       - run: cargo fmt --all -- --check
       - name: Verify generated native declarations
         run: cargo run --locked -p termprobe-bindgen -- --check
+      - name: Compile the native header as C and C++
+        if: runner.os != 'Windows'

@@ -19,3 +19,4 @@ fn trace_mode(mode: &str) -> Result<TraceMode> {
     serde_json::from_value(mode.into()).map_err(|_| {
         TermprobeError::usage(format!(
             "unknown trace mode {mode:?}; expected off, on-failure, or on"
+        ))

@@ -24,3 +24,5 @@ MAPPING = {
         ("client", "get_output"),
         ("client", "get_exit_code"),
         ("client", "get_cwd"),
+        ("client", "get_cursor"),
+        ("client", "get_size"),

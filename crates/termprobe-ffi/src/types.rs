@@ -62,3 +62,6 @@ pub struct TuiColor {
     pub blue: u8,
 }
 /// The function called determines the populated success field. error_kind is
+/// 0 on success, 1 assertion, 2 usage, 3 no-session, 5 internal.
+/// snapshot: 0 passed, 1 written, 2 updated. Free exactly once.
+#[repr(C)]
