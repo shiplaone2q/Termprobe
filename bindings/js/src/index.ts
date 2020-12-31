@@ -21,3 +21,4 @@ export type {
   TitleOptions,
   RecordingFormat,
   RecordingOptions,
+  RestartOptions,

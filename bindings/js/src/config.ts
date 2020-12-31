@@ -61,3 +61,5 @@ const COLOR_FIELDS = new Map([
 
 export function resolveTimeout(
   cls: TimeoutClass,
+  callTimeout?: number,
+  options: { timeouts?: Timeouts } = {},

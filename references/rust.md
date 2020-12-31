@@ -12,3 +12,4 @@ cargo add termprobe-rs@0.1.1
 use termprobe::{OpenOptions, Session};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let terminal = Session::new("example");
