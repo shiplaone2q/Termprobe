@@ -15,3 +15,7 @@ export function createResources(model) {
     return value;
   }
   /** @param {TraceFrame} frame @returns {ImageResult} */
+  function image(frame) {
+    if (!frame.svg) return {};
+    const document = new DOMParser().parseFromString(frame.svg, "image/svg+xml");
+    const root = document.documentElement;

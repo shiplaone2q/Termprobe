@@ -13,3 +13,7 @@ use termprobe::{OpenOptions, Session};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let terminal = Session::new("example");
+    terminal.open(OpenOptions::default())?;
+    terminal.get_by_text("Ready").expect()?;
+    terminal.get_by_text("Continue").click()?;
+    terminal.close()?;

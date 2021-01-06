@@ -45,3 +45,6 @@ download() {
   destination="$2"
 
   if command -v curl >/dev/null 2>&1; then
+    if [ -n "$TOKEN" ]; then
+      curl --proto '=https' --tlsv1.2 -fsSL \
+        -H "Authorization: Bearer ${TOKEN}" \
