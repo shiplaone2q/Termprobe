@@ -78,3 +78,4 @@ impl NerdFont {
                 continue;
             };
             let mut builder = SvgPathBuilder::default();
+            let Some(bounds) = face.outline_glyph(glyph_id, &mut builder) else {

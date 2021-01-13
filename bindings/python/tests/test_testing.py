@@ -44,3 +44,5 @@ class DefaultShellTests(unittest.TestCase):
             expected = "bash"
         self.assertEqual(testing.DEFAULT_SHELL, expected)
 
+
+class RegistryTests(unittest.TestCase):
