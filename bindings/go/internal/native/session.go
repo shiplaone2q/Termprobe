@@ -137,3 +137,5 @@ func (runtime *Session) Text(full bool) (string, error) {
 }
 
 func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error) {
+	memory := nativeMemory{}
+	defer memory.release()

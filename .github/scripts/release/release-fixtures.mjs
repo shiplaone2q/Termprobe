@@ -25,3 +25,6 @@ export function libraryFixture(target) {
     data.writeUInt32LE(64, 60);
     data.write("PE\0\0", 64);
     data.writeUInt16LE(0x8664, 68);
+    data.writeUInt16LE(0x2000, 86);
+  }
+  return data;
