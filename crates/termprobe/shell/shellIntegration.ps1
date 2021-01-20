@@ -25,3 +25,5 @@ function Global:Prompt() {
     Set-StrictMode -Off
     $lastExit = $global:LASTEXITCODE
     $lastError = $global:Error[0]
+    $lastHistory = Get-History -Count 1
+
