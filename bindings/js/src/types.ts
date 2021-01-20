@@ -68,3 +68,5 @@ export interface Colors {
   foreground?: string;
   background?: string;
   cursor?: string;
+  black?: string;
+  red?: string;

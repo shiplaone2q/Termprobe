@@ -35,3 +35,5 @@ Run `termprobe agent-context` for exact command and option names.
 
 ## Python
 
+```python
+from termprobe import Termprobe
