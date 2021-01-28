@@ -37,3 +37,6 @@ RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" \
   env -u CARGO_TARGET_DIR cargo zigbuild --locked -p termprobe-ffi --target x86_64-unknown-linux-musl
 ```
 
+The cross-built library is `target/x86_64-unknown-linux-musl/debug/libtermprobe_ffi.so`.
+It requires a musl process.
+

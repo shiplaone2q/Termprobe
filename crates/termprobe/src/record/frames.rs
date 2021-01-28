@@ -96,3 +96,6 @@ impl FrameCapture {
             pending: TimedGrid::capture(emulator, Duration::ZERO)?,
             error: None,
         })
+    }
+
+    pub(crate) fn capture(&mut self, emulator: &dyn Emulator, at: Instant) {
