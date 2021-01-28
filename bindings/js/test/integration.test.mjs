@@ -291,3 +291,6 @@ test("xterm.js clipboard rejects as InternalError", async () => {
       (error) =>
         error instanceof InternalError && error.message.includes("unavailable"),
     );
+  } finally {
+    await su.closeQuiet();
+  }

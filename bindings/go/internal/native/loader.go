@@ -22,3 +22,5 @@ func initializeNativeEngine() error {
 	if err != nil {
 		return err
 	}
+	table, err := loadNativeFunctions(path)
+	if err != nil {
