@@ -21,3 +21,7 @@ try {
   }
   environment.PATH = "";
   for (const args of [
+    ["mod", "init", "example.com/termprobe-consumer"],
+    ["mod", "edit", `-replace=github.com/microsoft/termprobe/bindings/go=${packagePath}`],
+    ["get", "github.com/microsoft/termprobe/bindings/go@v0.0.0"],
+    ["build", "-buildvcs=false", "-o", path.join(directory, "smoke.exe"), "github.com/microsoft/termprobe/bindings/go/examples/smoke"],

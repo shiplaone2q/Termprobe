@@ -103,3 +103,7 @@ func newClient(t *testing.T, options termprobe.ClientOptions) *termprobe.Client 
 		if err := terminal.Close(); err != nil {
 			t.Errorf("close terminal: %v", err)
 		}
+	})
+	return terminal
+}
+func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.SpawnOptions) {
