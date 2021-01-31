@@ -111,3 +111,4 @@ impl Trace {
             })
     }
 
+    pub fn record(

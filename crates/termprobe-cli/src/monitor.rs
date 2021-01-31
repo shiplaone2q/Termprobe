@@ -235,3 +235,4 @@ impl Style {
             }
         }
         let sub = match self.underline {
+            UnderlineStyle::None => 0,

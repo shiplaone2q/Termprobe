@@ -19,3 +19,6 @@ export class TermprobeError extends Error {
   }
 }
 
+export class ExpectationError extends TermprobeError {
+  constructor(message: string) {
+    super(message, "assertion", 1);
