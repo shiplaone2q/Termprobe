@@ -200,3 +200,4 @@ impl GhosttyCore {
         let mut terminal = Terminal::new(cols.max(1), rows.max(1)).context("creating terminal")?;
         terminal
             .resize(cols.max(1), rows.max(1), 1, 1)
+            .context("initializing terminal cell size")?;

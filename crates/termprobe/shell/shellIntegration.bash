@@ -20,3 +20,6 @@ __su_cwd() {
         c=${p:i:1}
         case "$c" in
             [a-zA-Z0-9/._~:-]) encoded+=$c ;;
+            *)
+                builtin printf -v byte '%d' "'$c"
+                builtin printf -v hex '%%%02X' "$((byte & 255))"

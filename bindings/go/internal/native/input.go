@@ -36,3 +36,6 @@ func (memory *nativeMemory) colors(colors Colors) (*abiPair, uintptr) {
 		"bright_black": colors.BrightBlack, "bright_red": colors.BrightRed, "bright_green": colors.BrightGreen, "bright_yellow": colors.BrightYellow, "bright_blue": colors.BrightBlue, "bright_magenta": colors.BrightMagenta, "bright_cyan": colors.BrightCyan, "bright_white": colors.BrightWhite,
 	}
 	for key, value := range values {
+		if value == "" {
+			delete(values, key)
+		}
