@@ -236,3 +236,6 @@ impl Style {
         }
         let sub = match self.underline {
             UnderlineStyle::None => 0,
+            UnderlineStyle::Single => 1,
+            UnderlineStyle::Double => 2,
+            UnderlineStyle::Curly => 3,

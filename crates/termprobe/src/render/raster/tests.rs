@@ -202,3 +202,6 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         let image = renderer.render(&content).unwrap();
         let (panel_width, panel_height) = crate::render::svg::pixel_size(4, 1, &Style::default());
         let panel_width = super::scaled_dimension(panel_width, zoom, "test width").unwrap();
+        let panel_height = super::scaled_dimension(panel_height, zoom, "test height").unwrap();
+        let origin_x = (image.dimensions().0 - panel_width) as f32 / 2.0;
+        let origin_y = (image.dimensions().1 - panel_height) as f32 / 2.0;

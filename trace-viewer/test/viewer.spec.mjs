@@ -88,3 +88,7 @@ test("passing actions sharing a failure frame do not inherit mismatches", async 
 test("evicted completion checkpoints never substitute a retained frame", async ({ page, openReport }) => {
   await openReport();
   await page.locator('#points [data-operation="1"]').click();
+  await expect(page.locator("#frame-meta")).toContainText("Screen 999 was not retained");
+  await expect(page.locator("#screen-image")).toHaveCount(0);
+  await expect(page.locator("#screen-text")).toContainText("evicted");
+  await expect(page.locator("#frame-count")).toHaveText("Unavailable");
