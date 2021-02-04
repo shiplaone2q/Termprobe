@@ -40,3 +40,5 @@ impl Drop for TuiTask {
 pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mut TuiResult {
     if !START.with(|slot| slot.borrow().is_some()) {
         return boundary(work);
+    }
+    let (sender, receiver) = mpsc::channel();

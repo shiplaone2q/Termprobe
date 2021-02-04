@@ -22,3 +22,7 @@ type Options struct {
 // Test failures are reported through Close so the engine can retain configured traces.
 func New(tb testing.TB, options Options) *termprobe.Client {
 	tb.Helper()
+	prefix := options.Prefix
+	if prefix == "" {
+		prefix = tb.Name()
+	}

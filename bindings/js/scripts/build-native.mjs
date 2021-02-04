@@ -30,3 +30,4 @@ if (!tag) throw new Error(`Unsupported native target: ${target}`);
 const env = { ...process.env };
 delete env.CARGO_TARGET_DIR;
 if (target.endsWith("-musl")) {
+  env.RUSTFLAGS = `${env.RUSTFLAGS ?? ""} -C target-feature=-crt-static`.trim();
