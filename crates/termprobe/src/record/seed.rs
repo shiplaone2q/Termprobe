@@ -84,3 +84,4 @@ impl State {
             top - 1
         } else {
             0
+        };

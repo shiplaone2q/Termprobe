@@ -39,3 +39,7 @@ func (memory *nativeMemory) colors(colors Colors) (*abiPair, uintptr) {
 		if value == "" {
 			delete(values, key)
 		}
+	}
+	return memory.pairs(values)
+}
+

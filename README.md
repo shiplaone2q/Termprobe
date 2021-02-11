@@ -110,3 +110,7 @@ try {
 
 ### Rust
 
+```rust
+use termprobe::{OpenOptions, Operation, Session};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {

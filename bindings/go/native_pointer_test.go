@@ -16,3 +16,5 @@ func TestNativeOptionPointersPreserveValidation(t *testing.T) {
 		}
 	})
 	options := SpawnOptions{Backend: Backend("invalid-native-backend")}
+	t.Run("open", func(t *testing.T) {
+		_, openErr := terminal.Open(OpenOptions{SpawnOptions: options})
