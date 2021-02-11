@@ -33,3 +33,7 @@ func TestRetryTerminalProcess(t *testing.T) {
 	os.Exit(0)
 }
 
+func clientLaunchTimeouts() termprobe.Timeouts {
+	return termprobe.Timeouts{
+		Text: termprobe.Ptr(11 * time.Millisecond), Idle: termprobe.Ptr(12 * time.Millisecond),
+		Command: termprobe.Ptr(13 * time.Millisecond), Exit: termprobe.Ptr(14 * time.Millisecond),

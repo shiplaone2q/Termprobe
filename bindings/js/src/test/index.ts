@@ -34,3 +34,6 @@ export interface CreateTerminalOptions {
   profile?: Profile;
   artifacts?: ArtifactOptions;
   recording?: AutomaticRecording;
+  trace?: TraceOptions;
+}
+

@@ -530,3 +530,5 @@ fn monitor_frames_and_input_outlive_the_target() {
     std::thread::sleep(Duration::from_millis(100));
 
     let secret = "human-secret-monitor-input";
+    sandbox.ok(&["open"]);
+    write_monitor_input(&mut input, format!("echo {secret}\r").as_bytes());
