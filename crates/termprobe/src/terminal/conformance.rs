@@ -471,3 +471,4 @@ macro_rules! emulator_conformance_tests {
             assert_eq!(e.cursor(), (9, 0), "cursor sits just past the tab stop");
         }
 
+        /// Every SGR attribute the cell vocabulary exposes round-trips.

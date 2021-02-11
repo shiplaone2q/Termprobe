@@ -70,3 +70,7 @@ test("closeAllTracked closes and forgets every tracked terminal", async () => {
   });
   const a = makeStub("a");
   const b = makeStub("b");
+  trackTerminal(a);
+  trackTerminal(b);
+  assert.equal(trackedCount(), 2);
+  await closeAllTracked();
