@@ -7,3 +7,4 @@ def __su_osc(m):
 
 def __su_cwd():
     return f'\033]7;{__su_pathlib.Path.cwd().as_uri()}\007'
+

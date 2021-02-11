@@ -103,3 +103,5 @@ end: "uint16_t",
 types.TuiMatch = koffi.struct({
 text: types.TuiString,
 start: types.TuiPosition,
+end: types.TuiPosition,
+spans: "void *",
