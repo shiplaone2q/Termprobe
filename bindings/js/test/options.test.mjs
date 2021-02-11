@@ -190,3 +190,6 @@ test("mouse helpers encode named buttons and modifiers", async () => {
       [
         "click",
         {
+          x: undefined,
+          y: undefined,
+          onText: "OK",

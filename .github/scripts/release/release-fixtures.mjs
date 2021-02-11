@@ -28,3 +28,7 @@ export function libraryFixture(target) {
     data.writeUInt16LE(0x2000, 86);
   }
   return data;
+}
+
+export function createFixture(t) {
+  fs.mkdirSync(path.join(root, "target"), { recursive: true });
