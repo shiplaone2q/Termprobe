@@ -22,3 +22,5 @@ from .types import (
     TraceOptions,
     Backend,
     BellEvent,
+    Cell,
+    Colors,

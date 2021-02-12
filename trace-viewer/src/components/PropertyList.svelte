@@ -4,3 +4,4 @@
 </script>
 
 <dl {id}>
+  {#each Object.entries(values) as [key, value] (key)}

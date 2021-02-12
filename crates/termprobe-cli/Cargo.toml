@@ -11,3 +11,5 @@ publish = false
 [[bin]]
 name = "termprobe"
 path = "src/main.rs"
+
+[dependencies]
