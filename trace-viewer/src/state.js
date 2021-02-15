@@ -21,3 +21,6 @@ export function initialState(model, hash = "") {
 function select(model, state, frameIndex, actionId, missingScreen) {
   const next = { ...state, frameIndex, actionId, missingScreen, playback: undefined };
   const { frame, action, mismatches } = selection(model, next);
+  const mismatch = mismatches.find((entry) => cellAt(frame, entry.x, entry.y));
+  const point = mismatch ?? action?.pointer ?? (frame && {
+    x: Math.min(frame.cursor.x, frame.columns - 1), y: Math.min(frame.cursor.y, frame.rows - 1),

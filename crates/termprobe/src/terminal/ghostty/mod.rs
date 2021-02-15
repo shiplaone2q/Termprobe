@@ -212,3 +212,4 @@ impl GhosttyEmu {
         F: FnOnce(&mut GhosttyCore) -> Result<T> + Send + 'static,
     {
         self.call(operation, job)
+            .unwrap_or_else(|error| panic!("Ghostty {operation} failed: {error:#}"))
