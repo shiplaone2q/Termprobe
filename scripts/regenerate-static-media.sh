@@ -37,3 +37,6 @@ while (($#)); do
             echo "unknown argument: $1" >&2
             usage >&2
             exit 2
+            ;;
+    esac
+done

@@ -31,3 +31,5 @@ impl ProtectedFile {
         if path == self.path || self.identity.is_some() && self.identity == identity {
             Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
+                "manual recording must not overwrite the automatic recording",
+            ))

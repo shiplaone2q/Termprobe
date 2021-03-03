@@ -16,3 +16,6 @@ function fixture(t) {
   const directory = fs.mkdtempSync(path.join(target, "package-node-test-"));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const bindings = path.join(directory, "bindings/js");
+  fs.mkdirSync(path.join(bindings, "artifacts"), { recursive: true });
+  fs.writeFileSync(path.join(bindings, "package.json"), JSON.stringify({
+    name: "@fixture/termprobe",
