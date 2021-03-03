@@ -27,3 +27,7 @@ impl TimeoutClass {
         match self {
             TimeoutClass::Text | TimeoutClass::Idle => 5_000,
             TimeoutClass::Command | TimeoutClass::Exit | TimeoutClass::Ready => 30_000,
+        }
+    }
+
+    /// The environment variable consulted for this class.

@@ -10,3 +10,5 @@ _session_counter = 0
 _session_counter_lock = threading.Lock()
 
 
+def unique_session(prefix: Optional[str] = None) -> str:
+    global _session_counter

@@ -13,3 +13,6 @@ name = "termprobe"
 path = "src/main.rs"
 
 [dependencies]
+anyhow.workspace = true
+clap = { workspace = true, features = ["env"] }
+crossterm.workspace = true
