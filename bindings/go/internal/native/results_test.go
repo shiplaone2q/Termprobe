@@ -18,3 +18,4 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 			foreground: memory.text("#ffffff"), background: memory.text("#000000"), cursor: memory.text("#abcdef"),
 			palette: &palette[0], paletteLen: 1,
 		},
+	})

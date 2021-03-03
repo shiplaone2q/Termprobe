@@ -37,3 +37,5 @@ Run `termprobe agent-context` for exact command and option names.
 
 ```python
 from termprobe import Termprobe
+
+async with Termprobe.ephemeral() as terminal:
