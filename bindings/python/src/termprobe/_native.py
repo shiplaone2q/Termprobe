@@ -133,3 +133,6 @@ def _copy(value):
     """Copy every borrowed field before the result allocation is released."""
     if isinstance(value, abi.TuiString):
         return _text(value)
+    if isinstance(value, (abi.TuiOptionalU64, abi.TuiOptionalI32,
+                          abi.TuiOptionalBool, abi.TuiOptionalF64)):
+        return value.value if value.present else None

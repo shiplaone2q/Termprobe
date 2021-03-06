@@ -58,3 +58,7 @@ pub fn scripts_dir() -> PathBuf {
     home_dir().join("shell")
 }
 
+/// Materialize the bundled shell-integration scripts into the home directory.
+pub fn write_integration_scripts() -> std::io::Result<()> {
+    write_scripts_to(&scripts_dir())
+}
