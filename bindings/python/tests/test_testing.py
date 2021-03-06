@@ -46,3 +46,7 @@ class DefaultShellTests(unittest.TestCase):
 
 
 class RegistryTests(unittest.TestCase):
+    def tearDown(self):
+        run(testing.close_all_tracked())
+
+    def test_tracking_and_closing(self):

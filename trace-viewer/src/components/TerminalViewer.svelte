@@ -20,3 +20,4 @@
     ? `Screen ${frame.sequence}${sharesFailure ? (isFailure ? " / failure" : " / also used by failure") : ""} / ${frame.description}`
     : `Screen ${missingScreen ?? "unknown"} was not retained. No substitute frame is shown.`);
 
+  function changeZoom(event: Event & { currentTarget: HTMLSelectElement }) {

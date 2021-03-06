@@ -30,3 +30,6 @@ fn demonstrate(backend: Backend) -> Result<()> {
         env: Vec::new(),
         wait_ready: Some(false),
         restart: false,
+        timeouts: defaults.timeouts,
+        recording: AutomaticRecording {
+            mode: AutomaticRecordingMode::Disabled,

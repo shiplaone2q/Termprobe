@@ -21,3 +21,5 @@ class SharedLibraryBuild(build_rust):
         extension_path = Path(super().get_dylib_ext_path(ext, target_fname))
         platform = self.plat_name.lower()
         filename = (
+            "tui_test_ffi.dll" if platform.startswith("win")
+            else "libtui_test_ffi.dylib" if platform.startswith("macosx")
