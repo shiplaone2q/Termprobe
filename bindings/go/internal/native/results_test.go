@@ -19,3 +19,5 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 			palette: &palette[0], paletteLen: 1,
 		},
 	})
+	if state.Cursor.Shape != "bar" || state.Cursor.Color != "#abcdef" || !state.Cursor.Visible {
+		t.Fatalf("cursor=%+v", state.Cursor)
