@@ -40,3 +40,5 @@ await (
 await terminal
   .getByText("Settings")
   .getByText("Save", { direction: "after" })
+  .unique()
+  .click();

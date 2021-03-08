@@ -5,3 +5,5 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "npm run typecheck && node build.mjs --check",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "dev": "node build.mjs --watch",
