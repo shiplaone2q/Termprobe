@@ -278,3 +278,5 @@ struct TuiResult *tui_get_viewport(struct TuiString session);
  * The session buffer must remain readable throughout this call.
  */
 struct TuiResult *tui_scroll(struct TuiString session, int32_t lines);
+
+/**

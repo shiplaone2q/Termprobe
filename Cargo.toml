@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "crates/termprobe",
+    "crates/termprobe-cli",
+    "crates/termprobe-ffi",
+    "tools/bindgen",
+]
+default-members = [
+    "crates/termprobe",
+    "crates/termprobe-cli",
+]
+resolver = "2"
+
+[workspace.package]
