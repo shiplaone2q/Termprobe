@@ -91,3 +91,5 @@ This also applies when resize changes the normal buffer while the alternate buff
 Keyboard input returns to the live screen.
 Mouse input and historical locator clicks fail while the viewport shows history.
 Use `scroll bottom` before mouse input. Mouse behavior at the live screen does not change.
+`get cursor` and `state` retain the application cursor coordinates.
+Captures project that cursor into the viewport and hide it outside the view.

@@ -22,3 +22,7 @@ function libraryPath() {
   if (!extension) throw new Error(`unsupported native platform: ${platform}`);
   const local = fileURLToPath(new URL(`termprobe.${tag}.${extension}`, import.meta.url));
   if (existsSync(local)) return local;
+  return createRequire(import.meta.url).resolve(`@microsoft/termprobe-${tag}`);
+}
+
+const path = libraryPath();

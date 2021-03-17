@@ -156,3 +156,4 @@ fn c_type(ty: &str) -> Result<String> {
     Ok(match ty {
         "String" | "Option<String>" | "PathBuf" | "Option<PathBuf>" => "TuiString".into(),
         "Option<u64>" | "Option<u32>" | "Option<u8>" => "TuiOptionalU64".into(),
+        "Option<i32>" => "TuiOptionalI32".into(),
