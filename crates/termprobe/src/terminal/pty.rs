@@ -154,3 +154,6 @@ pub struct SpawnOptions {
     pub cwd: Option<String>,
     pub env: Vec<(String, String)>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ProcessExit {

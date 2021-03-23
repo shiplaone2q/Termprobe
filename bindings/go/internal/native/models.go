@@ -70,3 +70,4 @@ const (
 )
 
 type Whitespace string
+
