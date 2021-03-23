@@ -79,3 +79,7 @@ export interface Cell {
   invisible: boolean
   strike: boolean
   blink: boolean
+  underline: boolean
+  underline_style: UnderlineStyle
+  underline_color: Color
+  link: string

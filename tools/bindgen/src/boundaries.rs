@@ -157,3 +157,6 @@ fn c_type(ty: &str) -> Result<String> {
         "String" | "Option<String>" | "PathBuf" | "Option<PathBuf>" => "TuiString".into(),
         "Option<u64>" | "Option<u32>" | "Option<u8>" => "TuiOptionalU64".into(),
         "Option<i32>" => "TuiOptionalI32".into(),
+        "Option<bool>" => "TuiOptionalBool".into(),
+        "Option<f64>" => "TuiOptionalF64".into(),
+        "CellColor" => "TuiColor".into(),

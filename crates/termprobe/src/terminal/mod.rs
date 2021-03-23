@@ -10,3 +10,4 @@ pub mod integration;
 pub mod locator;
 pub mod pty;
 #[cfg(feature = "rio")]
+pub mod rio;

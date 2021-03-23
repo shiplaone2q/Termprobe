@@ -101,3 +101,6 @@ Timeouts: {
 "idle": ["idle", "Option<u64>"],
 "command": ["command", "Option<u64>"],
 "exit": ["exit", "Option<u64>"],
+"ready": ["ready", "Option<u64>"],
+},
+AutomaticRecordingOptions: {
