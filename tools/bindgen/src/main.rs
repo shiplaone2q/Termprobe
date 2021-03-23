@@ -87,3 +87,7 @@ fn main() -> Result<()> {
         "crates/termprobe-ffi/include/termprobe.h",
         &String::from_utf8(header)?,
         check,
+    )?;
+    emit(
+        &root,
+        "bindings/go/internal/native/abi.go",
