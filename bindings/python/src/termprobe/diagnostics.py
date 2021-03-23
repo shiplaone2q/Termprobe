@@ -32,3 +32,5 @@ def _optional_string(value: object) -> Optional[str]:
         raise TypeError("optional artifact paths must be strings or null")
     return value
 
+
+@dataclass(frozen=True)

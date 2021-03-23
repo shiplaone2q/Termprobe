@@ -20,3 +20,4 @@ fn trace_mode(mode: &str) -> Result<TraceMode> {
         TermprobeError::usage(format!(
             "unknown trace mode {mode:?}; expected off, on-failure, or on"
         ))
+    })

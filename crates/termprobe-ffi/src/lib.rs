@@ -152,3 +152,6 @@ pub unsafe extern "C" fn tui_run(
         execute(session, "run", || {
             let o = input::open(options)?;
             let program = program.required()?;
+            if program.is_empty() {
+                return Err(TermprobeError::usage("program must not be empty"));
+            }

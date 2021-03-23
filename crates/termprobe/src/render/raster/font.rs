@@ -26,3 +26,7 @@ pub(super) struct FontSystem {
     catalog: std::sync::Arc<catalog::Catalog>,
     glyphs: HashMap<GlyphKey, Option<GlyphOutline>>,
 }
+
+impl FontSystem {
+    /// Built from the style's fonts, so a recording draws with the family the
+    /// config named rather than whatever the catalog ranked first.
