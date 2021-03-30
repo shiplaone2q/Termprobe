@@ -29,3 +29,4 @@ const list = (validate) => (value, path) => {
   if (!Array.isArray(value)) invalid(path, "an array");
   value.forEach((item, index) => validate(item, `${path}[${index}]`));
 };
+/** @param {Record<string, Validator>} fields @returns {Validator} */

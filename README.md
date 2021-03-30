@@ -114,3 +114,7 @@ try {
 use termprobe::{OpenOptions, Operation, Session};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let terminal = Session::new("example");
+    terminal.open(OpenOptions::default())?;
+    terminal.execute(Operation::Submit {
+        data: Some("echo hello".into()),
