@@ -13,3 +13,4 @@
     {#each [0, 1, 2, 3, 4, 5] as tick}<span>{time(Math.round(duration * tick / 5))}</span>{/each}
   </div>
   <div id="action-timeline" class="action-timeline" aria-label="Operation durations">
+    {#each actions as action (action.id)}
