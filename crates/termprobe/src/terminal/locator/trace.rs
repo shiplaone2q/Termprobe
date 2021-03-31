@@ -112,3 +112,4 @@ impl Trace {
     }
 
     pub fn record(
+        &mut self,

@@ -77,3 +77,4 @@ impl InputDetails {
             Operation::Write { data } => data.len(),
             Operation::Submit { data } => data.as_ref().map_or(0, String::len),
             Operation::Key { keys, .. } => keys.iter().fold(0usize, |size, key| {
+                size.saturating_add(key.len().saturating_add(1))
