@@ -28,3 +28,6 @@ function publicationFixture(t) {
   git(["add", "bindings", "LICENSE", ".github"]);
   git(["commit", "-q", "-s", "-m", "Source release fixture"]);
   fixture.revision = git(["rev-parse", "HEAD"]).trim();
+  git(["tag", "1.2.3"]);
+  git(["tag", "1.2.4"]);
+  git(["init", "-q", "--bare", "-b", "main", remote]);

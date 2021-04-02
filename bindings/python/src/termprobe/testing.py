@@ -50,3 +50,4 @@ class TerminalOptions:
     env: Optional[Any] = None
     session: Optional[str] = None
     prefix: Optional[str] = None
+    retries: Optional[int] = None

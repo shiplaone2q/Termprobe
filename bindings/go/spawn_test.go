@@ -37,3 +37,6 @@ func clientLaunchTimeouts() termprobe.Timeouts {
 	return termprobe.Timeouts{
 		Text: termprobe.Ptr(11 * time.Millisecond), Idle: termprobe.Ptr(12 * time.Millisecond),
 		Command: termprobe.Ptr(13 * time.Millisecond), Exit: termprobe.Ptr(14 * time.Millisecond),
+		Ready: termprobe.Ptr(15 * time.Millisecond),
+	}
+}
