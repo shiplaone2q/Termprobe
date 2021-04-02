@@ -12,3 +12,5 @@
 <div class="attachment-layout">
   <div id="evidence-links">
     {#each files as file (file.id)}
+      <div class="attachment">
+        <button data-attachment={file.name} onclick={() => onselect(file.id)}>{file.name} ({file.byteLength.toLocaleString("en-US")} B)</button>

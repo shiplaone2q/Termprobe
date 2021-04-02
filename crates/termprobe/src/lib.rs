@@ -7,3 +7,4 @@ pub mod input;
 pub mod locator_query;
 pub mod logger;
 pub mod profile;
+pub mod record;
