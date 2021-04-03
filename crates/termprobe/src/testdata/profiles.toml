@@ -24,3 +24,5 @@ font_size = 24
 canvas_padding = 8
 
 [profiles.ci.recording.style.window]
+title_bar = false
+

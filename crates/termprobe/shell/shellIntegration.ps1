@@ -27,3 +27,5 @@ function Global:Prompt() {
     $lastError = $global:Error[0]
     $lastHistory = Get-History -Count 1
 
+    $out = ""
+    if ($Global:__su_state.LastHistoryId -ne -1 -and
