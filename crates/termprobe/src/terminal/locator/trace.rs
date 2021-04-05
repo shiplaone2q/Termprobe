@@ -113,3 +113,7 @@ impl Trace {
 
     pub fn record(
         &mut self,
+        query: &LocatorQuery,
+        path: &str,
+        require_one: bool,
+        stats: NodeStats,
