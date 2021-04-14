@@ -137,3 +137,6 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
   // Each entry is the code of an OSC sequence and whether it ended in `BEL`.
   // Keyed by code because the scan sees every sequence while only the color
   // ones are answered here: a title arriving between two queries would
+  // otherwise shift the queue out of step and put the wrong terminator on a
+  // reply.
+  //
