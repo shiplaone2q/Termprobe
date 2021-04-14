@@ -18,3 +18,5 @@ func (memory *nativeMemory) text(value string) abiString {
 	pointer := &buffer[0]
 	memory.pinner.Pin(pointer)
 	return abiString{data: pointer, len: uintptr(len(value))}
+}
+

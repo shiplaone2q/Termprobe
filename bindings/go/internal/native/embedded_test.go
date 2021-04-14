@@ -62,3 +62,6 @@ func TestBundleTarget(t *testing.T) {
 func TestOverrideBypassesBundleAndCache(t *testing.T) {
 	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "/explicit/library")
 	path, err := nativeLibraryPath(nil)
+	if err != nil || path != "/explicit/library" {
+		t.Fatalf("path = %q, error = %v", path, err)
+	}
