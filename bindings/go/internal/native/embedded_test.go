@@ -65,3 +65,4 @@ func TestOverrideBypassesBundleAndCache(t *testing.T) {
 	if err != nil || path != "/explicit/library" {
 		t.Fatalf("path = %q, error = %v", path, err)
 	}
+}
