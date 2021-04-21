@@ -40,3 +40,4 @@ fn effective_timeouts(s: &mut Storage, v: termprobe::api::EffectiveTimeouts) -> 
     TuiTimeouts {
         text: unsigned(v.text),
         idle: unsigned(v.idle),
+        command: unsigned(v.command),

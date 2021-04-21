@@ -53,3 +53,7 @@ impl OperationExpectation {
                     LocatorExpectation::Hidden
                 } else {
                     LocatorExpectation::Visible
+                },
+            },
+            Operation::ResolveLocator { query } => Self::Locator {
+                query: Box::new(query.clone()),

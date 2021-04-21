@@ -298,3 +298,5 @@ test("xterm.js clipboard rejects as InternalError", async () => {
 
 test("recording API writes an asciicast file", async () => {
   const root = mkdtempSync(join(tmpdir(), "termprobe-recording-"));
+  const path = join(root, "demo.cast");
+  try {
