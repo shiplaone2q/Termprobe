@@ -20,3 +20,4 @@ func nativeLayoutPairs() []nativeLayoutPair {
 		{reflect.TypeFor[abiString](), reflect.TypeFor[C.TuiString]()},
 		{reflect.TypeFor[abiOptionalI32](), reflect.TypeFor[C.TuiOptionalI32]()},
 		{reflect.TypeFor[abiOptionalU64](), reflect.TypeFor[C.TuiOptionalU64]()},
+		{reflect.TypeFor[abiOptionalBool](), reflect.TypeFor[C.TuiOptionalBool]()},

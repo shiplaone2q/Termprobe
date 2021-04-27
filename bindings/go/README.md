@@ -48,3 +48,5 @@ Cross-compile for glibc Linux with:
 ```sh
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
 ```
+
+For musl, also select the destination interpreter:

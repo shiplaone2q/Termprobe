@@ -7,3 +7,4 @@ __pycache__/
 *.node
 bindings/js/native/*.so
 bindings/js/native/*.dylib
+bindings/js/native/*.dll
