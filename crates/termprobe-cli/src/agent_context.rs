@@ -47,3 +47,7 @@ fn exit_codes() -> Value {
 /// Build a `{ name: {...} }` map of a command's visible subcommands.
 fn commands_json(cmd: &Command) -> Value {
     let mut map = Map::new();
+    for sub in cmd.get_subcommands() {
+        if sub.is_hide_set() {
+            continue;
+        }

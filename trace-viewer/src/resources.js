@@ -19,3 +19,6 @@ export function createResources(model) {
     if (!frame.svg) return {};
     const document = new DOMParser().parseFromString(frame.svg, "image/svg+xml");
     const root = document.documentElement;
+    if (document.querySelector("parsererror") || root.localName !== "svg" || root.namespaceURI !== "http://www.w3.org/2000/svg") {
+      return { error: IMAGE_ERROR };
+    }
