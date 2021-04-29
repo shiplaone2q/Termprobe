@@ -67,3 +67,7 @@ impl LocatorExpression {
             ];
             let mut depth = 1;
             let mut size = 1;
+            for reference in references.into_iter().flatten() {
+                if reference >= index {
+                    return Err(error("operand references must point to earlier nodes"));
+                }
