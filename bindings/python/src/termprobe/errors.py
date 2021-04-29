@@ -15,3 +15,7 @@ class TuiTestError(Exception):
         *,
         details: Optional[FailureDetails] = None,
         artifact: Optional[FailureArtifactRef] = None,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.details = details
