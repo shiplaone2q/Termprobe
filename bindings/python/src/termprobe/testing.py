@@ -51,3 +51,7 @@ class TerminalOptions:
     session: Optional[str] = None
     prefix: Optional[str] = None
     retries: Optional[int] = None
+    wait_ready: Optional[bool] = None
+    timeouts: Optional[Timeouts] = None
+    profile: Optional[Profile] = None
+    screen_history_limit: Optional[int] = None
