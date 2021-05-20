@@ -40,3 +40,7 @@ func clientLaunchTimeouts() termprobe.Timeouts {
 		Ready: termprobe.Ptr(15 * time.Millisecond),
 	}
 }
+
+type launchTimeoutCase struct {
+	name     string
+	options  termprobe.Timeouts

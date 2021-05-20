@@ -24,3 +24,6 @@ class NativeAssertionError(builtins.Exception):
 class NativeInternalError(builtins.Exception):
     r"""
     Native internal error.
+    """
+    ...
+

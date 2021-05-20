@@ -42,3 +42,4 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
         return boundary(work);
     }
     let (sender, receiver) = mpsc::channel();
+    START.with(|slot| *slot.borrow_mut() = Some(Some(receiver)));
