@@ -55,3 +55,7 @@ func (client *Client) GetByLink(uri string, options LinkSelectorOptions) *Locato
 }
 
 func cloneLocatorQuery(source locatorQuery) locatorQuery {
+	return locatorQuery{nodes: append([]locatorNode(nil), source.nodes...), root: source.root}
+}
+
+func appendLocatorNode(parent *locatorQuery, node locatorNode) locatorQuery {

@@ -108,3 +108,7 @@ test("terminating a worker during a native wait preserves the loaded engine", {
   `);
 });
 
+test("nested input buffers remain live during native start and marshaling", () => {
+  runWithGc(`
+    import assert from "node:assert/strict";
+    import koffi from "koffi";

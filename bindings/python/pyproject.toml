@@ -19,3 +19,4 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
