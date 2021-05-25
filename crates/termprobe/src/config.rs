@@ -31,3 +31,5 @@ impl TimeoutClass {
     }
 
     /// The environment variable consulted for this class.
+    pub fn env_var(self) -> &'static str {
+        match self {
