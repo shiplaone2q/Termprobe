@@ -233,3 +233,7 @@ fn stream_mp4_frames(
         let pixels = renderer.render(&frames[step.frame])?;
         for _ in 0..step.repeats {
             output.write_all(pixels.as_raw())?;
+        }
+    }
+    output.flush()?;
+    Ok(())

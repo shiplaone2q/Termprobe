@@ -4,3 +4,4 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "svelte"],
