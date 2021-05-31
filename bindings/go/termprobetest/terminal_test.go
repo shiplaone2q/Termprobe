@@ -23,3 +23,6 @@ func TestHelperChild(t *testing.T) {
 			os.Exit(0)
 		}
 	}
+	os.Exit(0)
+}
+

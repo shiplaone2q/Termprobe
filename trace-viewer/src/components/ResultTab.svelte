@@ -20,3 +20,6 @@
 </details>
 
 <style>
+  .error-heading { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  h1 { color: var(--red); }
+  h1.passed { color: var(--green); }
