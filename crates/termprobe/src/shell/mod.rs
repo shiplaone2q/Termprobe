@@ -62,3 +62,7 @@ pub fn scripts_dir() -> PathBuf {
 pub fn write_integration_scripts() -> std::io::Result<()> {
     write_scripts_to(&scripts_dir())
 }
+
+fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dir)?;
+    let files: &[(&str, &str)] = &[
