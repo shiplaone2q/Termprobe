@@ -66,3 +66,5 @@ func TestOverrideBypassesBundleAndCache(t *testing.T) {
 		t.Fatalf("path = %q, error = %v", path, err)
 	}
 }
+
+func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
