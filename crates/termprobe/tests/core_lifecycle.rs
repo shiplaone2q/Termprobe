@@ -232,3 +232,7 @@ fn named_wait_allows_concurrent_input_resize_and_submit() {
         assert!(started.elapsed() < Duration::from_secs(2));
     }
     assert!(finished_rx.try_recv().is_err());
+    session
+        .execute(Operation::Submit {
+            data: Some("emit-marker".into()),
+        })

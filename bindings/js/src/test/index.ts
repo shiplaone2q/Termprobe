@@ -37,3 +37,7 @@ export interface CreateTerminalOptions {
   trace?: TraceOptions;
 }
 
+let defaults: Partial<CreateTerminalOptions> = {};
+
+export function setTerminalDefaults(values: Partial<CreateTerminalOptions>): void {
+  defaults = { ...defaults, ...values };
