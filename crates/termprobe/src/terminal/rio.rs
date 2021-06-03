@@ -154,3 +154,5 @@ impl ColorState {
         }
     }
 
+    fn slot_index(slot: ColorSlot) -> usize {
+        match slot {

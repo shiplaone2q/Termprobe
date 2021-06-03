@@ -20,3 +20,4 @@ func (memory *nativeMemory) text(value string) abiString {
 	return abiString{data: pointer, len: uintptr(len(value))}
 }
 
+func (memory *nativeMemory) optionalText(value *string) abiString {
