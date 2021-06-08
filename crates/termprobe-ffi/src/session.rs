@@ -21,3 +21,7 @@ fn trace_mode(mode: &str) -> Result<TraceMode> {
             "unknown trace mode {mode:?}; expected off, on-failure, or on"
         ))
     })
+}
+
+pub(crate) fn execute(
+    name: String,
