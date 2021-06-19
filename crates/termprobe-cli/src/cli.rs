@@ -487,3 +487,4 @@ pub enum RecordCmd {
         /// Scale image/video dimensions while keeping the same terminal cells.
         #[arg(long)]
         zoom: Option<f64>,
+        /// Canvas background color (#rgb or #rrggbb).

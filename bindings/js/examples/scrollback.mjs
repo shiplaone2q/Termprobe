@@ -9,3 +9,5 @@ try {
   const full = await terminal.text({ full: true });
   console.log("Live screen:\n" + await terminal.text());
   await terminal.scrollToTop();
+  console.log("History viewport:", await terminal.getViewport());
+  console.log("Oldest screen:\n" + await terminal.text());
