@@ -137,3 +137,6 @@ def _copy(value):
                           abi.TuiOptionalBool, abi.TuiOptionalF64)):
         return value.value if value.present else None
     if isinstance(value, abi.TuiColor):
+        if value.kind == 0:
+            return "default"
+        if value.kind == 1:

@@ -4,3 +4,4 @@ package termprobe
 type Keyboard struct{ runtime *nativeRuntime }
 
 func (keyboard *Keyboard) Press(keys ...string) error  { return keyboard.runtime.key(keys, 0) }
+func (keyboard *Keyboard) Down(keys ...string) error   { return keyboard.runtime.key(keys, 1) }
