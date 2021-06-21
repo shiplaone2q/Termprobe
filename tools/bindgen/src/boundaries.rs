@@ -160,3 +160,6 @@ fn c_type(ty: &str) -> Result<String> {
         "Option<bool>" => "TuiOptionalBool".into(),
         "Option<f64>" => "TuiOptionalF64".into(),
         "CellColor" => "TuiColor".into(),
+        "bool" | "u16" | "u32" | "u64" | "u8" | "f64" | "i32" | "usize" => ty.into(),
+        t if OUTPUTS.contains(&t) || t == "Timeouts" => c_name(t),
+        _ => bail!("no C mapping for {ty}"),

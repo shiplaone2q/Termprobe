@@ -278,3 +278,6 @@ impl Locator {
         self.wait_with_timeout(None)
     }
 
+    pub fn wait_with_timeout(&self, timeout_ms: Option<u64>) -> Result<(), TermprobeError> {
+        self.wait_for(false, timeout_ms)
+    }

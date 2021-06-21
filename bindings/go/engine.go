@@ -66,3 +66,7 @@ func (runtime *nativeRuntime) restart(gracefulTimeout time.Duration) (OpenResult
 	value, err := runtime.session.Restart(gracefulTimeout)
 	return OpenResult(value), engineError(err)
 }
+func (runtime *nativeRuntime) typeText(text string) error {
+	return engineError(runtime.session.TypeText(text))
+}
+func (runtime *nativeRuntime) write(text string) error {
