@@ -32,3 +32,5 @@ const options = {
   bundle: true, minify: true, treeShaking: true, charset: "ascii", legalComments: "none",
   target: "es2023", format: "iife", platform: "browser", write: false, metafile: true,
   supported: { "template-literal": false },
+  conditions: ["svelte", "browser", "production"], define: { "process.env.NODE_ENV": '"production"' },
+  banner: { js: licenses.join("\n") },

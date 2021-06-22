@@ -16,3 +16,4 @@ class TuiTest < Formula
     end
   end
 
+  on_linux do

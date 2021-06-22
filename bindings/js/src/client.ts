@@ -235,3 +235,7 @@ class Keyboard {
   }
 
   async press(...keys: string[]): Promise<void> {
+    await this.#runtime.press(keys);
+  }
+
+  async down(...keys: string[]): Promise<void> {
