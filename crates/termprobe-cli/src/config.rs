@@ -40,3 +40,7 @@ pub fn recording_dir() -> PathBuf {
     dirs::cache_dir()
         .unwrap_or_else(std::env::temp_dir)
         .join("termprobe")
+}
+
+pub fn recording_file(session: &str) -> PathBuf {
+    recording_dir().join(format!("{session}.cast"))

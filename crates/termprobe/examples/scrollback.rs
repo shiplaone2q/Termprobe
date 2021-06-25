@@ -33,3 +33,4 @@ fn demonstrate(backend: Backend) -> Result<()> {
         timeouts: defaults.timeouts,
         recording: AutomaticRecording {
             mode: AutomaticRecordingMode::Disabled,
+            directory: None,
