@@ -10,3 +10,7 @@ pub(crate) struct SessionInput {
     pub trace_mode: Option<String>,
     pub trace_directory: Option<String>,
     pub screen_history_limit: Option<u16>,
+}
+impl SessionInput {
+    pub fn validate(self) -> Result<(String, ExecutionContext)> {
+        let artifact = match self.artifact_mode {
