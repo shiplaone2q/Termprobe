@@ -169,3 +169,6 @@ fn timeline_with_limit(
                     let width = if cell.ch == CONTINUATION {
                         0
                     } else if row.get(x + 1).is_some_and(|next| next.ch == CONTINUATION) {
+                        2
+                    } else {
+                        1

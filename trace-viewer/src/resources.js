@@ -22,3 +22,4 @@ export function createResources(model) {
     if (document.querySelector("parsererror") || root.localName !== "svg" || root.namespaceURI !== "http://www.w3.org/2000/svg") {
       return { error: IMAGE_ERROR };
     }
+    // Crop only the display copy. Attachment downloads retain the original bytes.

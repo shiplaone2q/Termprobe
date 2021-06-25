@@ -11,3 +11,4 @@ def __su_cwd():
 @events.on_precommand
 def __su_pre(cmd, **kw):
     __su_osc('C')
+

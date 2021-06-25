@@ -21,3 +21,4 @@
     : `Screen ${missingScreen ?? "unknown"} was not retained. No substitute frame is shown.`);
 
   function changeZoom(event: Event & { currentTarget: HTMLSelectElement }) {
+    const value = event.currentTarget.value;
