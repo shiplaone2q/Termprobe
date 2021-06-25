@@ -23,3 +23,6 @@ __su_cwd() {
             *)
                 builtin printf -v byte '%d' "'$c"
                 builtin printf -v hex '%%%02X' "$((byte & 255))"
+                encoded+=$hex
+                ;;
+        esac

@@ -11,3 +11,5 @@ func TestNativeLibraryPathRequiresBundleOrOverride(t *testing.T) {
 	_, err := nativeLibraryPath(nil)
 	if err == nil || !strings.Contains(err.Error(), "no bundled native engine") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
