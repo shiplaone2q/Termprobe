@@ -1114,3 +1114,6 @@ impl Engine {
                         )],
                     },
                 };
+                if is_trace {
+                    let mut trace = self
+                        .trace

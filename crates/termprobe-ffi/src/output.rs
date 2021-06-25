@@ -46,3 +46,4 @@ impl Storage {
     ) -> (*const TuiPair, usize) {
         for (index, color) in values {
             let key = self.string(index.to_string());
+            let value = self.string(color);

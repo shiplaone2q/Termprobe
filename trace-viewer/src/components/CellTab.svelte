@@ -18,3 +18,5 @@
       Hyperlink: cell.link || "none", "Link ID": cell.link_id || "none",
     });
     for (const flag of ["bold", "dim", "italic", "inverse", "invisible", "strike", "blink"]) properties[flag] = cell.flags.includes(flag);
+    if (previous) {
+      const keys = [...new Set([...Object.keys(previous), ...Object.keys(cell)])] as (keyof FrameCell)[];

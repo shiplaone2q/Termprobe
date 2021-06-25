@@ -20,3 +20,7 @@ type nativeFunctionTable struct {
 	GetOutput        func(abiString) *abiResult
 	GetExitCode      func(abiString) *abiResult
 	GetCwd           func(abiString) *abiResult
+	GetCursor        func(abiString) *abiResult
+	GetSize          func(abiString) *abiResult
+	GetTitle         func(abiString) *abiResult
+	GetClipboard     func(abiString) *abiResult
