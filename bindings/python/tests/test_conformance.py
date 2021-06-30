@@ -26,3 +26,4 @@ MAPPING = {
         ("client", "get_cwd"),
         ("client", "get_cursor"),
         ("client", "get_size"),
+        ("client", "get_viewport"),

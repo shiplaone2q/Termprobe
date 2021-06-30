@@ -31,3 +31,5 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
     emu.resize(24, 5);
     emu.process("\x1b]4;1;#112233\x07\x1b[2J\x1b[H\x1b[31mA\x1b[0m\u{4f60}e\u{301}".as_bytes());
     emu.process(b"\x1b]2;</script><img src=x onerror=alert(1)>\x07");
+    let sequence = capture(&mut history, &emu, 30);
+    capture(&mut history, &emu, 40);

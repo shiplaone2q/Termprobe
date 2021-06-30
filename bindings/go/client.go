@@ -91,3 +91,7 @@ func validateArtifactOptions(options *ArtifactOptions) error {
 			return &Error{Kind: UsageError, Message: "unknown artifact mode: " + string(options.OnFailure)}
 		}
 		if options.Dir == "" {
+			return &Error{Kind: UsageError, Message: "artifact directory must not be empty"}
+		}
+	}
+	return nil
