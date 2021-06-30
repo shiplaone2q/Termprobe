@@ -16,3 +16,5 @@ func main() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			if scanner.Text() == "quit" {
+				return
+			}

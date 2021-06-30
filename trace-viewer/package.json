@@ -7,3 +7,4 @@
     "check": "npm run typecheck && node build.mjs --check",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "dev": "node build.mjs --watch",
+    "test:unit": "node --test test/model.test.mjs",

@@ -9,3 +9,4 @@
 
 <svg id="overlay" aria-hidden="true" viewBox={frame.viewBox}>
   {#each locations as location (location)}
+    {@const [x, y] = location.split(",").map(Number)}
