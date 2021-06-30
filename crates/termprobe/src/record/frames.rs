@@ -99,3 +99,6 @@ impl FrameCapture {
     }
 
     pub(crate) fn capture(&mut self, emulator: &dyn Emulator, at: Instant) {
+        if self.error.is_none() {
+            if let Err(error) = self.push(emulator, at) {
+                self.error = Some(error);
