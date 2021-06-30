@@ -30,3 +30,6 @@ const list = (validate) => (value, path) => {
   value.forEach((item, index) => validate(item, `${path}[${index}]`));
 };
 /** @param {Record<string, Validator>} fields @returns {Validator} */
+const shape = (fields) => (value, path) => {
+  object(value, path);
+  for (const [key, validate] of Object.entries(fields)) validate(value[key], `${path}.${key}`);

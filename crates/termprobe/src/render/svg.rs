@@ -368,3 +368,4 @@ fn write_cursor(
     nerd_font: &NerdFont,
     style: &Style,
 ) {
+    let Some(row) = rows.get(cy) else {

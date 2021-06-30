@@ -18,3 +18,6 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 	checked := make(map[string]bool)
 	for _, pair := range nativeLayoutPairs() {
 		checked[pair.binding.Name()] = true
+		t.Run(pair.binding.Name(), func(t *testing.T) {
+			if pair.binding.Size() != pair.compiler.Size() {
+				t.Errorf("size: Go=%d, C=%d", pair.binding.Size(), pair.compiler.Size())
