@@ -44,3 +44,4 @@ pub fn recording_dir() -> PathBuf {
 
 pub fn recording_file(session: &str) -> PathBuf {
     recording_dir().join(format!("{session}.cast"))
+}

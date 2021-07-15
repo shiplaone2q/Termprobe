@@ -117,3 +117,6 @@ impl Trace {
         path: &str,
         require_one: bool,
         stats: NodeStats,
+    ) -> Option<usize> {
+        if !self.enabled {
+            return None;

@@ -43,3 +43,6 @@ func (memory *nativeMemory) colors(colors Colors) (*abiPair, uintptr) {
 	return memory.pairs(values)
 }
 
+func (memory *nativeMemory) openOptions(options OpenOptions, recording *AutomaticRecording) (abiOpenOptions, error) {
+	timeouts, err := nativeTimeouts(options.Timeouts)
+	if err != nil {
