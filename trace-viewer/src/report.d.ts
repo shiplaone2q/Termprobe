@@ -89,3 +89,6 @@ export interface FailureTextSelector {
 export interface FailureStyleSelector {
   readonly style: FailureTextStyle;
   readonly full: boolean;
+}
+
+export type FailureLocatorSelector =

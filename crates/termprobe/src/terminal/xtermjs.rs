@@ -156,3 +156,7 @@ fn describe(ctx: &Ctx<'_>, method: &str, error: rquickjs::Error) -> String {
             Some(stack) if !stack.trim().is_empty() => {
                 format!("{exception}\n{}", stack.trim_end())
             }
+            _ => exception.to_string(),
+        },
+        None => format!("{thrown:?}"),
+    };
