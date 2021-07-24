@@ -70,3 +70,4 @@ func (runtime *nativeRuntime) typeText(text string) error {
 	return engineError(runtime.session.TypeText(text))
 }
 func (runtime *nativeRuntime) write(text string) error {
+	return engineError(runtime.session.Write(text))

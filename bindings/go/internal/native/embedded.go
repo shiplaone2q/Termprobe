@@ -46,3 +46,5 @@ func nativeLibraryPath(libraries map[string]bundledLibrary) (string, error) {
 func bundleTarget(goos, goarch, libc string) (string, error) {
 	arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64"}[goarch]
 	if arch != "" {
+		switch goos {
+		case "darwin":
