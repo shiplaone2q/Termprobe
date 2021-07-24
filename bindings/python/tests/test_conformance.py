@@ -27,3 +27,4 @@ MAPPING = {
         ("client", "get_cursor"),
         ("client", "get_size"),
         ("client", "get_viewport"),
+        ("client", "get_title"),

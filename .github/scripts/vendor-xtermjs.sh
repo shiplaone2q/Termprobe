@@ -16,3 +16,6 @@ if [ "${1:-}" = "--latest" ]; then
   unicode11="$(npm view @xterm/addon-unicode11 version)"
   jq -n --arg h "$headless" --arg u "$unicode11" \
     '{"@xterm/headless": $h, "@xterm/addon-unicode11": $u}' > "$pinned"
+else
+  headless="$(jq -r '."@xterm/headless"' "$pinned")"
+  unicode11="$(jq -r '."@xterm/addon-unicode11"' "$pinned")"
