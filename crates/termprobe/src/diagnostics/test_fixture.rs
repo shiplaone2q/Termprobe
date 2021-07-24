@@ -33,3 +33,4 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
     emu.process(b"\x1b]2;</script><img src=x onerror=alert(1)>\x07");
     let sequence = capture(&mut history, &emu, 30);
     capture(&mut history, &emu, 40);
+    history.pin_current();
