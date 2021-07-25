@@ -36,3 +36,4 @@
     send({ type: "pause" });
     if (!event.persisted) resources.dispose();
   }
+

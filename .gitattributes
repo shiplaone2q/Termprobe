@@ -1,3 +1,4 @@
 * text=auto eol=lf
 install/install.sh linguist-detectable=false
 install/install.ps1 linguist-detectable=false
+
