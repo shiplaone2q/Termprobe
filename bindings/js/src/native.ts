@@ -166,3 +166,7 @@ export function mapNativeError(error: unknown): TermprobeError {
       attachStructuredFailure(mapped, envelope);
       Object.defineProperty(mapped, "cause", {
         configurable: true,
+        value: error,
+      });
+      return mapped;
+    } catch (parseError) {

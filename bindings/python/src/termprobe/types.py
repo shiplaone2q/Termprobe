@@ -38,3 +38,6 @@ class Colors:
     foreground: Optional[str] = None
     background: Optional[str] = None
     cursor: Optional[str] = None
+    black: Optional[str] = None
+    red: Optional[str] = None
+    green: Optional[str] = None

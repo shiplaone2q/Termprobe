@@ -86,3 +86,5 @@ impl TestDirectory {
 impl Drop for TestDirectory {
     fn drop(&mut self) {
         for _ in 0..20 {
+            match std::fs::remove_dir_all(self.0.parent().unwrap()) {
+                Ok(()) => return,
