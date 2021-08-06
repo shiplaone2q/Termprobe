@@ -176,3 +176,7 @@ fn timeline_with_limit(
                     let value = FrameCell::capture(cell, width, &source.render_state);
                     let key = serde_json::to_string(&value)?;
                     let index = *dictionary.entry(key).or_insert_with(|| {
+                        let index = frame.cells.len();
+                        frame.cells.push(value);
+                        index
+                    });
