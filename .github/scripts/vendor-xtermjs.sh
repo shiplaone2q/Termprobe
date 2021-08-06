@@ -19,3 +19,7 @@ if [ "${1:-}" = "--latest" ]; then
 else
   headless="$(jq -r '."@xterm/headless"' "$pinned")"
   unicode11="$(jq -r '."@xterm/addon-unicode11"' "$pinned")"
+fi
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT

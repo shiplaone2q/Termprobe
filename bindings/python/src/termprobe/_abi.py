@@ -148,3 +148,6 @@ TuiPair._fields_ = [
 ]
 
 
+TuiQuery._fields_ = [
+    ("json", TuiString),
+]
