@@ -488,3 +488,6 @@ pub enum RecordCmd {
         #[arg(long)]
         zoom: Option<f64>,
         /// Canvas background color (#rgb or #rrggbb).
+        #[arg(long, conflicts_with = "transparent")]
+        background: Option<String>,
+        /// Leave the APNG or GIF canvas transparent.

@@ -298,3 +298,5 @@ impl Session {
                 Err(error) => {
                     let error = error.to_string();
                     watcher_logger.event(&format!("process wait failed error={error}"));
+                    let mut st = watcher_state
+                        .lock()

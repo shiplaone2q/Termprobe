@@ -85,3 +85,4 @@ impl State {
         } else {
             0
         };
+        if !modes.contains(TermMode::LINE_WRAP) {
