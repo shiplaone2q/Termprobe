@@ -236,3 +236,7 @@ class IntegrationTests(unittest.TestCase):
                             self.assertEqual(
                                 int.from_bytes(data[20:24], "big"), 188
                             )
+                        else:
+                            self.assertEqual(data[:6], b"GIF89a")
+                            self.assertEqual(
+                                int.from_bytes(data[6:8], "little"), 278

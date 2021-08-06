@@ -47,3 +47,5 @@ const MAPPING = {
   submit: [["client", "submit"]],
   key: [["client", "keyboard"]],
   press: [["client", "press"]],
+  mouse: [["client", "mouse"]],
+  resize: [["client", "resize"]],

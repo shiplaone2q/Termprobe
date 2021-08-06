@@ -14,3 +14,6 @@ function showError(message) {
 
 window.addEventListener("error", (event) => showError(event.message));
 window.addEventListener("unhandledrejection", (event) => showError(String(event.reason)));
+try {
+  const source = document.getElementById("report-data")?.textContent;
+  if (!source) throw new Error("Missing embedded report-data");
