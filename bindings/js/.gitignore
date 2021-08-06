@@ -5,3 +5,4 @@ native/*.node
 native/*.dylib
 native/*.so
 native/*.dll
+npm/

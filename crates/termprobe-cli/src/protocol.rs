@@ -236,3 +236,4 @@ pub enum Request {
     Monitor {
         cols: u16,
         rows: u16,
+        #[serde(default)]

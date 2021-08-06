@@ -26,3 +26,4 @@ function libraryPath() {
 }
 
 const path = libraryPath();
+const library = koffi.load(path);
