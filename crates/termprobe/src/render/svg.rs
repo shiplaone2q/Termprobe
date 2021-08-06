@@ -369,3 +369,7 @@ fn write_cursor(
     style: &Style,
 ) {
     let Some(row) = rows.get(cy) else {
+        return;
+    };
+    let cell_w = style.cell_width();
+    let cell_h = style.cell_height();

@@ -131,3 +131,7 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
                         | std::io::ErrorKind::ConnectionAborted
                         | std::io::ErrorKind::ConnectionReset
                 ) => {}
+            Err(error) => {
+                listener_error = Some(error);
+                break None;
+            }

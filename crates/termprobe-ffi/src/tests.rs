@@ -95,3 +95,5 @@ fn missing_sessions_retain_structured_errors_and_owned_messages() {
         assert!(unsafe { message(result) }.contains("no active session"));
         unsafe { tui_result_free(result) };
     }
+    unsafe { tui_result_free(std::ptr::null_mut()) };
+}
