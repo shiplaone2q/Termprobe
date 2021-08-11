@@ -8,3 +8,4 @@ import { pathToFileURL } from "node:url";
 const packageRoot = process.env.TERMPROBE__TEST_PACKAGE_ROOT;
 
 if (packageRoot) {
+  test("packed binding works without the CLI", async () => {
