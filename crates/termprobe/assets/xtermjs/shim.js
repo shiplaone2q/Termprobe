@@ -140,3 +140,5 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
   // otherwise shift the queue out of step and put the wrong terminator on a
   // reply.
   //
+  // The scan carries its state between calls because a PTY read splits
+  // wherever it likes, including between the two bytes of an `ST`.
