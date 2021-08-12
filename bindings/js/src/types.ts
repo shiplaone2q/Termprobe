@@ -70,3 +70,4 @@ export interface Colors {
   cursor?: string;
   black?: string;
   red?: string;
+  green?: string;

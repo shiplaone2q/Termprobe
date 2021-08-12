@@ -6,3 +6,4 @@ import (
 )
 
 type nativeLibraryHandle struct{ library *syscall.DLL }
+
