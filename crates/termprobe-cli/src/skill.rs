@@ -69,3 +69,6 @@ fn first_heading_anchor(document: &str) -> Option<String> {
                 Some('-')
             } else {
                 None
+            }
+        })
+        .collect::<String>();
