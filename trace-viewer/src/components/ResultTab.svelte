@@ -23,3 +23,5 @@
   .error-heading { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
   h1 { color: var(--red); }
   h1.passed { color: var(--green); }
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .comparison > div { border-left: 3px solid var(--border); padding-left: 10px; min-width: 0; }
