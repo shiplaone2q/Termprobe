@@ -5,3 +5,4 @@
 
 <dl {id}>
   {#each Object.entries(values) as [key, value] (key)}
+    <dt>{key}</dt>

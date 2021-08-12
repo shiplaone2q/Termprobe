@@ -51,3 +51,6 @@ export function describeLocator(query) {
   const style = styleDescription(query.style);
   if (style) description += ` with ${style}`;
   if (query.occurrence !== "any") description += ` (${occurrence(query.occurrence)})`;
+  if (!query.within) return description;
+  if (query.direction === "within" && (selector.kind === "style" || selector.kind === "link")) {
+    return `[${describeLocator(query.within)}] whose whole match satisfies ${description}`;
