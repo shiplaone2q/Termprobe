@@ -118,3 +118,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.open(OpenOptions::default())?;
     terminal.execute(Operation::Submit {
         data: Some("echo hello".into()),
+    })?;
+    terminal.get_by_text("hello").last().expect()?;
