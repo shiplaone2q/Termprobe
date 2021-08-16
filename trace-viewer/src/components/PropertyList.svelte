@@ -6,3 +6,4 @@
 <dl {id}>
   {#each Object.entries(values) as [key, value] (key)}
     <dt>{key}</dt>
+    <dd>{#if /^#[0-9a-f]{6}$/i.test(colors[key] ?? "")}<span class="swatch" style:background-color={colors[key]}></span>{/if}{value ?? "Not captured"}</dd>

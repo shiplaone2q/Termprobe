@@ -104,3 +104,6 @@ Timeouts: {
 "ready": ["ready", "Option<u64>"],
 },
 AutomaticRecordingOptions: {
+"directory": ["directory", "Option<PathBuf>"],
+},
+TraceOptions: {
