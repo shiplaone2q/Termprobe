@@ -88,3 +88,7 @@ fn cases() -> [SnapshotCase; 4] {
 fn regular_grid() -> Vec<Vec<EmuCell>> {
     let mut grid = blank_grid();
     write_text(
+        &mut grid,
+        0,
+        0,
+        "termprobe render snapshot",

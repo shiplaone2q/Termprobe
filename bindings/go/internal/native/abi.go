@@ -58,3 +58,4 @@ type abiColor struct {
 type abiResult struct {
 	_             structs.HostLayout
 	errorKind     uint32
+	errorMessage  abiString
