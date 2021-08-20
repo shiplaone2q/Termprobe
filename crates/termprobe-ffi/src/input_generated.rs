@@ -19,3 +19,7 @@ unsafe fn open_input(
         backend,
         shell,
         profile,
+        cols: u16_option(value.cols, "cols")?.unwrap_or(80),
+        rows: u16_option(value.rows, "rows")?.unwrap_or(30),
+        cwd: unsafe { value.cwd.optional()? },
+        env: unsafe { pairs(value.env, value.env_len)? },
