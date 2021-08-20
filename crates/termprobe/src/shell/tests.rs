@@ -88,3 +88,4 @@ impl Drop for TestDirectory {
         for _ in 0..20 {
             match std::fs::remove_dir_all(self.0.parent().unwrap()) {
                 Ok(()) => return,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
