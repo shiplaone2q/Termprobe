@@ -120,3 +120,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         data: Some("echo hello".into()),
     })?;
     terminal.get_by_text("hello").last().expect()?;
+    terminal.close()?;
+    Ok(())
+}
+```

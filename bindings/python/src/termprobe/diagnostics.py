@@ -34,3 +34,6 @@ def _optional_string(value: object) -> Optional[str]:
 
 
 @dataclass(frozen=True)
+class FailureLocation:
+    row: int
+    column: int

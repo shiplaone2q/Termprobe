@@ -16,3 +16,6 @@ path = "src/main.rs"
 anyhow.workspace = true
 clap = { workspace = true, features = ["env"] }
 crossterm.workspace = true
+dialoguer.workspace = true
+dirs.workspace = true
+interprocess.workspace = true
