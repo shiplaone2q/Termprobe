@@ -23,3 +23,5 @@ unsafe fn open_input(
         rows: u16_option(value.rows, "rows")?.unwrap_or(30),
         cwd: unsafe { value.cwd.optional()? },
         env: unsafe { pairs(value.env, value.env_len)? },
+        wait_ready: value.wait_ready.option(),
+        restart: value.restart,

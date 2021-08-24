@@ -205,3 +205,6 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         let panel_height = super::scaled_dimension(panel_height, zoom, "test height").unwrap();
         let origin_x = (image.dimensions().0 - panel_width) as f32 / 2.0;
         let origin_y = (image.dimensions().1 - panel_height) as f32 / 2.0;
+        let scale = zoom as f32;
+        let top = grid_y(origin_y, 0, scale);
+        let bottom = grid_y(origin_y, 1, scale);
