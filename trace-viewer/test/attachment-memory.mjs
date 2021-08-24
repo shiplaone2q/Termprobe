@@ -8,3 +8,5 @@ async function retainedBytes() {
   await new Promise(setImmediate);
   global.gc();
   return process.memoryUsage().arrayBuffers;
+}
+const data = fixture();

@@ -37,3 +37,5 @@ def _optional_string(value: object) -> Optional[str]:
 class FailureLocation:
     row: int
     column: int
+
+
