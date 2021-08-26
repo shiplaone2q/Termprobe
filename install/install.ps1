@@ -46,3 +46,4 @@ elseif ($version -eq "beta") {
         -Headers $headers `
         -UseBasicParsing
     $latestBeta = $releases |
+        Where-Object {
