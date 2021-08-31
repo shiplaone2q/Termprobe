@@ -63,3 +63,7 @@ export function resolveTimeout(
   cls: TimeoutClass,
   callTimeout?: number,
   options: { timeouts?: Timeouts } = {},
+): number | undefined {
+  if (callTimeout !== undefined && callTimeout !== null) {
+    return callTimeout;
+  }

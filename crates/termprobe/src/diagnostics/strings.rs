@@ -65,3 +65,4 @@ pub(crate) fn base_error_message(message: &str) -> String {
         .to_string()
 }
 
+pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {

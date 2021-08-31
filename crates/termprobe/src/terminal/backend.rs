@@ -28,3 +28,4 @@ pub enum Backend {
     #[cfg(feature = "xtermjs")]
     Xtermjs,
 }
+
