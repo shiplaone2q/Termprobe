@@ -719,3 +719,5 @@ fn restart_preserves_recording_without_a_trace_override_and_honors_an_explicit_o
                 ..Default::default()
             },
         )
+        .unwrap()
+    else {
