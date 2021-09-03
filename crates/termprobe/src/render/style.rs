@@ -200,3 +200,7 @@ impl ShadowStyle {
 #[serde(untagged)]
 pub enum Padding {
     Uniform(u32),
+    Sides(PaddingSides),
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]

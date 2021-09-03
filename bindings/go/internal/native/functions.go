@@ -24,3 +24,4 @@ type nativeFunctionTable struct {
 	GetSize          func(abiString) *abiResult
 	GetTitle         func(abiString) *abiResult
 	GetClipboard     func(abiString) *abiResult
+	GetBellCount     func(abiString) *abiResult
