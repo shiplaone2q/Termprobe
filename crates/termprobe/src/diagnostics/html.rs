@@ -180,3 +180,7 @@ fn timeline_with_limit(
                         frame.cells.push(value);
                         index
                     });
+                    indices.push(index);
+                }
+                frame.grid.push(indices);
+            }

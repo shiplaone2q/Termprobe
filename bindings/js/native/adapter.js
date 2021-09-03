@@ -118,3 +118,6 @@ function decode(type, value) {
     if (value.kind === 0) return "default";
     if (value.kind === 1) return value.index;
     if (value.kind === 2) return "#" + [value.red, value.green, value.blue].map((v) => v.toString(16).padStart(2, "0")).join("");
+    throw error("internal", `unknown native color kind ${value.kind}`);
+  }
+  const result = {};

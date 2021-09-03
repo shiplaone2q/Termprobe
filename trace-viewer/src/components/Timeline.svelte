@@ -14,3 +14,7 @@
   </div>
   <div id="action-timeline" class="action-timeline" aria-label="Operation durations">
     {#each actions as action (action.id)}
+      {@const title = `${action.name} ${action.label}: ${time(action.duration)} (${action.result})`}
+      <button class="action-bar" class:failed={action.failed} data-operation={action.id} {title}
+        aria-label={title} aria-current={selectedAction === action.id} onclick={() => onaction(action.id)}
+        style:left={`${Math.min(99.5, action.started / Math.max(1, duration) * 100)}%`}
