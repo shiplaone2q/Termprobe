@@ -17,3 +17,7 @@ fn __su_uri_path {|p|
 fn __su_cwd {
   var p = $pwd
   if (eq $platform:os windows) { set p = (str:replace "\\" "/" $p) }
+  if (not (str:has-prefix $p "/")) { set p = "/"$p }
+  __su_osc "7;file://"(__su_uri_path $p)
+}
+

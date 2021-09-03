@@ -48,3 +48,6 @@ download() {
     if [ -n "$TOKEN" ]; then
       curl --proto '=https' --tlsv1.2 -fsSL \
         -H "Authorization: Bearer ${TOKEN}" \
+        "$url" -o "$destination"
+    else
+      curl --proto '=https' --tlsv1.2 -fsSL "$url" -o "$destination"
