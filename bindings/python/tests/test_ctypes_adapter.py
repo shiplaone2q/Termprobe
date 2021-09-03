@@ -72,3 +72,6 @@ class OwnershipTests(unittest.TestCase):
                 native._invoke("expect_locator", ())
         envelope = json.loads(caught.exception._tui_test_error_json)
         self.assertEqual(envelope["details"], {"reason": "timeout"})
+        self.assertEqual(envelope["artifact"], {"directory": "artifacts"})
+        library.tui_result_free.assert_called_once()
+

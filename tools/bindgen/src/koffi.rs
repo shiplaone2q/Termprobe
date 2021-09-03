@@ -40,3 +40,6 @@ fn asynchronous(function: &ItemFn) -> bool {
 
 pub fn generate(
     root: &Path,
+    structs: &[&ItemStruct],
+    functions: &[&ItemFn],
+    version: &str,

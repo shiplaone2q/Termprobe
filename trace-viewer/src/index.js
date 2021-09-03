@@ -17,3 +17,5 @@ window.addEventListener("unhandledrejection", (event) => showError(String(event.
 try {
   const source = document.getElementById("report-data")?.textContent;
   if (!source) throw new Error("Missing embedded report-data");
+  const target = document.getElementById("workbench");
+  if (!target) throw new Error("Missing workbench root");
