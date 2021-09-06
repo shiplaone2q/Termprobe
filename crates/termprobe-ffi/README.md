@@ -40,3 +40,5 @@ RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" \
 The cross-built library is `target/x86_64-unknown-linux-musl/debug/libtermprobe_ffi.so`.
 It requires a musl process.
 
+All three bindings accept `TERMPROBE__NATIVE_LIBRARY` as an explicit library path.
+Python wheels and JavaScript platform packages include the library.

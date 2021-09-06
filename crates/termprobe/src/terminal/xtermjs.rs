@@ -160,3 +160,6 @@ fn describe(ctx: &Ctx<'_>, method: &str, error: rquickjs::Error) -> String {
         },
         None => format!("{thrown:?}"),
     };
+    format!("xterm.js: {method} threw: {detail}")
+}
+
