@@ -18,3 +18,7 @@
       <button class="action-bar" class:failed={action.failed} data-operation={action.id} {title}
         aria-label={title} aria-current={selectedAction === action.id} onclick={() => onaction(action.id)}
         style:left={`${Math.min(99.5, action.started / Math.max(1, duration) * 100)}%`}
+        style:width={`${Math.max(.4, action.duration / Math.max(1, duration) * 100)}%`}></button>
+    {/each}
+  </div>
+  <nav id="filmstrip" class="filmstrip" aria-label="Retained terminal frames">
