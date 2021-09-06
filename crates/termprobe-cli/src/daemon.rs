@@ -135,3 +135,7 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
                 listener_error = Some(error);
                 break None;
             }
+        }
+    };
+    host.stopping.store(true, Ordering::Release);
+    drop(operations);
