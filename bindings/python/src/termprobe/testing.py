@@ -55,3 +55,4 @@ class TerminalOptions:
     timeouts: Optional[Timeouts] = None
     profile: Optional[Profile] = None
     screen_history_limit: Optional[int] = None
+    artifacts: Optional[Dict[str, Any]] = None

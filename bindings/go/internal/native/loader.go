@@ -24,3 +24,7 @@ func initializeNativeEngine() error {
 	}
 	table, err := loadNativeFunctions(path)
 	if err != nil {
+		return fmt.Errorf("load native engine from %q: %w", path, err)
+	}
+	nativeFunctions = table
+	return nil
