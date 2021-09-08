@@ -68,3 +68,6 @@ func TestOverrideBypassesBundleAndCache(t *testing.T) {
 }
 
 func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
+	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "")
+	cache := t.TempDir()
+	t.Setenv("HOME", cache)
