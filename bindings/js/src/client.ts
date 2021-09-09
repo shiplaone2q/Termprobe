@@ -239,3 +239,4 @@ class Keyboard {
   }
 
   async down(...keys: string[]): Promise<void> {
+    await this.#runtime.keyDown(keys);
