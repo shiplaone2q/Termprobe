@@ -108,3 +108,7 @@ func newClient(t *testing.T, options termprobe.ClientOptions) *termprobe.Client 
 }
 func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.SpawnOptions) {
 	t.Helper()
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}

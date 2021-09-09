@@ -22,3 +22,6 @@
     {/each}
   </div>
   <nav id="filmstrip" class="filmstrip" aria-label="Retained terminal frames">
+    {#each frames as frame (frame.index)}
+      <button class="thumbnail" data-frame={frame.index} aria-current={selectedFrame === frame.index}
+        aria-label={`Screen ${frame.sequence} at ${time(frame.started)}`} onclick={() => onframe(frame.index)}>
