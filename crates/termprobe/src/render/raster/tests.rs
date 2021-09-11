@@ -208,3 +208,6 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         let scale = zoom as f32;
         let top = grid_y(origin_y, 0, scale);
         let bottom = grid_y(origin_y, 1, scale);
+        let background_left = grid_x(origin_x, 2, scale);
+        let cursor_left = grid_x(origin_x, 3, scale);
+        let cursor_right = grid_x(origin_x, 4, scale);

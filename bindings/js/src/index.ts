@@ -22,3 +22,7 @@ export type {
   RecordingFormat,
   RecordingOptions,
   RestartOptions,
+  ScreenshotOptions,
+} from "./client.js";
+export { uniqueSession } from "./ephemeral.js";
+export { closeAll, getRecording, sessions } from "./sessions.js";
