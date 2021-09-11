@@ -23,3 +23,7 @@ class SharedLibraryBuild(build_rust):
         filename = (
             "tui_test_ffi.dll" if platform.startswith("win")
             else "libtui_test_ffi.dylib" if platform.startswith("macosx")
+            else "libtui_test_ffi.so"
+        )
+        return str(extension_path.with_name(filename))
+

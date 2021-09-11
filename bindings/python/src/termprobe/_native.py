@@ -140,3 +140,6 @@ def _copy(value):
         if value.kind == 0:
             return "default"
         if value.kind == 1:
+            return value.index
+        return "#{:02x}{:02x}{:02x}".format(value.red, value.green, value.blue)
+    result = {}

@@ -72,3 +72,4 @@ fn first_heading_anchor(document: &str) -> Option<String> {
             }
         })
         .collect::<String>();
+    (!anchor.is_empty()).then_some(anchor)

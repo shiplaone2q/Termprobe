@@ -26,3 +26,4 @@ __su_cwd() {
                 encoded+=$hex
                 ;;
         esac
+    done
