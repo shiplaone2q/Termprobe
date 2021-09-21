@@ -15,3 +15,7 @@ const runNpm = (args) => execFileSync("npm", args, { stdio: "inherit" });
 const targets = Object.values(rootPackage.nativeTargets).sort();
 
 if (targets.length === 0) {
+  throw new Error(`No native targets configured in ${packagePath}`);
+}
+
+fs.mkdirSync(outputDirectory, { recursive: true });
