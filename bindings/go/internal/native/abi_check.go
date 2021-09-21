@@ -24,3 +24,5 @@ func nativeLayoutPairs() []nativeLayoutPair {
 		{reflect.TypeFor[abiOptionalF64](), reflect.TypeFor[C.TuiOptionalF64]()},
 		{reflect.TypeFor[abiPair](), reflect.TypeFor[C.TuiPair]()},
 		{reflect.TypeFor[abiQuery](), reflect.TypeFor[C.TuiQuery]()},
+		{reflect.TypeFor[abiOpenResult](), reflect.TypeFor[C.TuiOpenResult]()},
+		{reflect.TypeFor[abiCursor](), reflect.TypeFor[C.TuiCursor]()},

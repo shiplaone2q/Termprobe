@@ -27,3 +27,4 @@ class NativeInternalError(builtins.Exception):
     """
     ...
 
+class NativeNoSessionError(builtins.Exception):
