@@ -77,3 +77,7 @@ class NativeSurfaceTests(unittest.TestCase):
             "open",
             "run",
             "restart",
+            "close",
+            "state",
+            "text",
+            "find_locator",

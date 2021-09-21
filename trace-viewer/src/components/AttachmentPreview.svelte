@@ -12,3 +12,5 @@
       <p class="notice error">Captured SVG could not be displayed. Download retains the original attachment bytes.</p>
     {:else if file.mime === "image/svg+xml"}
       <img src={url} alt={file.name} onerror={() => onimageerror(file.id)} />
+    {:else}
+      <pre>{file.preview}</pre>

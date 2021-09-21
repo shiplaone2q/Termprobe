@@ -83,3 +83,6 @@ export interface Cell {
   underline_style: UnderlineStyle
   underline_color: Color
   link: string
+  link_id: string
+}
+

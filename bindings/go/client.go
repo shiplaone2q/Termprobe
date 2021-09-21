@@ -95,3 +95,5 @@ func validateArtifactOptions(options *ArtifactOptions) error {
 		}
 	}
 	return nil
+}
+
