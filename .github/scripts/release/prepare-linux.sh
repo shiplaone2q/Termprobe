@@ -14,3 +14,5 @@ case "$(uname -m)" in
   aarch64|arm64)
     arch=aarch64
     sha256=ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17
+    ;;
+  *)

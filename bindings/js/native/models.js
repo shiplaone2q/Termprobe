@@ -107,3 +107,7 @@ AutomaticRecordingOptions: {
 "directory": ["directory", "Option<PathBuf>"],
 },
 TraceOptions: {
+"mode": ["mode", "Option<TraceMode>"],
+"directory": ["directory", "Option<PathBuf>"],
+},
+FailureArtifactOptions: {

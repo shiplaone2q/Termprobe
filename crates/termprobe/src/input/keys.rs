@@ -283,3 +283,4 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
             }
             sequence.push('\r');
         }
+        ControlKey::Escape => {
