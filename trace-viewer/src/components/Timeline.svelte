@@ -25,3 +25,7 @@
     {#each frames as frame (frame.index)}
       <button class="thumbnail" data-frame={frame.index} aria-current={selectedFrame === frame.index}
         aria-label={`Screen ${frame.sequence} at ${time(frame.started)}`} onclick={() => onframe(frame.index)}>
+        {#if images[frame.index]?.url && !failedImages.includes(frame.index)}
+          <img src={images[frame.index].url} alt="" onerror={() => onimageerror(frame.index)} />
+        {/if}
+        <span>{frame.label}</span>
