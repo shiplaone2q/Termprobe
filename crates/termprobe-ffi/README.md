@@ -42,3 +42,6 @@ It requires a musl process.
 
 All three bindings accept `TERMPROBE__NATIVE_LIBRARY` as an explicit library path.
 Python wheels and JavaScript platform packages include the library.
+
+For example, run the Go smoke example on macOS:
+
