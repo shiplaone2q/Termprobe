@@ -237,3 +237,4 @@ fn stream_mp4_frames(
     }
     output.flush()?;
     Ok(())
+}

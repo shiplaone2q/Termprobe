@@ -27,3 +27,6 @@ function select(model, state, frameIndex, actionId, missingScreen) {
   });
   return { ...next, column: String(point?.x ?? 0), row: String(point?.y ?? 0),
     cell: point && cellAt(frame, point.x, point.y) ? { x: point.x, y: point.y } : undefined };
+}
+
+/** @param {TraceModel} model @param {ViewerState} state @param {ViewerEvent} event @returns {ViewerState} */
