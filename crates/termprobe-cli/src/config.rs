@@ -45,3 +45,7 @@ pub fn recording_dir() -> PathBuf {
 pub fn recording_file(session: &str) -> PathBuf {
     recording_dir().join(format!("{session}.cast"))
 }
+
+const SOCKET_PATH_MAX: usize = 100;
+const SOCKET_DIGEST_HEX_LEN: usize = 16;
+

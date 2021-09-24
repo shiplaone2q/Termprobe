@@ -14,3 +14,4 @@ pub(crate) struct SessionInput {
 impl SessionInput {
     pub fn validate(self) -> Result<(String, ExecutionContext)> {
         let artifact = match self.artifact_mode {
+            None => None,
