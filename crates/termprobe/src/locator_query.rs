@@ -71,3 +71,6 @@ impl LocatorExpression {
                 if reference >= index {
                     return Err(error("operand references must point to earlier nodes"));
                 }
+                depth = depth.max(depths[reference] + 1);
+                size += sizes[reference];
+            }
