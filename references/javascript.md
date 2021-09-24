@@ -37,3 +37,6 @@ const locator = terminal
 | `getByText(text, options?)` | Match text or regex. |
 | `getByStyle(style, options?)` | Match appearance; when chained, require it on the whole match. |
 | `getByLink(uri, options?)` | Match an OSC 8 target; when chained, require it on every cell. `""` means unlinked. |
+| `and(other)`, `or(other)` | Intersect/union cells, then form contiguous per-row runs. |
+| `filter({ has?, hasNot? })` | Keep whole matches containing an inner match or containing none. |
+| `any()` | Keep all matches. |

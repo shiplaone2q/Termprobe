@@ -20,3 +20,5 @@ classifiers = [
 dependencies = []
 
 [project.urls]
+Homepage = "https://github.com/microsoft/termprobe"
+Repository = "https://github.com/microsoft/termprobe"
