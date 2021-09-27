@@ -532,3 +532,6 @@ fn monitor_frames_and_input_outlive_the_target() {
     let secret = "human-secret-monitor-input";
     sandbox.ok(&["open"]);
     write_monitor_input(&mut input, format!("echo {secret}\r").as_bytes());
+    input.flush().expect("flush first target input");
+    sandbox.wait_for_text(secret, "5000");
+
