@@ -124,3 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+[Rust API reference](https://docs.rs/termprobe-rs/latest/termprobe/)
+
+### Go

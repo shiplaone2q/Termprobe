@@ -59,3 +59,7 @@ type abiResult struct {
 	_             structs.HostLayout
 	errorKind     uint32
 	errorMessage  abiString
+	errorDetails  abiString
+	errorArtifact abiString
+	text          abiString
+	number        uint64
