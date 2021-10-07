@@ -11,3 +11,5 @@ import (
 type nativeLibraryHandle struct{ library uintptr }
 
 func openNativeLibrary(path string) (*nativeLibraryHandle, error) {
+	library, err := purego.Dlopen(path, purego.RTLD_NOW|purego.RTLD_LOCAL)
+	if err != nil {

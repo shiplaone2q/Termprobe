@@ -128,3 +128,5 @@ impl Recorder {
         self.automatic
     }
 
+    pub fn capture(&self) -> Capture {
+        Capture {

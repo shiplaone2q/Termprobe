@@ -157,3 +157,5 @@ pub struct SpawnOptions {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ProcessExit {
+    pub(crate) code: i32,
+    pub(crate) signal: Option<String>,
