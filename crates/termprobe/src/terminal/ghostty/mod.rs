@@ -213,3 +213,6 @@ impl GhosttyEmu {
     {
         self.call(operation, job)
             .unwrap_or_else(|error| panic!("Ghostty {operation} failed: {error:#}"))
+    }
+}
+

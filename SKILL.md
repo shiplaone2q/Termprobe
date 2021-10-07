@@ -39,3 +39,7 @@ Run `termprobe agent-context` for exact command and option names.
 from termprobe import Termprobe
 
 async with Termprobe.ephemeral() as terminal:
+    await terminal.run("my-app")
+    await terminal.get_by_text("Ready").expect()
+    await terminal.get_by_text("Continue").click()
+```

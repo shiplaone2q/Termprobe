@@ -27,3 +27,7 @@ class SharedLibraryBuild(build_rust):
         )
         return str(extension_path.with_name(filename))
 
+
+class SharedLibraryWheel(bdist_wheel):
+    def get_tag(self):
+        _, _, platform = super().get_tag()

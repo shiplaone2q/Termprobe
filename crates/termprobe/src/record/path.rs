@@ -33,3 +33,6 @@ impl ProtectedFile {
                 io::ErrorKind::InvalidInput,
                 "manual recording must not overwrite the automatic recording",
             ))
+        } else {
+            Ok(())
+        }
