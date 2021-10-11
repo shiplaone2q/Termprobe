@@ -25,3 +25,5 @@ try {
     ["mod", "edit", `-replace=github.com/microsoft/termprobe/bindings/go=${packagePath}`],
     ["get", "github.com/microsoft/termprobe/bindings/go@v0.0.0"],
     ["build", "-buildvcs=false", "-o", path.join(directory, "smoke.exe"), "github.com/microsoft/termprobe/bindings/go/examples/smoke"],
+  ]) {
+    execFileSync(go, args, { cwd: directory, env: environment, stdio: "inherit" });

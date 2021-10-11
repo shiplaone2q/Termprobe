@@ -74,3 +74,5 @@ test("closeAllTracked closes and forgets every tracked terminal", async () => {
   trackTerminal(b);
   assert.equal(trackedCount(), 2);
   await closeAllTracked();
+  assert.deepEqual(closed.sort(), ["a", "b"]);
+  assert.equal(trackedCount(), 0);
