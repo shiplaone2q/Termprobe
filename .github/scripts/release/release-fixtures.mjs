@@ -32,3 +32,4 @@ export function libraryFixture(target) {
 
 export function createFixture(t) {
   fs.mkdirSync(path.join(root, "target"), { recursive: true });
+  const directory = fs.mkdtempSync(path.join(root, "target/release-test-"));

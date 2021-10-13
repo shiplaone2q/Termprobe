@@ -6,3 +6,4 @@
     "test": "node --test release/*.test.mjs"
   },
   "dependencies": {
+    "tar": "^7.5.22"
