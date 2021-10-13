@@ -1117,3 +1117,7 @@ impl Engine {
                 if is_trace {
                     let mut trace = self
                         .trace
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    trace.artifact = Some(artifact.clone());
+                    trace.owned_directories.extend(owned_directory);

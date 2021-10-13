@@ -139,3 +139,6 @@ func (runtime *Session) Text(full bool) (string, error) {
 func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error) {
 	memory := nativeMemory{}
 	defer memory.release()
+	result := nativeFunctions.Cells(memory.text(runtime.name), column, row, width, height)
+	defer nativeFunctions.ResultFree(result)
+	if err := nativeError(result); err != nil {
