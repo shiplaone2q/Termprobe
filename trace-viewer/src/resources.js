@@ -23,3 +23,5 @@ export function createResources(model) {
       return { error: IMAGE_ERROR };
     }
     // Crop only the display copy. Attachment downloads retain the original bytes.
+    root.setAttribute("viewBox", frame.viewBox);
+    root.setAttribute("width", String(frame.width));
