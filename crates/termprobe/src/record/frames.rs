@@ -102,3 +102,4 @@ impl FrameCapture {
         if self.error.is_none() {
             if let Err(error) = self.push(emulator, at) {
                 self.error = Some(error);
+            }

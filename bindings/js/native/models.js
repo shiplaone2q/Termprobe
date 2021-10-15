@@ -111,3 +111,4 @@ TraceOptions: {
 "directory": ["directory", "Option<PathBuf>"],
 },
 FailureArtifactOptions: {
+"directory": ["directory", "PathBuf"],
