@@ -48,3 +48,6 @@ impl Storage {
             let key = self.string(index.to_string());
             let value = self.string(color);
             self.pairs.push(TuiPair { key, value });
+        }
+        (self.pairs.as_ptr(), self.pairs.len())
+    }

@@ -49,3 +49,4 @@ const MAPPING = {
   press: [["client", "press"]],
   mouse: [["client", "mouse"]],
   resize: [["client", "resize"]],
+  scroll: [["client", "scroll"], ["client", "scrollToTop"], ["client", "scrollToBottom"]],

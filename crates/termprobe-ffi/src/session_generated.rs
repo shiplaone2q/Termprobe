@@ -15,3 +15,6 @@ impl SessionInput {
     pub fn validate(self) -> Result<(String, ExecutionContext)> {
         let artifact = match self.artifact_mode {
             None => None,
+            Some(mode) => {
+                let mode = artifact_mode(&mode)?;
+                let options = FailureArtifactOptions {
