@@ -19,3 +19,4 @@ crossterm.workspace = true
 dialoguer.workspace = true
 dirs.workspace = true
 interprocess.workspace = true
+serde.workspace = true

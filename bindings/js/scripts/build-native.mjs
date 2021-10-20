@@ -34,3 +34,5 @@ if (target.endsWith("-musl")) {
 }
 if (zigbuild && target.endsWith("-gnu")) {
   const arch = target.startsWith("aarch64") ? "aarch64" : "x86_64";
+  const tools = join(root, "target/manylinux-tools", arch);
+  mkdirSync(tools, { recursive: true });
