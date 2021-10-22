@@ -93,3 +93,4 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
         0,
         "termprobe render snapshot",
         CellStyle::default(),
+    );
