@@ -27,3 +27,7 @@ function libraryPath() {
 
 const path = libraryPath();
 const library = koffi.load(path);
+let platformLibrary;
+if (process.platform === "win32") {
+  // Rust thread-local destructors can outlive the JavaScript environment.
+  platformLibrary = koffi.load("kernel32.dll");

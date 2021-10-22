@@ -101,3 +101,7 @@ pub fn describe_cell(
         Expected::Default => cell
             .map(|cell| cell.to_index().to_string())
             .unwrap_or_else(|| DEFAULT.to_string()),
+        Expected::Ansi256(_) => cell
+            .map(|cell| cell.to_index().to_string())
+            .unwrap_or_else(|| DEFAULT.to_string()),
+        _ => colors.resolve(cell, is_fg).to_hex(),
