@@ -66,3 +66,5 @@ pub(crate) fn base_error_message(message: &str) -> String {
 }
 
 pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
+    match operation {
+        Operation::Open(_) => "open",

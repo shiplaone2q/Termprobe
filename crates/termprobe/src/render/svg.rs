@@ -373,3 +373,5 @@ fn write_cursor(
     };
     let cell_w = style.cell_width();
     let cell_h = style.cell_height();
+    let header_h = style.header_height();
+    let cell = cell_at(row, cx as usize);
