@@ -107,3 +107,7 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 #### Input
 
 | Method | Description |
+| --- | --- |
+| `submit(text?)` | Type text and press Enter. |
+| `type(text)` | Type text. |
+| `write(data)` | Write raw bytes. |
