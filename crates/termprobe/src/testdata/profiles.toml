@@ -26,3 +26,6 @@ canvas_padding = 8
 [profiles.ci.recording.style.window]
 title_bar = false
 
+[profiles.ci.recording.style.shadow]
+enabled = false
+
