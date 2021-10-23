@@ -11,3 +11,5 @@ try {
   await terminal.scrollToTop();
   console.log("History viewport:", await terminal.getViewport());
   console.log("Oldest screen:\n" + await terminal.text());
+  console.log("Full text unchanged:", full === await terminal.text({ full: true }));
+  await terminal.scroll(-2);

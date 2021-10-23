@@ -535,3 +535,7 @@ fn monitor_frames_and_input_outlive_the_target() {
     input.flush().expect("flush first target input");
     sandbox.wait_for_text(secret, "5000");
 
+    sandbox.ok(&["open", "--restart"]);
+    input
+        .write_all(b"{\"kind\":\"resize\",\"cols\":100,\"rows\":40}\n")
+        .expect("resize monitor input");

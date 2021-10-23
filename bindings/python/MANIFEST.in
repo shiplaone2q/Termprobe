@@ -4,3 +4,4 @@ recursive-include src *.py *.pyi py.typed
 recursive-include tests *.py
 recursive-include examples *.py
 graft _rust
+graft .cargo
