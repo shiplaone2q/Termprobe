@@ -34,3 +34,6 @@ const options = {
   supported: { "template-literal": false },
   conditions: ["svelte", "browser", "production"], define: { "process.env.NODE_ENV": '"production"' },
   banner: { js: licenses.join("\n") },
+  plugins: [sveltePlugin(), {
+    name: "standalone-report",
+    setup(build) {

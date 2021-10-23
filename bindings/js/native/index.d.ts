@@ -86,3 +86,5 @@ export interface Cell {
   link_id: string
 }
 
+export interface TextPosition {
+  row: number
