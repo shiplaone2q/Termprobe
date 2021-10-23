@@ -44,3 +44,6 @@ func clientLaunchTimeouts() termprobe.Timeouts {
 type launchTimeoutCase struct {
 	name     string
 	options  termprobe.Timeouts
+	expected termprobe.EffectiveTimeouts
+}
+
