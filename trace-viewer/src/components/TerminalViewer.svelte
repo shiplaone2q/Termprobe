@@ -22,3 +22,4 @@
 
   function changeZoom(event: Event & { currentTarget: HTMLSelectElement }) {
     const value = event.currentTarget.value;
+    if (value !== "fit" && value !== "1" && value !== "1.5") throw new Error(`Unknown zoom: ${value}`);

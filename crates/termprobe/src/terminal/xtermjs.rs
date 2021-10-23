@@ -167,3 +167,7 @@ impl XtermJsEmu {
     pub fn new(cols: u16, rows: u16, profile: &Profile) -> anyhow::Result<Self> {
         Self::with_bell_tracker(cols, rows, profile, BellTracker::default())
     }
+
+    pub(crate) fn with_bell_tracker(
+        cols: u16,
+        rows: u16,

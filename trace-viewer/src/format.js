@@ -54,3 +54,6 @@ export function describeLocator(query) {
   if (!query.within) return description;
   if (query.direction === "within" && (selector.kind === "style" || selector.kind === "link")) {
     return `[${describeLocator(query.within)}] whose whole match satisfies ${description}`;
+  }
+  return `${description} ${query.direction} [${describeLocator(query.within)}]`;
+}
