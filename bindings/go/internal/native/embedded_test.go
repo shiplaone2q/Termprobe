@@ -71,3 +71,5 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 	t.Setenv("TERMPROBE__NATIVE_LIBRARY", "")
 	cache := t.TempDir()
 	t.Setenv("HOME", cache)
+	t.Setenv("XDG_CACHE_HOME", cache)
+	t.Setenv("LocalAppData", cache)
