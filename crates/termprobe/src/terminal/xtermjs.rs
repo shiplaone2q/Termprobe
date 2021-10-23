@@ -163,3 +163,7 @@ fn describe(ctx: &Ctx<'_>, method: &str, error: rquickjs::Error) -> String {
     format!("xterm.js: {method} threw: {detail}")
 }
 
+impl XtermJsEmu {
+    pub fn new(cols: u16, rows: u16, profile: &Profile) -> anyhow::Result<Self> {
+        Self::with_bell_tracker(cols, rows, profile, BellTracker::default())
+    }
