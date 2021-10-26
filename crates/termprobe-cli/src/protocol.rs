@@ -237,3 +237,4 @@ pub enum Request {
         cols: u16,
         rows: u16,
         #[serde(default)]
+        interactive: bool,

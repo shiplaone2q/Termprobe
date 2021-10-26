@@ -11,3 +11,5 @@ test("release checks require every Go installation example to match the tag", t 
   const current = "go get github.com/microsoft/termprobe/bindings/go@v1.2.3";
   for (const name of files) fs.writeFileSync(path.join(fixture.root, name), current);
   verifyGoVersion(fixture.root, "1.2.3");
+  for (const name of files) {
+    const filename = path.join(fixture.root, name);

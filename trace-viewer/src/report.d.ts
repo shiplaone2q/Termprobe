@@ -92,3 +92,5 @@ export interface FailureStyleSelector {
 }
 
 export type FailureLocatorSelector =
+  | { readonly kind: "text"; readonly selector: FailureTextSelector }
+  | { readonly kind: "style"; readonly selector: FailureStyleSelector }
