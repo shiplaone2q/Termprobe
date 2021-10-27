@@ -42,3 +42,4 @@ await terminal
   .getByText("Save", { direction: "after" })
   .unique()
   .click();
+```

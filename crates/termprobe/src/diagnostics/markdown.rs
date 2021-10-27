@@ -145,3 +145,6 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
                 note: format!("Expression: {}. {}", stage.expression_path, details.summary),
             };
         }
+    }
+    Explanation {
+        title: match details.reason {

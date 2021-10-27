@@ -24,3 +24,5 @@ from .types import (
     BellEvent,
     Cell,
     Colors,
+    Cursor,
+    Viewport,
