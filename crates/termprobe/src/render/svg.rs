@@ -375,3 +375,7 @@ fn write_cursor(
     let cell_h = style.cell_height();
     let header_h = style.header_height();
     let cell = cell_at(row, cx as usize);
+    // A double-width character stores its second half as a continuation cell,
+    // so the cursor has to cover both or it clips the glyph down the middle.
+    let span = if row
+        .get(cx as usize + 1)

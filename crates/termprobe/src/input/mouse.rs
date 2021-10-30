@@ -29,3 +29,5 @@ pub fn motion(x: u16, y: u16) -> String {
     format!("{CSI}<35;{};{}M", u32::from(x) + 1, u32::from(y) + 1)
 }
 
+/// SGR drag motion at (x, y), preserving the button and modifier bits.
+pub fn drag_motion(x: u16, y: u16, options: MouseOptions) -> String {

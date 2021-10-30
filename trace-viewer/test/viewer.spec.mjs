@@ -95,3 +95,6 @@ test("evicted completion checkpoints never substitute a retained frame", async (
   await expect(page.locator("#inspect")).toBeDisabled();
   await expect(page.locator("#play")).toBeDisabled();
   await expect(page.locator("#call-properties")).toContainText("evidence limit");
+  await page.locator("#failure").click();
+  await expect(page.locator("#frame-count")).toHaveText("3 / 3");
+});
