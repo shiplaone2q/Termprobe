@@ -2,3 +2,4 @@
 install/install.sh linguist-detectable=false
 install/install.ps1 linguist-detectable=false
 
+# Third-party bundles dropped in unchanged. `vendored` rather than

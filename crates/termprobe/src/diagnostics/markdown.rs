@@ -148,3 +148,7 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
     }
     Explanation {
         title: match details.reason {
+            FailureReason::Completed => "Session completed",
+            FailureReason::TestFailed => "Test failed",
+            FailureReason::Cancelled => "Operation cancelled",
+            FailureReason::SessionExited => "Session exited",
