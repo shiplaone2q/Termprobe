@@ -8,3 +8,5 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "dev": "node build.mjs --watch",
     "test:unit": "node --test test/model.test.mjs",
+    "test": "npm run check && npm run test:unit && playwright test"
+  },

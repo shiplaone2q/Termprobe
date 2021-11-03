@@ -72,3 +72,5 @@ const (
 	After  Direction = "after"
 	Before Direction = "before"
 )
+
+type Whitespace string

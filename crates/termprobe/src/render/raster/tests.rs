@@ -212,3 +212,6 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         let cursor_left = grid_x(origin_x, 3, scale);
         let cursor_right = grid_x(origin_x, 4, scale);
 
+        for y in top..bottom {
+            for x in background_left..cursor_left {
+                assert_eq!(
