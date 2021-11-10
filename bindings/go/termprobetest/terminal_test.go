@@ -26,3 +26,5 @@ func TestHelperChild(t *testing.T) {
 	os.Exit(0)
 }
 
+func helperOptions(t *testing.T) termprobetest.Options {
+	t.Helper()
