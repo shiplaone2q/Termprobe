@@ -41,3 +41,5 @@ pub(crate) unsafe fn slice<'a, T>(data: *const T, len: usize) -> Result<&'a [T]>
     Ok(unsafe { std::slice::from_raw_parts(data, len) })
 }
 impl TuiString {
+    pub(crate) unsafe fn optional(self) -> Result<Option<String>> {
+        if self.data.is_null() {

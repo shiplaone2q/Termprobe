@@ -5,3 +5,5 @@
   import LocatorBlock from "./LocatorBlock.svelte";
   let { action, frame, missingScreen }: { action?: TraceAction; frame?: TraceFrame; missingScreen?: number } = $props();
   const properties = $derived({
+    Action: action?.name ?? "Frame inspection", ...action?.properties,
+    ...(action?.expectation ? { Expected: action.expectation } : {}),
