@@ -19,3 +19,4 @@ class TuiTestError(Exception):
         super().__init__(message)
         self.message = message
         self.details = details
+        self.artifact = artifact

@@ -74,3 +74,4 @@ impl LocatorExpression {
                 depth = depth.max(depths[reference] + 1);
                 size += sizes[reference];
             }
+            if depth > 64 || size > 4096 {
