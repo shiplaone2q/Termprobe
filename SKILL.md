@@ -43,3 +43,6 @@ async with Termprobe.ephemeral() as terminal:
     await terminal.get_by_text("Ready").expect()
     await terminal.get_by_text("Continue").click()
 ```
+
+## JavaScript
+

@@ -43,3 +43,6 @@ await terminal
   .unique()
   .click();
 ```
+
+## Wait for loading
+
