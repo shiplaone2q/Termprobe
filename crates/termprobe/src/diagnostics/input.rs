@@ -78,3 +78,6 @@ impl InputDetails {
             Operation::Submit { data } => data.as_ref().map_or(0, String::len),
             Operation::Key { keys, .. } => keys.iter().fold(0usize, |size, key| {
                 size.saturating_add(key.len().saturating_add(1))
+            }),
+            Operation::Mouse {
+                action: MouseAction::Click { on_text, .. },

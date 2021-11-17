@@ -97,3 +97,7 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
     write_text(
         &mut grid,
         1,
+        0,
+        "ANSI color palette",
+        CellStyle {
+            fg: Some(Color::Named(NamedColor::BrightCyan)),

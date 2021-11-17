@@ -49,3 +49,5 @@ pub fn recording_file(session: &str) -> PathBuf {
 const SOCKET_PATH_MAX: usize = 100;
 const SOCKET_DIGEST_HEX_LEN: usize = 16;
 
+pub fn socket_name(session: &str) -> String {
+    socket_name_in(&home_dir(), session)
