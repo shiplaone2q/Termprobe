@@ -21,3 +21,5 @@ func (memory *nativeMemory) text(value string) abiString {
 }
 
 func (memory *nativeMemory) optionalText(value *string) abiString {
+	if value == nil {
+		return abiString{}
