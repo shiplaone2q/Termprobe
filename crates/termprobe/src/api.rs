@@ -447,3 +447,4 @@ pub enum LocatorSelector {
 }
 
 /// Select cells by their exact OSC 8 URI. An empty URI requires no link.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

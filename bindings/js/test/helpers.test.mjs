@@ -76,3 +76,6 @@ test("closeAllTracked closes and forgets every tracked terminal", async () => {
   await closeAllTracked();
   assert.deepEqual(closed.sort(), ["a", "b"]);
   assert.equal(trackedCount(), 0);
+});
+
+test("untrackTerminal removes a terminal from the registry", async () => {
