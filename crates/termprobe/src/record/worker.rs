@@ -59,3 +59,6 @@ pub(super) fn worker_loop(
             }
             Message::Resize { at, cols, rows } => {
                 seed.resize(cols, rows);
+                if let Some(writer) = primary.as_mut() {
+                    if let Err(error) = writer.write_resize(at, cols, rows) {
+                        logger.event(&format!("automatic recording failed: {error}"));

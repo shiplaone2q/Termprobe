@@ -10,3 +10,4 @@
     "test:unit": "node --test test/model.test.mjs",
     "test": "npm run check && npm run test:unit && playwright test"
   },
+  "dependencies": {
