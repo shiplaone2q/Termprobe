@@ -20,3 +20,7 @@
     for (const flag of ["bold", "dim", "italic", "inverse", "invisible", "strike", "blink"]) properties[flag] = cell.flags.includes(flag);
     if (previous) {
       const keys = [...new Set([...Object.keys(previous), ...Object.keys(cell)])] as (keyof FrameCell)[];
+      properties["Changed fields (previous frame)"] = keys.filter((key) => json(cell[key]) !== json(previous[key])).join(", ") || "none";
+    }
+    return {
+      heading: `Column ${x}, row ${y}${cell.width === 0 ? " / continuation" : ""}`, properties,
