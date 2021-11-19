@@ -29,3 +29,6 @@
           <img src={images[frame.index].url} alt="" onerror={() => onimageerror(frame.index)} />
         {/if}
         <span>{frame.label}</span>
+      </button>
+    {/each}
+  </nav>

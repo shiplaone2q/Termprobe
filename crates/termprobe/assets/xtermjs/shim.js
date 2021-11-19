@@ -142,3 +142,7 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
   //
   // The scan carries its state between calls because a PTY read splits
   // wherever it likes, including between the two bytes of an `ST`.
+  //
+  // Only the codes answered here are recorded. The scan sees every sequence,
+  // and one whose terminator is never claimed would sit in this list for the
+  // life of the session: a shell that retitles the window on every prompt
