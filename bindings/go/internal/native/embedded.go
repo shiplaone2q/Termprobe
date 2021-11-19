@@ -52,3 +52,4 @@ func bundleTarget(goos, goarch, libc string) (string, error) {
 		case "linux":
 			if libc == "gnu" || libc == "musl" {
 				return arch + "-unknown-linux-" + libc, nil
+			}

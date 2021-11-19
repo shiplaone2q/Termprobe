@@ -69,3 +69,7 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
     match operation {
         Operation::Open(_) => "open",
         Operation::Run(_) => "run",
+        Operation::Restart { .. } => "restart",
+        Operation::Close => "close",
+        Operation::FinishTrace { .. } => "trace.finish",
+        Operation::State => "state",
