@@ -20,3 +20,6 @@ pub struct TuiOptionalU64 {
 pub struct TuiOptionalI32 {
     pub present: bool,
     pub value: i32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]

@@ -457,3 +457,7 @@ pub struct RecordingDiagnostics {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
     pub ephemeral: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiagnosticHint {
