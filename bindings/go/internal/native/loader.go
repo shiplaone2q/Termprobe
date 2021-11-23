@@ -28,3 +28,7 @@ func initializeNativeEngine() error {
 	}
 	nativeFunctions = table
 	return nil
+}
+
+func loadNativeFunctions(path string) (nativeFunctionTable, error) {
+	table := nativeFunctionTable{}

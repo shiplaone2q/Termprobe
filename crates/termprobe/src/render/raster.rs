@@ -179,3 +179,6 @@ impl FrameRenderer for GridRenderer {
         let style = &self.style;
         let (base_width, base_height) = if self.exact_size {
             svg::exact_pixel_size(cols, rows, style)
+        } else {
+            svg::pixel_size(cols, rows, style)
+        };
