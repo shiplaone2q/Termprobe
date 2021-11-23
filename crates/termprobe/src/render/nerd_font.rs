@@ -83,3 +83,6 @@ impl NerdFont {
             };
             if builder.path.is_empty() {
                 continue;
+            }
+            glyphs.insert(
+                c,

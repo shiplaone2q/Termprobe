@@ -94,3 +94,7 @@ export interface FailureStyleSelector {
 export type FailureLocatorSelector =
   | { readonly kind: "text"; readonly selector: FailureTextSelector }
   | { readonly kind: "style"; readonly selector: FailureStyleSelector }
+  | { readonly kind: "link"; readonly selector: { readonly uri: string; readonly full: boolean } }
+  | { readonly kind: "and" | "or"; readonly selector: { readonly left: FailureLocatorQuery; readonly right: FailureLocatorQuery } }
+  | { readonly kind: "filter"; readonly selector: { readonly input: FailureLocatorQuery; readonly has?: FailureLocatorQuery | null; readonly has_not?: FailureLocatorQuery | null } };
+

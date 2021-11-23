@@ -43,3 +43,4 @@ pub(crate) unsafe fn slice<'a, T>(data: *const T, len: usize) -> Result<&'a [T]>
 impl TuiString {
     pub(crate) unsafe fn optional(self) -> Result<Option<String>> {
         if self.data.is_null() {
+            if self.len != 0 {
