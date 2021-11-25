@@ -28,3 +28,4 @@ func TestHelperChild(t *testing.T) {
 
 func helperOptions(t *testing.T) termprobetest.Options {
 	t.Helper()
+	executable, err := os.Executable()

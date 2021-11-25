@@ -39,3 +39,6 @@ class FailureLocation:
     column: int
 
 
+@dataclass(frozen=True)
+class FailureCellMismatch:
+    location: FailureLocation
