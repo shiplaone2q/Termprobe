@@ -63,3 +63,5 @@ type abiResult struct {
 	errorArtifact abiString
 	text          abiString
 	number        uint64
+	exitCode      abiOptionalI32
+	open          abiOpenResult

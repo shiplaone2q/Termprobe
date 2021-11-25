@@ -105,3 +105,7 @@ text: types.TuiString,
 start: types.TuiPosition,
 end: types.TuiPosition,
 spans: "void *",
+spans_len: "size_t",
+});
+types.TuiTimeouts = koffi.struct({
+text: types.TuiOptionalU64,
