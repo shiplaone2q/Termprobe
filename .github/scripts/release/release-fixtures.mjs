@@ -33,3 +33,6 @@ export function libraryFixture(target) {
 export function createFixture(t) {
   fs.mkdirSync(path.join(root, "target"), { recursive: true });
   const directory = fs.mkdtempSync(path.join(root, "target/release-test-"));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(directory, "bindings/js"), { recursive: true });
+  fs.writeFileSync(path.join(directory, "bindings/js/package.json"), JSON.stringify({

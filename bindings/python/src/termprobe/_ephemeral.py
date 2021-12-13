@@ -14,3 +14,4 @@ def unique_session(prefix: Optional[str] = None) -> str:
     global _session_counter
     with _session_counter_lock:
         _session_counter += 1
+        counter = _session_counter
