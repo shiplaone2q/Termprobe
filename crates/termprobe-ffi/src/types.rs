@@ -65,3 +65,6 @@ pub struct TuiColor {
 /// 0 on success, 1 assertion, 2 usage, 3 no-session, 5 internal.
 /// snapshot: 0 passed, 1 written, 2 updated. Free exactly once.
 #[repr(C)]
+#[derive(Default)]
+pub struct TuiResult {
+    pub error_kind: u32,

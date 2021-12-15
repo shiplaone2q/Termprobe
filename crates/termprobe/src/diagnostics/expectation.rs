@@ -57,3 +57,7 @@ impl OperationExpectation {
             },
             Operation::ResolveLocator { query } => Self::Locator {
                 query: Box::new(query.clone()),
+                outcome: LocatorExpectation::Unique,
+            },
+            Operation::ClickLocator { query, .. } => Self::Locator {
+                query: Box::new(query.clone()),
