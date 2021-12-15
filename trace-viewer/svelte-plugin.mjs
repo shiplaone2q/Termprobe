@@ -10,3 +10,5 @@ export function sveltePlugin(generate = "client") {
       build.onLoad({ filter: /\.svelte$/ }, async ({ path: filename }) => {
         const source = (await readFile(filename, "utf8")).replace(/\r\n/g, "\n");
         const compiled = compile(source, {
+          filename, generate, runes: true, dev: false, css: "external", discloseVersion: false,
+          cssHash: ({ hash, css }) => `svelte-${hash(css)}`,
