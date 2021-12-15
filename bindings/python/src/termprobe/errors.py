@@ -20,3 +20,4 @@ class TuiTestError(Exception):
         self.message = message
         self.details = details
         self.artifact = artifact
+

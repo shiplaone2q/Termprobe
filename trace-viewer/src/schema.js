@@ -35,3 +35,4 @@ const shape = (fields) => (value, path) => {
   for (const [key, validate] of Object.entries(fields)) validate(value[key], `${path}.${key}`);
 };
 /** @param {Record<string, Validator>} variants @returns {Validator} */
+const tagged = (variants) => (value, path) => {
