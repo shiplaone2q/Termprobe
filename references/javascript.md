@@ -40,3 +40,5 @@ const locator = terminal
 | `and(other)`, `or(other)` | Intersect/union cells, then form contiguous per-row runs. |
 | `filter({ has?, hasNot? })` | Keep whole matches containing an inner match or containing none. |
 | `any()` | Keep all matches. |
+| `unique()` | Require one match. |
+| `first()`, `last()`, `nth(index)` | Select a match. |

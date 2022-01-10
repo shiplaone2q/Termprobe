@@ -51,3 +51,7 @@ fn commands_json(cmd: &Command) -> Value {
         if sub.is_hide_set() {
             continue;
         }
+        map.insert(sub.get_name().to_string(), command_json(sub));
+    }
+    Value::Object(map)
+}

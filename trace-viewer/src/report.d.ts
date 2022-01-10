@@ -98,3 +98,7 @@ export type FailureLocatorSelector =
   | { readonly kind: "and" | "or"; readonly selector: { readonly left: FailureLocatorQuery; readonly right: FailureLocatorQuery } }
   | { readonly kind: "filter"; readonly selector: { readonly input: FailureLocatorQuery; readonly has?: FailureLocatorQuery | null; readonly has_not?: FailureLocatorQuery | null } };
 
+export interface FailureLocatorQuery {
+  readonly selector: FailureLocatorSelector;
+  readonly occurrence: FailureMatchOccurrence;
+  readonly within?: FailureLocatorQuery | null;
