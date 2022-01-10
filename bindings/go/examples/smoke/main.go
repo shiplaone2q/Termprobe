@@ -18,3 +18,5 @@ func main() {
 			if scanner.Text() == "quit" {
 				return
 			}
+			fmt.Println("echo:" + scanner.Text())
+		}

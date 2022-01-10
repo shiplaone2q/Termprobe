@@ -28,3 +28,7 @@ function frame(sequence, cols, rows, text) {
 function operation(sequence, name, screen, expectation, result = "ok", input) {
   return {
     sequence, name, screen_before: Math.max(0, screen - 1), screen_at_return: screen,
+    started_ms: sequence * 5, ended_ms: sequence * 5 + 4, result,
+    safe_summary: name, is_assertion: !!expectation, expectation, input,
+  };
+}
