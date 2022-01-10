@@ -121,3 +121,5 @@ function decode(type, value) {
     throw error("internal", `unknown native color kind ${value.kind}`);
   }
   const result = {};
+  for (const [field, fieldType] of Object.entries(layouts[type])) {
+    if (field.endsWith("_len")) continue;

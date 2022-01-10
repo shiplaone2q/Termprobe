@@ -17,3 +17,6 @@ func openNativeLibrary(path string) (*nativeLibraryHandle, error) {
 	}
 	return &nativeLibraryHandle{library: library}, nil
 }
+func (handle *nativeLibraryHandle) symbol(name string) (uintptr, error) {
+	address, err := purego.Dlsym(handle.library, name)
+	if err != nil {
