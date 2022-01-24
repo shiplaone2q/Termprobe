@@ -34,3 +34,6 @@ impl FontSystem {
         Ok(Self {
             catalog: catalog::catalog_for(font)?,
             glyphs: HashMap::new(),
+        })
+    }
+

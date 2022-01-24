@@ -101,3 +101,5 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
         "ANSI color palette",
         CellStyle {
             fg: Some(Color::Named(NamedColor::BrightCyan)),
+            ..CellStyle::default()
+        },
