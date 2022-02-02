@@ -51,3 +51,6 @@ download() {
         "$url" -o "$destination"
     else
       curl --proto '=https' --tlsv1.2 -fsSL "$url" -o "$destination"
+    fi
+  elif command -v wget >/dev/null 2>&1; then
+    if [ -n "$TOKEN" ]; then

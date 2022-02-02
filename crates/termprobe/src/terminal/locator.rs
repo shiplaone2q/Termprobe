@@ -412,3 +412,6 @@ where
                                 },
                                 grapheme: cell.cell.ch.to_string(),
                                 property: "link".into(),
+                                operator: "equals".into(),
+                                expected: selector.uri.clone(),
+                                actual: cell.cell.uri().unwrap_or_default().into(),
