@@ -102,3 +102,6 @@ export interface FailureLocatorQuery {
   readonly selector: FailureLocatorSelector;
   readonly occurrence: FailureMatchOccurrence;
   readonly within?: FailureLocatorQuery | null;
+  readonly direction: "within" | "after" | "before";
+  readonly style: FailureTextStyle;
+}

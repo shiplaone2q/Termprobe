@@ -75,3 +75,4 @@ impl LocatorExpression {
                 size += sizes[reference];
             }
             if depth > 64 || size > 4096 {
+                return Err(error("locator expression exceeds the size or depth limit"));
