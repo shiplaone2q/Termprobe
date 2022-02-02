@@ -31,3 +31,7 @@ Newer is not better here. Measured cursor column after each sequence:
 | `🇺🇸X` | 3 | 3 | **3** | 3 | 3 |
 | `你X` | 3 | 3 | **3** | 3 | 3 |
 
+Only v11 agrees with alacritty on every case, which is why it is pinned there.
+
+## What the shim adds
+

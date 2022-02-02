@@ -17,3 +17,4 @@ def unique_session(prefix: Optional[str] = None) -> str:
         counter = _session_counter
     base = re.sub(r"[^A-Za-z0-9_-]", "-", prefix or "tui-test")
     suffix = "-{}-{}-{}".format(os.getpid(), secrets.token_hex(4), counter)
+    max_prefix = 64 - len(suffix)
