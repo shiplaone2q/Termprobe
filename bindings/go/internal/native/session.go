@@ -142,3 +142,5 @@ func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error)
 	result := nativeFunctions.Cells(memory.text(runtime.name), column, row, width, height)
 	defer nativeFunctions.ResultFree(result)
 	if err := nativeError(result); err != nil {
+		return nil, err
+	}
