@@ -18,3 +18,5 @@ impl SessionInput {
             Some(mode) => {
                 let mode = artifact_mode(&mode)?;
                 let options = FailureArtifactOptions {
+                    directory: self.artifact_directory.unwrap_or_default().into(),
+                    mode,

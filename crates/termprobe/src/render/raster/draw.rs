@@ -77,3 +77,5 @@ pub(super) fn fill_antialiased_rect(
 
 pub(super) fn fill_pixel_rect(
     pixmap: &mut Pixmap,
+    left: u32,
+    top: u32,

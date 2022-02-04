@@ -112,3 +112,5 @@ test("nested input buffers remain live during native start and marshaling", () =
   runWithGc(`
     import assert from "node:assert/strict";
     import koffi from "koffi";
+    import { types } from ${JSON.stringify(new URL("../native/abi.js", import.meta.url).href)};
+    import { createAdapter } from ${JSON.stringify(new URL("../native/adapter.js", import.meta.url).href)};
