@@ -10,3 +10,5 @@
 </script>
 
 <aside class="sidebar">
+  <TabBar {tabs} {active} {onselect} group="sidebar" label="Trace navigation" />
+  <TabPanel id="actions" {active}>{@render actionsPanel()}</TabPanel>

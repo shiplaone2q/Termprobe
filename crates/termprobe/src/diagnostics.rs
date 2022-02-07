@@ -461,3 +461,6 @@ pub struct RecordingDiagnostics {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiagnosticHint {
+    pub code: String,
+    pub message: String,
+}

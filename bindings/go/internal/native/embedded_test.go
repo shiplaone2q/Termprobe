@@ -73,3 +73,7 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 	t.Setenv("HOME", cache)
 	t.Setenv("XDG_CACHE_HOME", cache)
 	t.Setenv("LocalAppData", cache)
+	target, err := bundleTarget(runtime.GOOS, runtime.GOARCH, nativeLibc())
+	if err != nil {
+		t.Fatal(err)
+	}

@@ -229,3 +229,7 @@ def _link_query_value(
     uri: str,
     *,
     full: bool,
+    direction: LocatorDirection,
+    within: Optional["_LocatorQuery"],
+) -> "_LocatorQuery":
+    if not isinstance(uri, str):
