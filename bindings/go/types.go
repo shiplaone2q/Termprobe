@@ -74,3 +74,5 @@ const (
 )
 
 type Whitespace string
+
+const (

@@ -120,3 +120,6 @@ impl Trace {
     ) -> Option<usize> {
         if !self.enabled {
             return None;
+        }
+        if let Some(stage) = self
+            .stages

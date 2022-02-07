@@ -104,3 +104,6 @@ impl FrameCapture {
                 self.error = Some(error);
             }
         }
+    }
+
+    fn push(&mut self, emulator: &dyn Emulator, at: Instant) -> anyhow::Result<()> {
