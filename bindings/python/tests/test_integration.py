@@ -245,3 +245,5 @@ class IntegrationTests(unittest.TestCase):
                                 int.from_bytes(data[8:10], "little"), 188
                             )
 
+        run(scenario())
+

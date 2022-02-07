@@ -31,3 +31,4 @@ function Global:Prompt() {
     if ($Global:__su_state.LastHistoryId -ne -1 -and
         (-not $Global:__su_state.HasPSReadLine -or $Global:__su_state.IsInExecution)) {
         $Global:__su_state.IsInExecution = $false
+        if ($null -ne $lastHistory -and $lastHistory.Id -ne $Global:__su_state.LastHistoryId) {

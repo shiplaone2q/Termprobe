@@ -20,3 +20,7 @@ impl SessionInput {
                 let options = FailureArtifactOptions {
                     directory: self.artifact_directory.unwrap_or_default().into(),
                     mode,
+                    include_recording: self.artifact_include_recording,
+                };
+                options.validate().map_err(TermprobeError::usage)?;
+                Some(options)
