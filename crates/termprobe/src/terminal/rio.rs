@@ -156,3 +156,6 @@ impl ColorState {
 
     fn slot_index(slot: ColorSlot) -> usize {
         match slot {
+            ColorSlot::Indexed(index) => index as usize,
+            ColorSlot::Foreground => RioNamedColor::Foreground as usize,
+            ColorSlot::Background => RioNamedColor::Background as usize,

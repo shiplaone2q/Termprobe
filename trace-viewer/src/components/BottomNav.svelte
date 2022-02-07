@@ -6,3 +6,4 @@
   let { active, hasFailure, onselect, resultPanel, cellPanel, callPanel, attachmentsPanel }: {
     active: DetailsTab; hasFailure: boolean; onselect: (tab: DetailsTab) => void;
     resultPanel: Snippet; cellPanel: Snippet; callPanel: Snippet; attachmentsPanel: Snippet;
+  } = $props();

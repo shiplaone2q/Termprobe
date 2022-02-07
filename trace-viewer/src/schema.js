@@ -36,3 +36,5 @@ const shape = (fields) => (value, path) => {
 };
 /** @param {Record<string, Validator>} variants @returns {Validator} */
 const tagged = (variants) => (value, path) => {
+  object(value, path);
+  const kind = value.kind;
