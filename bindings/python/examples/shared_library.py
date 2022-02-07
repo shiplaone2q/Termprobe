@@ -8,3 +8,4 @@ from tui_test import TuiTest
 
 async def main():
     async with TuiTest.ephemeral("shared-library") as terminal:
+        await terminal.run(
