@@ -47,3 +47,7 @@ elseif ($version -eq "beta") {
         -UseBasicParsing
     $latestBeta = $releases |
         Where-Object {
+            $_.prerelease -and
+            -not $_.draft -and
+            $_.tag_name -match "^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$"
+        } |

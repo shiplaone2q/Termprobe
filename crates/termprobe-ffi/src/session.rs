@@ -25,3 +25,5 @@ fn trace_mode(mode: &str) -> Result<TraceMode> {
 
 pub(crate) fn execute(
     name: String,
+    context: ExecutionContext,
+    operation_name: &'static str,
