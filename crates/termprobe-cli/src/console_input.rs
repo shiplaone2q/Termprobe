@@ -19,3 +19,4 @@ impl ConsoleInput {
     }
 }
 
+impl Read for ConsoleInput {

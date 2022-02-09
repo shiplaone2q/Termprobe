@@ -16,3 +16,7 @@ class ScrollbackTests(unittest.TestCase):
         library = Mock()
         library.tui_get_viewport.return_value = ctypes.pointer(result)
 
+        def release(pointer):
+            pointer.contents.viewport = _abi.TuiViewport()
+
+        library.tui_result_free.side_effect = release

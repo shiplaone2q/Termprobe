@@ -8,3 +8,4 @@ func nativeLibc() string {
 	if _, err := purego.Dlsym(purego.RTLD_DEFAULT, "gnu_get_libc_version"); err == nil {
 		return "gnu"
 	}
+	return "musl"
