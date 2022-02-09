@@ -16,3 +16,4 @@ func TestNativeLibraryPathRequiresBundleOrOverride(t *testing.T) {
 
 func TestInitializeNativeEngineReportsConfiguredLibraryFailure(t *testing.T) {
 	t.Setenv("TERMPROBE__NATIVE_LIBRARY", t.TempDir())
+

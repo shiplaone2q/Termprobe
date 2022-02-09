@@ -248,3 +248,6 @@ class IntegrationTests(unittest.TestCase):
         run(scenario())
 
     def test_invalid_shell_is_a_typed_usage_error(self):
+        async def scenario():
+            su = self._client()
+            try:
