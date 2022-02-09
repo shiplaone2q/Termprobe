@@ -105,3 +105,5 @@ export interface FailureLocatorQuery {
   readonly direction: "within" | "after" | "before";
   readonly style: FailureTextStyle;
 }
+
+export type OperationExpectation =

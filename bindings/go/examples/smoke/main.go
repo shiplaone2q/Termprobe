@@ -20,3 +20,7 @@ func main() {
 			}
 			fmt.Println("echo:" + scanner.Text())
 		}
+		return
+	}
+	if err := smoke(); err != nil {
+		fmt.Fprintln(os.Stderr, err)

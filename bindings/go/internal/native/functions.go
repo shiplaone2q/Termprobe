@@ -26,3 +26,4 @@ type nativeFunctionTable struct {
 	GetClipboard     func(abiString) *abiResult
 	GetBellCount     func(abiString) *abiResult
 	GetBellEvents    func(abiString) *abiResult
+	StopRecording    func(abiString) *abiResult
