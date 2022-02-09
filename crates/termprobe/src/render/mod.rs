@@ -4,3 +4,4 @@ pub mod svg;
 
 #[cfg(feature = "recording-raster")]
 pub mod encode;
+#[cfg(feature = "recording-raster")]
