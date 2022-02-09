@@ -139,3 +139,5 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
     };
     host.stopping.store(true, Ordering::Release);
     drop(operations);
+    let response = shutdown_engine(Arc::clone(&host));
+    if let Some(mut conn) = closing_client {

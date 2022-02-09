@@ -4,3 +4,4 @@
     id: string; active: string; padding?: "none" | "metadata" | "details"; children: Snippet;
   } = $props();
 </script>
+
