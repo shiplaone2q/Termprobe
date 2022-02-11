@@ -51,3 +51,4 @@ elseif ($version -eq "beta") {
             -not $_.draft -and
             $_.tag_name -match "^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$"
         } |
+        Select-Object -First 1

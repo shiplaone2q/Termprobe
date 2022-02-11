@@ -29,3 +29,4 @@ title_bar = false
 [profiles.ci.recording.style.shadow]
 enabled = false
 
+# Demo: a light look for slides.
