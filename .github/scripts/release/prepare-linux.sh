@@ -16,3 +16,5 @@ case "$(uname -m)" in
     sha256=ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17
     ;;
   *)
+    echo "unsupported Zig host architecture: $(uname -m)" >&2
+    exit 1

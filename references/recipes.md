@@ -46,3 +46,6 @@ await terminal
 
 ## Wait for loading
 
+```python
+loading = terminal.get_by_text("Loading")
+await loading.wait()

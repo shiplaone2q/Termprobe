@@ -22,3 +22,6 @@ dependencies = []
 [project.urls]
 Homepage = "https://github.com/microsoft/termprobe"
 Repository = "https://github.com/microsoft/termprobe"
+
+[tool.setuptools.packages.find]
+where = ["src"]
