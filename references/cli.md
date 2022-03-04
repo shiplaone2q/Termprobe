@@ -93,3 +93,4 @@ Mouse input and historical locator clicks fail while the viewport shows history.
 Use `scroll bottom` before mouse input. Mouse behavior at the live screen does not change.
 `get cursor` and `state` retain the application cursor coordinates.
 Captures project that cursor into the viewport and hide it outside the view.
+Raster recordings capture viewport changes. Asciicast records only the PTY stream.
