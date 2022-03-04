@@ -212,3 +212,6 @@ fn build_catalog(font: &FontFamilies) -> anyhow::Result<Catalog> {
         .map(|face| face.id)
         .collect();
     Ok(Catalog {
+        database: Arc::new(database),
+        candidates,
+        nerd_faces,

@@ -103,3 +103,5 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
             fg: Some(Color::Named(NamedColor::BrightCyan)),
             ..CellStyle::default()
         },
+    );
+    write_text(

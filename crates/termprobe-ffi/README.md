@@ -45,3 +45,6 @@ Python wheels and JavaScript platform packages include the library.
 
 For example, run the Go smoke example on macOS:
 
+```sh
+export TERMPROBE__NATIVE_LIBRARY="$PWD/target/debug/libtermprobe_ffi.dylib"
+cd bindings/go
