@@ -56,3 +56,4 @@ impl Perform for InputState {
         if self.paste {
             return;
         }
+        if intermediates.is_empty() && action == 'u' && key.first() == Some(&93) {

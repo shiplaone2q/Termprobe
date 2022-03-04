@@ -22,3 +22,5 @@ import childProcess from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { syncBuiltinESMExports } from "node:module";
+childProcess.execFileSync = (command, args, options) => {
+  if (command === "rustc") return "host: ${host}\\n";
