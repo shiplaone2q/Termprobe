@@ -10,3 +10,4 @@
     if (selected !== undefined) points?.querySelector(`[data-operation="${selected}"]`)?.scrollIntoView({ block: "nearest" });
   });
 </script>
+
