@@ -122,3 +122,7 @@ impl CastWriter {
         self.sink.flush()?;
         self.last_committed = Some(elapsed);
         Ok(())
+    }
+}
+
+/// Paint the active screen; the worker appends `seed::State` so subsequent
