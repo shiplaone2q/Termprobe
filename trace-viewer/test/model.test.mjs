@@ -66,3 +66,5 @@ test("the result never borrows an unrelated failure on the same screen", () => {
 for (const [name, change, error] of [
   ["unsupported report version", (data) => { data.details.schema_version = 2; }, /report.details.schema_version/],
   ["unsupported timeline version", (data) => { data.timeline.schema_version = 2; }, /report.timeline.schema_version/],
+  ["missing frame text", (data) => { delete data.timeline.frames[0].text; }, /frames\[0\].text/],
+  ["invalid geometry", (data) => { data.timeline.geometry.cell_width = 0; }, /geometry.cell_width/],

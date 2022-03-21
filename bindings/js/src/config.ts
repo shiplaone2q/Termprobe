@@ -67,3 +67,4 @@ export function resolveTimeout(
   if (callTimeout !== undefined && callTimeout !== null) {
     return callTimeout;
   }
+  const scoped = options.timeouts?.[cls];

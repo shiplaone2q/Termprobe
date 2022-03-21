@@ -31,3 +31,4 @@ function publicationFixture(t) {
   git(["tag", "1.2.3"]);
   git(["tag", "1.2.4"]);
   git(["init", "-q", "--bare", "-b", "main", remote]);
+  git(["remote", "add", "origin", remote]);
