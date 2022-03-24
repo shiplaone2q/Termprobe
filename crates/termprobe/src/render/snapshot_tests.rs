@@ -105,3 +105,5 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
         },
     );
     write_text(
+        &mut grid,
+        2,

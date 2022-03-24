@@ -47,3 +47,4 @@ type launchTimeoutCase struct {
 	expected termprobe.EffectiveTimeouts
 }
 
+func launchTimeoutCases() []launchTimeoutCase {

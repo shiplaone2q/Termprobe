@@ -68,3 +68,7 @@ pub struct TuiColor {
 #[derive(Default)]
 pub struct TuiResult {
     pub error_kind: u32,
+    pub error_message: TuiString,
+    pub error_details: TuiString,
+    pub error_artifact: TuiString,
+    pub text: TuiString,
