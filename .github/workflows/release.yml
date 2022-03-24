@@ -210,3 +210,7 @@ jobs:
       - name: Build shared native engine
         working-directory: bindings/js
         shell: bash
+        run: npm run build:native -- ${{ matrix.args }}
+
+      - name: Check Linux dependencies and glibc baseline
+        if: runner.os == 'Linux'

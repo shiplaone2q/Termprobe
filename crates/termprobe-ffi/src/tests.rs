@@ -97,3 +97,6 @@ fn missing_sessions_retain_structured_errors_and_owned_messages() {
     }
     unsafe { tui_result_free(std::ptr::null_mut()) };
 }
+
+#[test]
+fn pointer_options_reject_null_and_preserve_validation() {

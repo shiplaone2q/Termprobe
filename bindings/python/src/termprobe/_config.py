@@ -38,3 +38,4 @@ _COLOR_FIELDS = frozenset(
         "white",
         "bright_black",
         "bright_red",
+        "bright_green",
