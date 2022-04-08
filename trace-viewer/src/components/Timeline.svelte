@@ -32,3 +32,7 @@
       </button>
     {/each}
   </nav>
+</section>
+
+<style>
+  .timeline { height: 132px; padding: 0 12px 6px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--panel); overflow: hidden; }

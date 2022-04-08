@@ -48,3 +48,7 @@ type launchTimeoutCase struct {
 }
 
 func launchTimeoutCases() []launchTimeoutCase {
+	zero := time.Duration(0)
+	return []launchTimeoutCase{
+		{name: "inherit", expected: termprobe.EffectiveTimeouts{Text: 11 * time.Millisecond, Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 15 * time.Millisecond}},
+		{name: "partial override", options: termprobe.Timeouts{Text: &zero, Ready: termprobe.Ptr(42 * time.Millisecond)}, expected: termprobe.EffectiveTimeouts{Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 42 * time.Millisecond}},
