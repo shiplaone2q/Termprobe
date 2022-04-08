@@ -7,3 +7,5 @@
   const properties = $derived({
     Action: action?.name ?? "Frame inspection", ...action?.properties,
     ...(action?.expectation ? { Expected: action.expectation } : {}),
+    Result: action?.result, Duration: action && time(action.duration), Started: action && time(action.started), Completed: action && time(action.ended),
+    Screen: frame?.sequence, "Terminal cursor (column, row)": frame && `${frame.cursor.x}, ${frame.cursor.y}`,
