@@ -91,3 +91,4 @@ fn main() -> Result<()> {
     emit(
         &root,
         "bindings/go/internal/native/abi.go",
+        &format_source("gofmt", &[], &go_types(&structs, &version)?)?,

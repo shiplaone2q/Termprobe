@@ -25,3 +25,6 @@ export function createResources(model) {
     // Crop only the display copy. Attachment downloads retain the original bytes.
     root.setAttribute("viewBox", frame.viewBox);
     root.setAttribute("width", String(frame.width));
+    root.setAttribute("height", String(frame.height));
+    return { url: url(new Blob([new XMLSerializer().serializeToString(root)], { type: "image/svg+xml" })) };
+  }
