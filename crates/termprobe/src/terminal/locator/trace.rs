@@ -123,3 +123,4 @@ impl Trace {
         }
         if let Some(stage) = self
             .stages
+            .iter_mut()

@@ -51,3 +51,7 @@ impl Storage {
         }
         (self.pairs.as_ptr(), self.pairs.len())
     }
+    fn spans(&mut self, values: Vec<TextSpan>) -> (*const TuiSpan, usize) {
+        let spans = values
+            .into_iter()
+            .map(|v| text_span(self, v))
