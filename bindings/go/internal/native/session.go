@@ -144,3 +144,5 @@ func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error)
 	if err := nativeError(result); err != nil {
 		return nil, err
 	}
+	return nativeCells(result), nil
+}

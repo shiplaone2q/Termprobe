@@ -26,3 +26,7 @@ export type {
 } from "./client.js";
 export { uniqueSession } from "./ephemeral.js";
 export { closeAll, getRecording, sessions } from "./sessions.js";
+export {
+  ExpectationError,
+  InternalError,
+  NoSessionError,
