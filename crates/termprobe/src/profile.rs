@@ -309,3 +309,7 @@ const fn build_xterm_256() -> [Rgb; 256] {
 /// The color a slot has when nothing has overridden it.
 pub fn xterm_color(index: u8) -> Rgb {
     XTERM_256[index as usize]
+}
+
+/// The settings a session runs with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
