@@ -56,3 +56,7 @@ class TerminalOptions:
     profile: Optional[Profile] = None
     screen_history_limit: Optional[int] = None
     artifacts: Optional[Dict[str, Any]] = None
+    recording: Optional[AutomaticRecording] = None
+    trace: Optional[TraceOptions] = None
+
+
