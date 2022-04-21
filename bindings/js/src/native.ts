@@ -174,3 +174,6 @@ export function mapNativeError(error: unknown): TermprobeError {
         parseError instanceof Error ? parseError.message : String(parseError);
       const mapped = new InternalError(`malformed native error envelope: ${detail}`);
       Object.defineProperty(mapped, "cause", {
+        configurable: true,
+        value: error,
+      });

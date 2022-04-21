@@ -28,3 +28,7 @@ export function parseReport(source) {
     return {
       index, sequence: frame.sequence, started: frame.first_seen_ms, ended: frame.last_seen_ms,
       columns: frame.size.cols, rows: frame.size.rows, width, height,
+      viewBox: `${geometry.grid_x} ${geometry.grid_y} ${width} ${height}`,
+      cursor: { x: frame.cursor.column, y: frame.cursor.row },
+      cursorAppearance: `${frame.cursor.shape}, ${frame.cursor.visible ? "visible" : "hidden"}`,
+      text: frame.text, svg, omission: frame.omission, cells, grid, evidence,
