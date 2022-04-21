@@ -51,3 +51,6 @@ const SOCKET_DIGEST_HEX_LEN: usize = 16;
 
 pub fn socket_name(session: &str) -> String {
     socket_name_in(&home_dir(), session)
+}
+
+pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
