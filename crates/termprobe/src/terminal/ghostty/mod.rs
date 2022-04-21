@@ -216,3 +216,7 @@ impl GhosttyEmu {
     }
 }
 
+impl Drop for GhosttyEmu {
+    fn drop(&mut self) {
+        self.jobs.take();
+        if let Some(worker) = self.worker.take() {
