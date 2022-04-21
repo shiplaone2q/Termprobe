@@ -25,3 +25,5 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 	if state.ExitSignal == nil || *state.ExitSignal != "KILL" || state.MouseMode != "drag" || state.Modes["cursor_visible"] {
 		t.Fatalf("state=%+v", state)
 	}
+	if state.Colors.Palette[1] != "#123456" || state.Colors.Foreground != "#ffffff" {
+		t.Fatalf("colors=%+v", state.Colors)
