@@ -79,3 +79,5 @@ pub(super) fn fill_pixel_rect(
     pixmap: &mut Pixmap,
     left: u32,
     top: u32,
+    right: u32,
+    bottom: u32,
