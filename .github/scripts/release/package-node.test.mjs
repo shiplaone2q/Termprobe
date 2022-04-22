@@ -19,3 +19,4 @@ function fixture(t) {
   fs.mkdirSync(path.join(bindings, "artifacts"), { recursive: true });
   fs.writeFileSync(path.join(bindings, "package.json"), JSON.stringify({
     name: "@fixture/termprobe",
+    version: "1.0.0",

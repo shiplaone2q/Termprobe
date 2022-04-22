@@ -84,3 +84,6 @@ fn baseline() -> EmuCell {
 /// Serialize a grid into a boxed text view, optionally followed by attributes.
 ///
 /// The attributes are a JSON object carrying whatever the box itself cannot
+/// record exactly: the full window title, and the per-cell style shifts when
+/// they are asked for. It is emitted only when there is something to put in
+/// it, so a plain snapshot is still just the box.
