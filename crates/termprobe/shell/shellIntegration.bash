@@ -29,3 +29,4 @@ __su_cwd() {
     done
     builtin printf '\033]7;file://%s%s\007' "${HOSTNAME:-}" "$encoded"
 }
+
