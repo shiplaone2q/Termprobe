@@ -55,3 +55,6 @@ impl Storage {
         let spans = values
             .into_iter()
             .map(|v| text_span(self, v))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let result = (spans.as_ptr(), spans.len());

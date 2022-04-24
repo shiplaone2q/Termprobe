@@ -379,3 +379,7 @@ fn write_cursor(
     // so the cursor has to cover both or it clips the glyph down the middle.
     let span = if row
         .get(cx as usize + 1)
+        .is_some_and(|next| next.ch == CONTINUATION)
+    {
+        2.0
+    } else {
