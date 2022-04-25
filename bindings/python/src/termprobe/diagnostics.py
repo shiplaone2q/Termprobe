@@ -42,3 +42,6 @@ class FailureLocation:
 @dataclass(frozen=True)
 class FailureCellMismatch:
     location: FailureLocation
+    grapheme: str
+    property: str
+    operator: str

@@ -6,3 +6,4 @@ dist/
 .pytest_cache/
 .venv/
 src/termprobe/termprobe_ffi.dll
+src/termprobe/libtermprobe_ffi.so
