@@ -112,3 +112,7 @@ func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.Spa
 	if err != nil {
 		t.Fatal(err)
 	}
+	options.WaitReady = termprobe.Ptr(false)
+	if _, err = terminal.Run(executable, []string{"-test.run=^TestTerminalProcess$", "--", "--tui-go-child"}, options); err != nil {
+		t.Fatal(err)
+	}
