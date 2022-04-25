@@ -33,3 +33,6 @@ if (process.platform === "win32") {
   platformLibrary = koffi.load("kernel32.dll");
   const pin = platformLibrary.func("int32_t __stdcall GetModuleHandleExW(uint32_t flags, void *address, _Out_ void **module)");
   const GET_MODULE_HANDLE_EX_FLAG_PIN = 1;
+  const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = 4;
+  if (!pin(
+    GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
