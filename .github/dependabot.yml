@@ -4,3 +4,4 @@ updates:
     directory: "/"
     groups:
       github-actions:
+        patterns: ["*"]
