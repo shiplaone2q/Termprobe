@@ -26,3 +26,6 @@
   .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .comparison > div { border-left: 3px solid var(--border); padding-left: 10px; min-width: 0; }
   .comparison .expected { border-color: var(--green); }
+  .comparison .actual { border-color: var(--red); }
+  .comparison h2 { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+  .comparison pre { max-height: 90px; }

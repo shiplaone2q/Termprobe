@@ -12,3 +12,4 @@ def __su_cwd():
 def __su_pre(cmd, **kw):
     __su_osc('C')
 
+@events.on_postcommand

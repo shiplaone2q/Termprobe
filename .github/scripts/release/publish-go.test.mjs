@@ -32,3 +32,5 @@ function publicationFixture(t) {
   git(["tag", "1.2.4"]);
   git(["init", "-q", "--bare", "-b", "main", remote]);
   git(["remote", "add", "origin", remote]);
+  git(["push", "-q", "origin", "main", "--tags"]);
+  for (const target of Object.keys(targets)) fixture.writeNative(target);

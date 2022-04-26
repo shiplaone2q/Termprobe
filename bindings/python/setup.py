@@ -31,3 +31,5 @@ class SharedLibraryBuild(build_rust):
 class SharedLibraryWheel(bdist_wheel):
     def get_tag(self):
         _, _, platform = super().get_tag()
+        return "py3", "none", platform
+
