@@ -73,3 +73,7 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::Close => "close",
         Operation::FinishTrace { .. } => "trace.finish",
         Operation::State => "state",
+        Operation::Text { .. } => "text",
+        Operation::PackedScreen { .. } => "packed_screen",
+        Operation::Cells { .. } => "cells",
+        Operation::GetCommand => "get.command",

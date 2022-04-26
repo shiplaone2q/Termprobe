@@ -21,3 +21,6 @@ class TuiTestError(Exception):
         self.details = details
         self.artifact = artifact
 
+
+class ExpectationError(TuiTestError):
+    kind = "assertion"

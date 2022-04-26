@@ -30,3 +30,7 @@ export {
   ExpectationError,
   InternalError,
   NoSessionError,
+  TermprobeError,
+  UsageError,
+} from "./errors.js";
+export type { ErrorKind } from "./errors.js";
