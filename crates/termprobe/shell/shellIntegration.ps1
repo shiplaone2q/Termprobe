@@ -32,3 +32,7 @@ function Global:Prompt() {
         (-not $Global:__su_state.HasPSReadLine -or $Global:__su_state.IsInExecution)) {
         $Global:__su_state.IsInExecution = $false
         if ($null -ne $lastHistory -and $lastHistory.Id -ne $Global:__su_state.LastHistoryId) {
+            # LASTEXITCODE survives cmdlets and throw. Only use it for a native
+            # failure, not for a new PowerShell error from the current command.
+            $errorException = if ($lastError -is [System.Management.Automation.ErrorRecord]) {
+                $lastError.Exception

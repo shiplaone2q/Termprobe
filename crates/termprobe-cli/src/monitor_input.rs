@@ -57,3 +57,7 @@ impl Perform for InputState {
             return;
         }
         if intermediates.is_empty() && action == 'u' && key.first() == Some(&93) {
+            let modifiers = params.next().unwrap_or(&[1]);
+            let event = modifiers.get(1).copied().unwrap_or(1);
+            let bits = modifiers.first().copied().unwrap_or(1).saturating_sub(1);
+            const CTRL: u16 = 4;

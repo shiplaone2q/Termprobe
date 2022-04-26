@@ -77,3 +77,7 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	library := libraryFixture(t, "selected library")
+	path, err := nativeLibraryPath(map[string]bundledLibrary{target: library})
+	if err != nil {
+		t.Fatal(err)

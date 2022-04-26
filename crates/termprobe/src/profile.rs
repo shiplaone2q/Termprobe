@@ -313,3 +313,5 @@ pub fn xterm_color(index: u8) -> Rgb {
 
 /// The settings a session runs with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Profile {
