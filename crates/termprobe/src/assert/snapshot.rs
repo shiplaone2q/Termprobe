@@ -87,3 +87,6 @@ fn baseline() -> EmuCell {
 /// record exactly: the full window title, and the per-cell style shifts when
 /// they are asked for. It is emitted only when there is something to put in
 /// it, so a plain snapshot is still just the box.
+///
+/// A style shift covers foreground, background and underline colors, the SGR
+/// attributes, the underline style and the link. The link is not an SGR
