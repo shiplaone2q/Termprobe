@@ -130,3 +130,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Go
 
 ```go
+package main
+
+import (
