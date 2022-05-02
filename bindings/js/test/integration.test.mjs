@@ -300,3 +300,7 @@ test("recording API writes an asciicast file", async () => {
   const root = mkdtempSync(join(tmpdir(), "termprobe-recording-"));
   const path = join(root, "demo.cast");
   try {
+    await withTerminal({ shell }, async (su) => {
+      await su.startRecording(path, {
+        format: "cast",
+        fps: 24,

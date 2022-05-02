@@ -14,3 +14,4 @@
       <img src={url} alt={file.name} onerror={() => onimageerror(file.id)} />
     {:else}
       <pre>{file.preview}</pre>
+      {#if file.truncated}<p class="muted">Preview limited to 512 KiB. Download contains the complete file.</p>{/if}
