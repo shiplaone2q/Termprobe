@@ -54,3 +54,7 @@ pub fn socket_name(session: &str) -> String {
 }
 
 pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
+    #[cfg(windows)]
+    {
+        let user = format!(
+            "{}\\{}",
