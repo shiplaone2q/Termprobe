@@ -13,3 +13,4 @@ try {
   console.log("Oldest screen:\n" + await terminal.text());
   console.log("Full text unchanged:", full === await terminal.text({ full: true }));
   await terminal.scroll(-2);
+  console.log("Two rows toward live:", await terminal.getViewport());

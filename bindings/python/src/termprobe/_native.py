@@ -143,3 +143,7 @@ def _copy(value):
             return value.index
         return "#{:02x}{:02x}{:02x}".format(value.red, value.green, value.blue)
     result = {}
+    fields = {name for name, _ in value._fields_}
+    for name, _ in value._fields_:
+        if name.endswith("_len"):
+            continue
