@@ -92,3 +92,4 @@ fn main() -> Result<()> {
         &root,
         "bindings/go/internal/native/abi.go",
         &format_source("gofmt", &[], &go_types(&structs, &version)?)?,
+        check,

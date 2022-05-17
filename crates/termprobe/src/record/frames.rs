@@ -107,3 +107,4 @@ impl FrameCapture {
     }
 
     fn push(&mut self, emulator: &dyn Emulator, at: Instant) -> anyhow::Result<()> {
+        let at = self.clock.advance(

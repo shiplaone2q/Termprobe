@@ -202,3 +202,7 @@ impl GhosttyCore {
             .resize(cols.max(1), rows.max(1), 1, 1)
             .context("initializing terminal cell size")?;
         terminal
+            .set_scrollback_max_lines(Some(profile.scrollback))
+            .context("setting scrollback limit")?;
+
+        terminal
