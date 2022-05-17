@@ -73,3 +73,6 @@ export interface Colors {
   green?: string;
   yellow?: string;
   blue?: string;
+  magenta?: string;
+  cyan?: string;
+  white?: string;
