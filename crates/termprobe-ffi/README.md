@@ -48,3 +48,6 @@ For example, run the Go smoke example on macOS:
 ```sh
 export TERMPROBE__NATIVE_LIBRARY="$PWD/target/debug/libtermprobe_ffi.dylib"
 cd bindings/go
+CGO_ENABLED=0 go run ./examples/smoke
+```
+

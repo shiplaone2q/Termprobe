@@ -20,3 +20,4 @@ function fixture(t) {
   fs.writeFileSync(path.join(bindings, "package.json"), JSON.stringify({
     name: "@fixture/termprobe",
     version: "1.0.0",
+    files: ["index.js"],
