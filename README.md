@@ -133,3 +133,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 package main
 
 import (
+    "log"
+
+    "github.com/microsoft/termprobe/bindings/go"
+)

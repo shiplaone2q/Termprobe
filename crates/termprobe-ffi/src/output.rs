@@ -58,3 +58,6 @@ impl Storage {
             .collect::<Vec<_>>()
             .into_boxed_slice();
         let result = (spans.as_ptr(), spans.len());
+        self.spans.push(spans);
+        result
+    }
