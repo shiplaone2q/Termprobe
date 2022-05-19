@@ -90,3 +90,4 @@ export interface TextPosition {
   row: number
   column: number
 }
+

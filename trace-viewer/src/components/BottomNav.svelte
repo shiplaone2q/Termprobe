@@ -7,3 +7,5 @@
     active: DetailsTab; hasFailure: boolean; onselect: (tab: DetailsTab) => void;
     resultPanel: Snippet; cellPanel: Snippet; callPanel: Snippet; attachmentsPanel: Snippet;
   } = $props();
+  const tabs: readonly { id: DetailsTab; label: string }[] = $derived([
+    { id: "errors", label: hasFailure ? "Error" : "Result" }, { id: "cell", label: "Cell" },

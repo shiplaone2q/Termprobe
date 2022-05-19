@@ -214,3 +214,5 @@ jobs:
 
       - name: Check Linux dependencies and glibc baseline
         if: runner.os == 'Linux'
+        run: >-
+          node .github/scripts/release/check-native-elf.mjs

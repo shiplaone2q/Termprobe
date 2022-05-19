@@ -36,3 +36,7 @@ export function createFixture(t) {
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   fs.mkdirSync(path.join(directory, "bindings/js"), { recursive: true });
   fs.writeFileSync(path.join(directory, "bindings/js/package.json"), JSON.stringify({
+    version: "1.2.3", nativeTargets: targets,
+  }));
+  fs.writeFileSync(path.join(directory, "LICENSE"), "License fixture\n");
+  const source = path.join(directory, "bindings/go");
