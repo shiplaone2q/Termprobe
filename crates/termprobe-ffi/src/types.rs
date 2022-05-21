@@ -72,3 +72,6 @@ pub struct TuiResult {
     pub error_details: TuiString,
     pub error_artifact: TuiString,
     pub text: TuiString,
+    pub number: u64,
+    pub exit_code: TuiOptionalI32,
+    pub open: TuiOpenResult,

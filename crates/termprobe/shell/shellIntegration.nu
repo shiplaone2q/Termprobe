@@ -12,3 +12,4 @@ def __su_cwd [] {
     } else {
         $env.PWD
     }
+    let path = if ($path | str starts-with '/') { $path } else { $"/($path)" }
