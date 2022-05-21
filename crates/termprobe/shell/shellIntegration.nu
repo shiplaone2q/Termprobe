@@ -10,3 +10,5 @@ def __su_cwd [] {
     let path = if $nu.os-info.name == "windows" {
         $env.PWD | str replace --all '\' '/'
     } else {
+        $env.PWD
+    }

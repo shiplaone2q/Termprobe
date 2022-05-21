@@ -28,3 +28,5 @@ export function createResources(model) {
     root.setAttribute("height", String(frame.height));
     return { url: url(new Blob([new XMLSerializer().serializeToString(root)], { type: "image/svg+xml" })) };
   }
+  const dispose = () => {
+    for (const value of urls) URL.revokeObjectURL(value);
