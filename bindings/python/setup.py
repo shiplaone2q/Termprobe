@@ -33,3 +33,6 @@ class SharedLibraryWheel(bdist_wheel):
         _, _, platform = super().get_tag()
         return "py3", "none", platform
 
+
+class SourceDistribution(sdist):
+    def make_release_tree(self, base_dir, files):

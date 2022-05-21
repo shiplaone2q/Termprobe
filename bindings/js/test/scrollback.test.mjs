@@ -16,3 +16,5 @@ test("viewport results preserve safe counts and reject lost precision", async ()
   const terminal = new TestSession("viewport-width");
   for (const count of [0, Number.MAX_SAFE_INTEGER, 9007199254740992n]) {
     koffi.encode(result, types.TuiResult, { viewport: { offset: count, history: count } });
+    if (typeof count === "bigint") {
+      await assert.rejects(terminal.getViewport(), /safe integer range/);
