@@ -4,3 +4,4 @@ source: https://github.com/JetBrains/JetBrainsMono
 path: fonts/ttf
 files: official full-glyph static faces, not unicode subsets
 
+Feature tiers:

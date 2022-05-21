@@ -36,3 +36,7 @@ function Global:Prompt() {
             # failure, not for a new PowerShell error from the current command.
             $errorException = if ($lastError -is [System.Management.Automation.ErrorRecord]) {
                 $lastError.Exception
+            } else {
+                $lastError
+            }
+            $powerShellError = $null -ne $lastError -and

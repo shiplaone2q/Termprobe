@@ -156,3 +156,6 @@ pub unsafe extern "C" fn tui_run(
                 return Err(TermprobeError::usage("program must not be empty"));
             }
             Ok(Operation::Run(RunOptions {
+                program,
+                args: input::strings(args, args_len)?,
+                backend: o.backend,
