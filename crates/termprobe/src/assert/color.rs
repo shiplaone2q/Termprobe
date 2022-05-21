@@ -105,3 +105,5 @@ pub fn describe_cell(
             .map(|cell| cell.to_index().to_string())
             .unwrap_or_else(|| DEFAULT.to_string()),
         _ => colors.resolve(cell, is_fg).to_hex(),
+    }
+}

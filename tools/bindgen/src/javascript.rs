@@ -158,3 +158,7 @@ fn parameters(models: &Models, method: &str, variant: &str) -> Result<Vec<Field>
         name: name.into(),
         ty: ty.into(),
     };
+    Ok(match method {
+        "scroll" => {
+            let mut fields = models.fields("ScrollTarget::Lines")?;
+            fields[0].name = "lines".into();

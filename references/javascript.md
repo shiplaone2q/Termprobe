@@ -42,3 +42,6 @@ const locator = terminal
 | `any()` | Keep all matches. |
 | `unique()` | Require one match. |
 | `first()`, `last()`, `nth(index)` | Select a match. |
+| `locations()`, `location()`, `count()`, `all()` | Read matches. |
+| `wait({ state?, timeout? })` | Wait for visible or hidden. |
+| `expect({ not?, timeout? })` | Assert. |
