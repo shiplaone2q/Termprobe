@@ -32,3 +32,4 @@ export function parseReport(source) {
       cursor: { x: frame.cursor.column, y: frame.cursor.row },
       cursorAppearance: `${frame.cursor.shape}, ${frame.cursor.visible ? "visible" : "hidden"}`,
       text: frame.text, svg, omission: frame.omission, cells, grid, evidence,
+      label: `#${frame.sequence} / ${time(frame.first_seen_ms)}`,
