@@ -156,3 +156,4 @@ impl TerminalMode {
     /// The sequence that turns this mode off.
     ///
     /// The counterpart to [`Self::set_sequence`]. `CSI ?1049 l` leaves the
+    /// alternate screen whichever sequence entered it, since the three share
