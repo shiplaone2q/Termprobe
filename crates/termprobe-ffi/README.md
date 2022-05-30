@@ -51,3 +51,7 @@ cd bindings/go
 CGO_ENABLED=0 go run ./examples/smoke
 ```
 
+The example starts a child terminal, submits input, checks its output, and prints `Go binding smoke passed`.
+
+Build and run the JavaScript example from the repository root:
+

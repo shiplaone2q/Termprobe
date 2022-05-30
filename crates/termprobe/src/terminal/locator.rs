@@ -415,3 +415,7 @@ where
                                 operator: "equals".into(),
                                 expected: selector.uri.clone(),
                                 actual: cell.cell.uri().unwrap_or_default().into(),
+                                resolved: None,
+                                reason: "value_mismatch".into(),
+                            });
+                        }

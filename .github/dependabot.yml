@@ -6,3 +6,4 @@ updates:
       github-actions:
         patterns: ["*"]
     schedule:
+      interval: "weekly"
