@@ -233,3 +233,5 @@ def _link_query_value(
     within: Optional["_LocatorQuery"],
 ) -> "_LocatorQuery":
     if not isinstance(uri, str):
+        raise TypeError("get_by_link requires a URI string")
+    if direction not in ("within", "after", "before"):

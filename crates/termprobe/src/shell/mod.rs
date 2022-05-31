@@ -66,3 +66,5 @@ pub fn write_integration_scripts() -> std::io::Result<()> {
 fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     let files: &[(&str, &str)] = &[
+        (
+            "shellIntegration.bash",

@@ -54,3 +54,7 @@ download() {
     fi
   elif command -v wget >/dev/null 2>&1; then
     if [ -n "$TOKEN" ]; then
+      wget -q --header="Authorization: Bearer ${TOKEN}" \
+        -O "$destination" "$url"
+    else
+      wget -q -O "$destination" "$url"

@@ -49,3 +49,6 @@ await terminal
 ```python
 loading = terminal.get_by_text("Loading")
 await loading.wait()
+await loading.wait(state="hidden")
+await terminal.get_by_text("Ready").expect()
+```
