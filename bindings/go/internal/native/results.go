@@ -43,3 +43,6 @@ func nativeInt(value abiOptionalI32) *int32 {
 	}
 	return pointerTo(value.value)
 }
+
+func nativeError(result *abiResult) error {
+	if result == nil {

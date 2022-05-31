@@ -37,3 +37,6 @@ Only v11 agrees with alacritty on every case, which is why it is pinned there.
 
 `@xterm/headless` leaves out a few things the [`Emulator`] contract asks for,
 and the shim supplies them rather than the Rust side working around them:
+
+| Contract | How |
+| -------- | --- |
