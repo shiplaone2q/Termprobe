@@ -42,3 +42,7 @@ fn effective_timeouts(s: &mut Storage, v: termprobe::api::EffectiveTimeouts) -> 
         idle: unsigned(v.idle),
         command: unsigned(v.command),
         exit: unsigned(v.exit),
+        ready: unsigned(v.ready),
+    }
+}
+#[allow(unused_variables)]
