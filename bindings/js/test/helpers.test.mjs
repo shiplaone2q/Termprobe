@@ -79,3 +79,7 @@ test("closeAllTracked closes and forgets every tracked terminal", async () => {
 });
 
 test("untrackTerminal removes a terminal from the registry", async () => {
+  await closeAllTracked();
+  const stub = {
+    async closeQuiet() {
+      throw new Error("should not be called");

@@ -12,3 +12,5 @@ func openNativeLibrary(path string) (*nativeLibraryHandle, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load native library %q: %w", path, err)
 	}
+	return &nativeLibraryHandle{library: library}, nil
+}
