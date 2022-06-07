@@ -116,3 +116,6 @@ func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.Spa
 	if _, err = terminal.Run(executable, []string{"-test.run=^TestTerminalProcess$", "--", "--tui-go-child"}, options); err != nil {
 		t.Fatal(err)
 	}
+	if err = terminal.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(10 * time.Second)}); err != nil {
+		t.Fatal(err)
+	}

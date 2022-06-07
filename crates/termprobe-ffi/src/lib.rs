@@ -159,3 +159,7 @@ pub unsafe extern "C" fn tui_run(
                 program,
                 args: input::strings(args, args_len)?,
                 backend: o.backend,
+                profile: o.profile,
+                style: o.style,
+                cols: o.cols,
+                rows: o.rows,

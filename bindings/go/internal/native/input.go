@@ -49,3 +49,4 @@ func (memory *nativeMemory) openOptions(options OpenOptions, recording *Automati
 		return abiOpenOptions{}, err
 	}
 	result := abiOpenOptions{backend: memory.nonemptyText(string(options.Backend)), shell: memory.nonemptyText(string(options.Shell)), cols: nativeUint(options.Cols), rows: nativeUint(options.Rows), cwd: memory.nonemptyText(options.Cwd), waitReady: nativeBool(options.WaitReady), timeouts: timeouts}
+	if options.Restart != nil {
