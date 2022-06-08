@@ -239,3 +239,7 @@ fn stream_mp4_frames(
     Ok(())
 }
 
+fn encode_gif(
+    path: &Path,
+    frames: &[Frame],
+    renderer: &mut dyn FrameRenderer,
