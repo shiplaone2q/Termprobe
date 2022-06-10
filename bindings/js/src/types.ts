@@ -76,3 +76,6 @@ export interface Colors {
   magenta?: string;
   cyan?: string;
   white?: string;
+  brightBlack?: string;
+  brightRed?: string;
+  brightGreen?: string;
