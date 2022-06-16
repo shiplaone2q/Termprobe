@@ -46,3 +46,5 @@ func nativeInt(value abiOptionalI32) *int32 {
 
 func nativeError(result *abiResult) error {
 	if result == nil {
+		return &Error{Kind: InternalError, Message: "native engine returned no result"}
+	}

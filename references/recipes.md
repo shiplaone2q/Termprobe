@@ -52,3 +52,7 @@ await loading.wait()
 await loading.wait(state="hidden")
 await terminal.get_by_text("Ready").expect()
 ```
+
+## Click with modifiers
+
+```sh
