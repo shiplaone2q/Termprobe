@@ -284,3 +284,5 @@ impl Locator {
 
     pub fn wait_hidden(&self, timeout_ms: Option<u64>) -> Result<(), TermprobeError> {
         self.wait_for(true, timeout_ms)
+    }
+

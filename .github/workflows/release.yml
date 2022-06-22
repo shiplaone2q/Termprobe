@@ -216,3 +216,4 @@ jobs:
         if: runner.os == 'Linux'
         run: >-
           node .github/scripts/release/check-native-elf.mjs
+          --library target/${{ matrix.target }}/release/libtermprobe_ffi.so

@@ -21,3 +21,7 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 		t.Run(pair.binding.Name(), func(t *testing.T) {
 			if pair.binding.Size() != pair.compiler.Size() {
 				t.Errorf("size: Go=%d, C=%d", pair.binding.Size(), pair.compiler.Size())
+			}
+			if pair.binding.Align() != pair.compiler.Align() {
+				t.Errorf("alignment: Go=%d, C=%d", pair.binding.Align(), pair.compiler.Align())
+			}
