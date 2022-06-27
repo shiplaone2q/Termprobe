@@ -81,3 +81,4 @@ pub(super) fn fill_pixel_rect(
     top: u32,
     right: u32,
     bottom: u32,
+    color: Rgb,

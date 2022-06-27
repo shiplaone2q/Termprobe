@@ -68,3 +68,5 @@ for (const [name, change, error] of [
   ["unsupported timeline version", (data) => { data.timeline.schema_version = 2; }, /report.timeline.schema_version/],
   ["missing frame text", (data) => { delete data.timeline.frames[0].text; }, /frames\[0\].text/],
   ["invalid geometry", (data) => { data.timeline.geometry.cell_width = 0; }, /geometry.cell_width/],
+  ["invalid dimensions", (data) => { data.timeline.frames[0].size.cols = 1.5; }, /size.cols/],
+  ["invalid grid", (data) => { data.timeline.frames[0].grid[0][0] = 999; }, /invalid cell grid/],
