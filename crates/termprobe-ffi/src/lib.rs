@@ -163,3 +163,6 @@ pub unsafe extern "C" fn tui_run(
                 style: o.style,
                 cols: o.cols,
                 rows: o.rows,
+                cwd: o.cwd,
+                env: o.env,
+                wait_ready: o.wait_ready,

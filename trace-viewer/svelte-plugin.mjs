@@ -12,3 +12,5 @@ export function sveltePlugin(generate = "client") {
         const compiled = compile(source, {
           filename, generate, runes: true, dev: false, css: "external", discloseVersion: false,
           cssHash: ({ hash, css }) => `svelte-${hash(css)}`,
+        });
+        if (compiled.warnings.length) {

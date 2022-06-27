@@ -89,3 +89,7 @@ pub enum Color {
 impl Color {
     /// Build from a 256-color index, routing 0-15 to [`Color::Named`] so the
     /// same index yields the same value no matter which backend produced it.
+    pub fn from_index(i: u8) -> Self {
+        match NamedColor::from_index(i) {
+            Some(named) => Color::Named(named),
+            None => Color::Idx(i),

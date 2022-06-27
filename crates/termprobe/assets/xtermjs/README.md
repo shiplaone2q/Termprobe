@@ -40,3 +40,6 @@ and the shim supplies them rather than the Rust side working around them:
 
 | Contract | How |
 | -------- | --- |
+| Window title | `onTitleChange`, with `windowOptions.pushTitle`/`popTitle` enabling the `CSI 22/23 t` stack the bundle implements but leaves off |
+| Cursor visibility | `coreService.isCursorHidden` |
+| Cursor shape | `coreService.decPrivateModes.cursorStyle`, absent until `DECSCUSR` sets one, so it reads as a block until then |
