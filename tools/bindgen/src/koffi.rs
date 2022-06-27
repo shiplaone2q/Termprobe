@@ -43,3 +43,6 @@ pub fn generate(
     structs: &[&ItemStruct],
     functions: &[&ItemFn],
     version: &str,
+    check: bool,
+) -> Result<()> {
+    let mut js = format!("// {NOTICE}\nimport koffi from 'koffi';\nexport const abiVersion = {version};\nexport const types = {{}};\n");

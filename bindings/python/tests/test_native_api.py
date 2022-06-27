@@ -81,3 +81,4 @@ class NativeSurfaceTests(unittest.TestCase):
             "state",
             "text",
             "find_locator",
+            "wait_locator",

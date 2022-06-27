@@ -89,3 +89,6 @@ impl Drop for TestDirectory {
             match std::fs::remove_dir_all(self.0.parent().unwrap()) {
                 Ok(()) => return,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
+                Err(_) => std::thread::sleep(Duration::from_millis(50)),
+            }
+        }
