@@ -48,3 +48,4 @@ func nativeError(result *abiResult) error {
 	if result == nil {
 		return &Error{Kind: InternalError, Message: "native engine returned no result"}
 	}
+	if result.errorKind == 0 {
