@@ -539,3 +539,4 @@ fn monitor_frames_and_input_outlive_the_target() {
     input
         .write_all(b"{\"kind\":\"resize\",\"cols\":100,\"rows\":40}\n")
         .expect("resize monitor input");
+    write_monitor_input(&mut input, b"echo restarted-monitor-marker\r");

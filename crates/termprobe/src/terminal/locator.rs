@@ -423,3 +423,6 @@ where
                     matched_all
                 });
                 if matches.is_empty() && stats.raw > 0 {
+                    stats.reason = Some(LocatorFailureReason::LinkFilterRemovedAll);
+                }
+                matches

@@ -36,3 +36,4 @@
 
 <style>
   .timeline { height: 132px; padding: 0 12px 6px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--panel); overflow: hidden; }
+  .time-scale { height: 21px; display: flex; justify-content: space-between; color: var(--muted); font: 10px/21px Consolas, monospace; }
