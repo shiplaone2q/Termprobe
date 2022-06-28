@@ -13,3 +13,5 @@ def __su_pre(cmd, **kw):
     __su_osc('C')
 
 @events.on_postcommand
+def __su_post(cmd, rtn, **kw):
+    __su_osc(f'D;{rtn}')

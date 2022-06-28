@@ -18,3 +18,5 @@ case "$(uname -m)" in
   *)
     echo "unsupported Zig host architecture: $(uname -m)" >&2
     exit 1
+    ;;
+esac

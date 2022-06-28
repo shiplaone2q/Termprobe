@@ -27,3 +27,7 @@ pub(crate) fn execute(
     name: String,
     context: ExecutionContext,
     operation_name: &'static str,
+    operation: Operation,
+) -> Result<OperationResult> {
+    global_registry()
+        .session(name)

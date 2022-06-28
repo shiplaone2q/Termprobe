@@ -50,3 +50,5 @@ fn bell_event(s: &mut Storage, v: termprobe::api::BellEvent) -> TuiBellEvent {
     TuiBellEvent {
         sequence: v.sequence,
         elapsed_ms: v.elapsed_ms,
+    }
+}
