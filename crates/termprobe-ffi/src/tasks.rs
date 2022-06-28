@@ -44,3 +44,6 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
     let (sender, receiver) = mpsc::channel();
     START.with(|slot| *slot.borrow_mut() = Some(Some(receiver)));
     match std::thread::Builder::new()
+        .name("termprobe-call".into())
+        .spawn(move || {
+            let result = catch_unwind(AssertUnwindSafe(work)).unwrap_or_else(|payload| {

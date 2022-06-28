@@ -419,3 +419,7 @@ where
                                 reason: "value_mismatch".into(),
                             });
                         }
+                    }
+                    matched_all
+                });
+                if matches.is_empty() && stats.raw > 0 {
