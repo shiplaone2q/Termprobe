@@ -70,3 +70,7 @@ for (const [name, change, error] of [
   ["invalid geometry", (data) => { data.timeline.geometry.cell_width = 0; }, /geometry.cell_width/],
   ["invalid dimensions", (data) => { data.timeline.frames[0].size.cols = 1.5; }, /size.cols/],
   ["invalid grid", (data) => { data.timeline.frames[0].grid[0][0] = 999; }, /invalid cell grid/],
+  ["duplicate frame IDs", (data) => { data.timeline.frames[1].sequence = 1; }, /Duplicate screen sequence/],
+  ["duplicate operation IDs", (data) => { data.details.recent_operations[1].sequence = 1; }, /Duplicate action sequence/],
+  ["invalid operation time", (data) => { data.details.recent_operations[0].ended_ms = 0; }, /end precedes start/],
+  ["invalid expectation", (data) => { data.details.recent_operations[0].expectation.kind = "unknown"; }, /expectation.kind/],

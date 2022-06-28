@@ -286,3 +286,7 @@ impl Locator {
         self.wait_for(true, timeout_ms)
     }
 
+    fn wait_for(&self, not: bool, timeout_ms: Option<u64>) -> Result<(), TermprobeError> {
+        self.target
+            .execute(
+                "locator.wait",
