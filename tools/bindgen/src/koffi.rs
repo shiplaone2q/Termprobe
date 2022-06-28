@@ -46,3 +46,6 @@ pub fn generate(
     check: bool,
 ) -> Result<()> {
     let mut js = format!("// {NOTICE}\nimport koffi from 'koffi';\nexport const abiVersion = {version};\nexport const types = {{}};\n");
+    let mut layouts = String::from("export const layouts = {\n");
+    let mut emitted = BTreeSet::new();
+    while emitted.len() < structs.len() {

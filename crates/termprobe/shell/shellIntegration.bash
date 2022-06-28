@@ -30,3 +30,7 @@ __su_cwd() {
     builtin printf '\033]7;file://%s%s\007' "${HOSTNAME:-}" "$encoded"
 }
 
+__su_preexec_invoke() {
+    [ -n "$COMP_LINE" ] && return
+    [ -z "$__su_preexec_armed" ] && return
+    __su_preexec_armed=
