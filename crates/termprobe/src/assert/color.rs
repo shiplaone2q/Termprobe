@@ -107,3 +107,4 @@ pub fn describe_cell(
         _ => colors.resolve(cell, is_fg).to_hex(),
     }
 }
+
