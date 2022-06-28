@@ -251,3 +251,4 @@ class IntegrationTests(unittest.TestCase):
         async def scenario():
             su = self._client()
             try:
+                with self.assertRaises(UsageError):

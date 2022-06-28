@@ -50,3 +50,7 @@ const MAPPING = {
   mouse: [["client", "mouse"]],
   resize: [["client", "resize"]],
   scroll: [["client", "scroll"], ["client", "scrollToTop"], ["client", "scrollToBottom"]],
+  write: [["client", "write"]],
+  signal: [["client", "signal"]],
+  kill: [["client", "kill"]],
+  wait: [["client", "waitTitle"], ["client", "waitClipboard"], ["client", "waitIdle"], ["client", "waitCommand"], ["client", "waitExit"], ["client", "waitBell"]],

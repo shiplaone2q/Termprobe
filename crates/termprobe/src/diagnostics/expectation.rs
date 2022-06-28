@@ -61,3 +61,4 @@ impl OperationExpectation {
             },
             Operation::ClickLocator { query, .. } => Self::Locator {
                 query: Box::new(query.clone()),
+                outcome: LocatorExpectation::Actionable,
