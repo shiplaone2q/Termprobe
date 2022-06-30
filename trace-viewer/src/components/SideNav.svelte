@@ -12,3 +12,4 @@
 <aside class="sidebar">
   <TabBar {tabs} {active} {onselect} group="sidebar" label="Trace navigation" />
   <TabPanel id="actions" {active}>{@render actionsPanel()}</TabPanel>
+  <TabPanel id="metadata" {active} padding="metadata">{@render metadataPanel()}</TabPanel>

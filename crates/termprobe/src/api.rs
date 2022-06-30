@@ -451,3 +451,7 @@ pub enum LocatorSelector {
 #[serde(deny_unknown_fields)]
 pub struct LinkSelector {
     pub uri: String,
+    #[serde(default)]
+    pub full: bool,
+}
+

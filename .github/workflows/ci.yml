@@ -71,3 +71,5 @@ jobs:
           c++ -std=c++17 -x c++ -fsyntax-only -Icrates/termprobe-ffi/include .github/scripts/check-native-header.c
       - name: Test native package assembly
         if: runner.os == 'Linux'
+        run: |
+          npm test --prefix .github/scripts
