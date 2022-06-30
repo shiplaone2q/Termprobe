@@ -29,3 +29,7 @@ pub enum Backend {
     Xtermjs,
 }
 
+impl Backend {
+    pub const ALL: &'static [Self] = &[
+        Self::Alacritty,
+        #[cfg(feature = "ghostty")]
