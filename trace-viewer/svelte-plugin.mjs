@@ -14,3 +14,4 @@ export function sveltePlugin(generate = "client") {
           cssHash: ({ hash, css }) => `svelte-${hash(css)}`,
         });
         if (compiled.warnings.length) {
+          return { errors: compiled.warnings.map((warning) => ({ text: `${filename}: ${warning.message}` })) };
