@@ -540,3 +540,7 @@ fn monitor_frames_and_input_outlive_the_target() {
         .write_all(b"{\"kind\":\"resize\",\"cols\":100,\"rows\":40}\n")
         .expect("resize monitor input");
     write_monitor_input(&mut input, b"echo restarted-monitor-marker\r");
+    input.flush().expect("flush restarted target input");
+    sandbox.wait_for_text("restarted-monitor-marker", "5000");
+
+    // The keystrokes are the human's, so they stay out of the agent's log.
