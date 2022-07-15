@@ -146,3 +146,6 @@ func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error)
 	}
 	return nativeCells(result), nil
 }
+
+func (runtime *Session) Resize(cols, rows uint16) error {
+	memory := nativeMemory{}

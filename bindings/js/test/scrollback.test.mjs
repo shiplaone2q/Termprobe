@@ -18,3 +18,4 @@ test("viewport results preserve safe counts and reject lost precision", async ()
     koffi.encode(result, types.TuiResult, { viewport: { offset: count, history: count } });
     if (typeof count === "bigint") {
       await assert.rejects(terminal.getViewport(), /safe integer range/);
+    } else {

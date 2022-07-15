@@ -52,3 +52,5 @@ class RegistryTests(unittest.TestCase):
     def test_tracking_and_closing(self):
         a, b = _FakeTerminal(), _FakeTerminal()
         testing.track_terminal(a)
+        testing.track_terminal(b)
+        self.assertEqual(testing.tracked_count(), 2)
