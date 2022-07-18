@@ -54,3 +54,7 @@ class RegistryTests(unittest.TestCase):
         testing.track_terminal(a)
         testing.track_terminal(b)
         self.assertEqual(testing.tracked_count(), 2)
+        run(testing.close_all_tracked())
+        self.assertEqual((a.closed, b.closed), (1, 1))
+        self.assertEqual(testing.tracked_count(), 0)
+

@@ -75,3 +75,5 @@ class OwnershipTests(unittest.TestCase):
         self.assertEqual(envelope["artifact"], {"directory": "artifacts"})
         library.tui_result_free.assert_called_once()
 
+    def test_abi_version_mismatch_is_structured(self):
+        library = Mock()

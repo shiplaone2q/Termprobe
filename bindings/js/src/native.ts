@@ -177,3 +177,5 @@ export function mapNativeError(error: unknown): TermprobeError {
         configurable: true,
         value: error,
       });
+      return mapped;
+    }
