@@ -24,3 +24,5 @@ import path from "node:path";
 import { syncBuiltinESMExports } from "node:module";
 childProcess.execFileSync = (command, args, options) => {
   if (command === "rustc") return "host: ${host}\\n";
+  if (command !== "cargo" && command !== "docker") throw new Error("Unexpected command: " + command);
+  fs.writeFileSync(path.join(options.cwd, "invocation.json"), JSON.stringify({

@@ -36,3 +36,6 @@ class SharedLibraryWheel(bdist_wheel):
 
 class SourceDistribution(sdist):
     def make_release_tree(self, base_dir, files):
+        super().make_release_tree(base_dir, files)
+        destination = Path(base_dir) / "_rust"
+        if destination.is_dir():
