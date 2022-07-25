@@ -25,3 +25,6 @@
     if (value !== "fit" && value !== "1" && value !== "1.5") throw new Error(`Unknown zoom: ${value}`);
     onzoom(value);
   }
+</script>
+
+<section class="viewer" aria-label="Terminal snapshot">

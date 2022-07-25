@@ -300,3 +300,4 @@ impl Session {
                     watcher_logger.event(&format!("process wait failed error={error}"));
                     let mut st = watcher_state
                         .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
