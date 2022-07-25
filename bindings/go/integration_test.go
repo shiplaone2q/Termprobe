@@ -119,3 +119,7 @@ func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.Spa
 	if err = terminal.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(10 * time.Second)}); err != nil {
 		t.Fatal(err)
 	}
+}
+func requireNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {

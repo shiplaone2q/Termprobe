@@ -39,3 +39,5 @@ class SourceDistribution(sdist):
         super().make_release_tree(base_dir, files)
         destination = Path(base_dir) / "_rust"
         if destination.is_dir():
+            return
+        destination.mkdir()
