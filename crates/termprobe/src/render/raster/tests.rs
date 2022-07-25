@@ -215,3 +215,5 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         for y in top..bottom {
             for x in background_left..cursor_left {
                 assert_eq!(
+                    pixel_at(&image, x, y),
+                    color_to_pixel(background),

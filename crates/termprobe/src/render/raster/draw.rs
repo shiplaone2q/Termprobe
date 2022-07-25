@@ -82,3 +82,6 @@ pub(super) fn fill_pixel_rect(
     right: u32,
     bottom: u32,
     color: Rgb,
+) {
+    if left >= right || top >= bottom {
+        return;
