@@ -33,3 +33,7 @@ impl Backend {
     pub const ALL: &'static [Self] = &[
         Self::Alacritty,
         #[cfg(feature = "ghostty")]
+        Self::Ghostty,
+        #[cfg(feature = "rio")]
+        Self::Rio,
+        #[cfg(feature = "xtermjs")]

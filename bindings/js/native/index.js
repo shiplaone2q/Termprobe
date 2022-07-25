@@ -36,3 +36,6 @@ if (process.platform === "win32") {
   const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = 4;
   if (!pin(
     GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+    library.symbol("tui_abi_version"),
+    [null],
+  )) {
