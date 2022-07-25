@@ -116,3 +116,4 @@ test("nested input buffers remain live during native start and marshaling", () =
     import { createAdapter } from ${JSON.stringify(new URL("../native/adapter.js", import.meta.url).href)};
     const expected = "nested-owned-buffer-".repeat(16000);
     const read = value => Buffer.from(koffi.decode(value.data, "uint8_t", value.len)).toString();
+    let calls = 0;
