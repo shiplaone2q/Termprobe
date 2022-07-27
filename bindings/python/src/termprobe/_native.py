@@ -147,3 +147,5 @@ def _copy(value):
     for name, _ in value._fields_:
         if name.endswith("_len"):
             continue
+        item = getattr(value, name)
+        if name + "_len" in fields:
