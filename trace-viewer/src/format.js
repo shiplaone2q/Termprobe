@@ -57,3 +57,4 @@ export function describeLocator(query) {
   }
   return `${description} ${query.direction} [${describeLocator(query.within)}]`;
 }
+/** @param {OperationExpectation | undefined} value */

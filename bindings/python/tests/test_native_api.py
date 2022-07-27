@@ -85,3 +85,6 @@ class NativeSurfaceTests(unittest.TestCase):
             "click_locator",
             "highlight_locator",
             "expect_locator",
+            "packed_screen",
+            "cells",
+            "get_command",
