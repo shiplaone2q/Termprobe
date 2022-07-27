@@ -45,3 +45,4 @@ const locator = terminal
 | `locations()`, `location()`, `count()`, `all()` | Read matches. |
 | `wait({ state?, timeout? })` | Wait for visible or hidden. |
 | `expect({ not?, timeout? })` | Assert. |
+| `click(options?)` | Click. |

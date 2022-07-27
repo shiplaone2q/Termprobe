@@ -166,3 +166,7 @@ pub unsafe extern "C" fn tui_run(
                 cwd: o.cwd,
                 env: o.env,
                 wait_ready: o.wait_ready,
+                restart: o.restart,
+                timeouts: o.timeouts,
+                recording: o.recording,
+            }))

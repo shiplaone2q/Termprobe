@@ -52,3 +52,7 @@ fn bell_event(s: &mut Storage, v: termprobe::api::BellEvent) -> TuiBellEvent {
         elapsed_ms: v.elapsed_ms,
     }
 }
+#[allow(unused_variables)]
+fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
+    let modes = s.modes(v.modes);
+    TuiState {

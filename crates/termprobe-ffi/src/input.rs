@@ -44,3 +44,7 @@ impl TuiString {
     pub(crate) unsafe fn optional(self) -> Result<Option<String>> {
         if self.data.is_null() {
             if self.len != 0 {
+                return Err(TermprobeError::usage(
+                    "null native string with nonzero length",
+                ));
+            }
