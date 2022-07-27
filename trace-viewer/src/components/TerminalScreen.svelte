@@ -19,3 +19,5 @@
     const bounds = terminal.getBoundingClientRect();
     oninspect(Math.floor((event.clientX - bounds.left) * frame.columns / bounds.width),
       Math.floor((event.clientY - bounds.top) * frame.rows / bounds.height));
+  }
+

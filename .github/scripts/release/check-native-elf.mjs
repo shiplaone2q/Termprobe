@@ -9,3 +9,5 @@ export function checkVersions(output) {
   const newer = [...new Set(versions.filter(version => {
     const [major, minor, ...rest] = version.split(".").map(Number);
     return major > 2 || (major === 2 && (minor > 28 || (minor === 28 && rest.length > 0)));
+  }))].sort();
+  if (newer.length) throw new Error(`Library requires glibc newer than 2.28: ${newer.join(", ")}`);
