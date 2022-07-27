@@ -11,3 +11,5 @@ export function checkVersions(output) {
     return major > 2 || (major === 2 && (minor > 28 || (minor === 28 && rest.length > 0)));
   }))].sort();
   if (newer.length) throw new Error(`Library requires glibc newer than 2.28: ${newer.join(", ")}`);
+}
+

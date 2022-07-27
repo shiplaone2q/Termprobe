@@ -76,3 +76,5 @@ impl FailureReport {
                 .failure_stage
                 .and_then(|index| {
                     locator
+                        .stages
+                        .iter()

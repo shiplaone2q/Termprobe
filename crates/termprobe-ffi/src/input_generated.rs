@@ -25,3 +25,5 @@ unsafe fn open_input(
         env: unsafe { pairs(value.env, value.env_len)? },
         wait_ready: value.wait_ready.option(),
         restart: value.restart,
+        timeouts: timeouts(value.timeouts),
+        recording: AutomaticRecording {

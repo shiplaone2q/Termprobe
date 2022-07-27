@@ -6,3 +6,4 @@
     "lib": ["ES2023", "ESNext.Disposable"],
     "rootDir": "src",
     "outDir": "dist",
+    "declaration": true,
