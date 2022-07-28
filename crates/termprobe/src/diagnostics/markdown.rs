@@ -152,3 +152,5 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
             FailureReason::TestFailed => "Test failed",
             FailureReason::Cancelled => "Operation cancelled",
             FailureReason::SessionExited => "Session exited",
+            FailureReason::SnapshotMismatch => "Snapshot mismatch",
+            FailureReason::EmulatorFault => "Emulator fault",

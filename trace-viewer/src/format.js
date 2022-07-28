@@ -58,3 +58,5 @@ export function describeLocator(query) {
   return `${description} ${query.direction} [${describeLocator(query.within)}]`;
 }
 /** @param {OperationExpectation | undefined} value */
+export function describeExpectation(value) {
+  if (!value) return undefined;
