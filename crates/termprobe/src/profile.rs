@@ -315,3 +315,7 @@ pub fn xterm_color(index: u8) -> Rgb {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Profile {
+    /// Rows retained beyond the visible screen.
+    pub scrollback: usize,
+    pub colors: Colors,
+}
