@@ -19,3 +19,6 @@ test("viewport results preserve safe counts and reject lost precision", async ()
     if (typeof count === "bigint") {
       await assert.rejects(terminal.getViewport(), /safe integer range/);
     } else {
+      assert.deepEqual(await terminal.getViewport(), { offset: count, history: count });
+    }
+  }
