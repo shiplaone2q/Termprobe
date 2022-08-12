@@ -38,3 +38,6 @@ fn demonstrate(backend: Backend) -> Result<()> {
     })?;
     let result = (|| -> Result<()> {
         session
+            .get_by_text("READY")
+            .wait_with_timeout(Some(5_000))?;
+        let full = text(&session, true)?;

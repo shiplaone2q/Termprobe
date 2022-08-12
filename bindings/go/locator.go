@@ -59,3 +59,5 @@ func cloneLocatorQuery(source locatorQuery) locatorQuery {
 }
 
 func appendLocatorNode(parent *locatorQuery, node locatorNode) locatorQuery {
+	query := locatorQuery{}
+	if parent != nil {
