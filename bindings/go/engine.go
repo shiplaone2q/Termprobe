@@ -71,3 +71,7 @@ func (runtime *nativeRuntime) typeText(text string) error {
 }
 func (runtime *nativeRuntime) write(text string) error {
 	return engineError(runtime.session.Write(text))
+}
+func (runtime *nativeRuntime) submit(text *string) error {
+	return engineError(runtime.session.Submit(text))
+}

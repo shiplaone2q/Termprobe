@@ -28,3 +28,5 @@
 </script>
 
 <section class="viewer" aria-label="Terminal snapshot">
+  <div class="viewer-toolbar">
+    <strong id="frame-heading">{action?.name ?? "Terminal snapshot"}</strong>

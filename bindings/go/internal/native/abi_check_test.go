@@ -25,3 +25,4 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 			if pair.binding.Align() != pair.compiler.Align() {
 				t.Errorf("alignment: Go=%d, C=%d", pair.binding.Align(), pair.compiler.Align())
 			}
+			fields := nativeFields(pair.compiler)

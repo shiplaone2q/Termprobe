@@ -73,3 +73,4 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           npm test --prefix .github/scripts
+          node .github/scripts/release/verify-go-version.mjs
