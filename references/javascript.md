@@ -46,3 +46,4 @@ const locator = terminal
 | `wait({ state?, timeout? })` | Wait for visible or hidden. |
 | `expect({ not?, timeout? })` | Assert. |
 | `click(options?)` | Click. |
+| `highlight({ timeout? })` | Highlight. |

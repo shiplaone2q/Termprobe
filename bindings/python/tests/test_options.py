@@ -242,3 +242,5 @@ class RecordingResolutionTests(unittest.TestCase):
     def test_trace_modes_are_separate_from_recording(self):
         for mode in ("on", "off", "on-failure"):
             self.assertEqual(cfg.normalize_trace({"mode": mode, "directory": "traces"}), {"mode": mode, "directory": "traces"})
+        with self.assertRaises(ValueError):
+            cfg.normalize_trace({"mode": "always"})

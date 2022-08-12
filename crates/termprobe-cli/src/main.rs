@@ -607,3 +607,4 @@ fn map_occurrence(
 ) -> MatchOccurrence {
     if let Some(index) = nth {
         return MatchOccurrence::Nth(index);
+    }
