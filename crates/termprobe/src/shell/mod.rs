@@ -68,3 +68,6 @@ fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
     let files: &[(&str, &str)] = &[
         (
             "shellIntegration.bash",
+            include_str!("../../shell/shellIntegration.bash"),
+        ),
+        (
