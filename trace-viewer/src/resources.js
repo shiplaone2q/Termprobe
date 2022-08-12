@@ -30,3 +30,6 @@ export function createResources(model) {
   }
   const dispose = () => {
     for (const value of urls) URL.revokeObjectURL(value);
+    urls.length = 0;
+  };
+  try {

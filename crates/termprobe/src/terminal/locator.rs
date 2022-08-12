@@ -426,3 +426,6 @@ where
                     stats.reason = Some(LocatorFailureReason::LinkFilterRemovedAll);
                 }
                 matches
+            }
+            LocatorSelector::Link(selector) => {
+                let matches = locate_cells_within(grid, allowed.as_deref(), &mut |cell| {
