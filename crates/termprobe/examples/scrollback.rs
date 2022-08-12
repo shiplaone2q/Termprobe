@@ -34,3 +34,7 @@ fn demonstrate(backend: Backend) -> Result<()> {
         recording: AutomaticRecording {
             mode: AutomaticRecordingMode::Disabled,
             directory: None,
+        },
+    })?;
+    let result = (|| -> Result<()> {
+        session

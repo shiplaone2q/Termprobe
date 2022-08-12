@@ -130,3 +130,5 @@ impl Recorder {
 
     pub fn capture(&self) -> Capture {
         Capture {
+            sender: self.sender.clone(),
+        }
