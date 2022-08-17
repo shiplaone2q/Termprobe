@@ -41,3 +41,5 @@ class SourceDistribution(sdist):
         if destination.is_dir():
             return
         destination.mkdir()
+        cargo_config = Path(base_dir) / ".cargo"
+        cargo_config.mkdir(exist_ok=True)

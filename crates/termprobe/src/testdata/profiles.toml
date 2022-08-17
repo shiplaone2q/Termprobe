@@ -30,3 +30,7 @@ title_bar = false
 enabled = false
 
 # Demo: a light look for slides.
+[profiles.demo.recording.style]
+canvas_background = "#f6f6f8"
+font_size = 20
+
