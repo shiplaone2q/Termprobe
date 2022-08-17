@@ -37,3 +37,6 @@
 <style>
   .timeline { height: 132px; padding: 0 12px 6px; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--panel); overflow: hidden; }
   .time-scale { height: 21px; display: flex; justify-content: space-between; color: var(--muted); font: 10px/21px Consolas, monospace; }
+  .action-timeline { height: 23px; position: relative; border-top: 1px solid var(--border); background: repeating-linear-gradient(to right, transparent 0, transparent calc(20% - 1px), var(--border) 20%); }
+  .action-bar { position: absolute; top: 6px; height: 10px; min-width: 4px; border: 0; padding: 0; border-radius: 2px; background: #7fb0eb; }
+  .action-bar.failed { background: #d95c65; }

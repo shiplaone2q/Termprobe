@@ -11,3 +11,5 @@
   });
 </script>
 
+<div class="action-filter">
+  <input id="action-filter" type="search" aria-label="Filter actions" placeholder="Filter actions"

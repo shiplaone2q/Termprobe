@@ -115,3 +115,5 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 | `resize(cols, rows)` | Resize the terminal. |
 | `scroll(lines)` | Move through native history; positive values show older output. |
 | `scrollToTop()` / `scrollToBottom()` | Show the oldest output or the live screen. |
+| `getViewport()` | Return `{ offset, history }`, in rows. |
+| `signal(name)` | Send `INT`, `TERM`, `KILL`, or `QUIT`. |
