@@ -43,3 +43,4 @@ class SourceDistribution(sdist):
         destination.mkdir()
         cargo_config = Path(base_dir) / ".cargo"
         cargo_config.mkdir(exist_ok=True)
+        shutil.copy2(RUST_ROOT / ".cargo/config.toml", cargo_config / "config.toml")
