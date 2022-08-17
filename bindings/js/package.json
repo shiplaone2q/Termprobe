@@ -16,3 +16,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "native/*.js",
+    "native/*.d.ts",
+    "README.md"
+  ],
