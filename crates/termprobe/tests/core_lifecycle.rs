@@ -236,3 +236,6 @@ fn named_wait_allows_concurrent_input_resize_and_submit() {
         .execute(Operation::Submit {
             data: Some("emit-marker".into()),
         })
+        .unwrap();
+    finished_rx
+        .recv_timeout(Duration::from_secs(2))

@@ -49,3 +49,5 @@ pub fn generate(
     let mut layouts = String::from("export const layouts = {\n");
     let mut emitted = BTreeSet::new();
     while emitted.len() < structs.len() {
+        let before = emitted.len();
+        for item in structs {
