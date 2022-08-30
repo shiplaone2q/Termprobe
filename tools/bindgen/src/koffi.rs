@@ -51,3 +51,5 @@ pub fn generate(
     while emitted.len() < structs.len() {
         let before = emitted.len();
         for item in structs {
+            let id = item.ident.to_string();
+            if emitted.contains(&id) {

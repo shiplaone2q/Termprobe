@@ -34,3 +34,5 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
     let sequence = capture(&mut history, &emu, 30);
     capture(&mut history, &emu, 40);
     history.pin_current();
+    let observation = FailureObservation {
+        rows: emu.viewable_rows(),
