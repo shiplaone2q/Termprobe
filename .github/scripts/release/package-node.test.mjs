@@ -21,3 +21,6 @@ function fixture(t) {
     name: "@fixture/termprobe",
     version: "1.0.0",
     files: ["index.js"],
+    dependencies: { koffi: "^3.3.3" },
+    nativeTargets,
+  }));

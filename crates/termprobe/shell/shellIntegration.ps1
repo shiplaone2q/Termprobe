@@ -40,3 +40,6 @@ function Global:Prompt() {
                 $lastError
             }
             $powerShellError = $null -ne $lastError -and
+                -not [object]::ReferenceEquals($lastError, $Global:__su_state.LastError) -and
+                $lastError.FullyQualifiedErrorId -ne 'NativeCommandError' -and
+                ($null -eq $errorException -or $errorException.GetType().FullName -ne 'System.Management.Automation.NativeCommandExitException')
