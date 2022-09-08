@@ -96,3 +96,7 @@ Captures project that cursor into the viewport and hide it outside the view.
 Raster recordings capture viewport changes. Asciicast records only the PTY stream.
 
 See the runnable [JavaScript example](../bindings/js/examples/scrollback.mjs)
+or the [Rust example](../crates/termprobe/examples/scrollback.rs).
+
+## Wait
+
