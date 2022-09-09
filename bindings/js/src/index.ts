@@ -34,3 +34,4 @@ export {
   UsageError,
 } from "./errors.js";
 export type { ErrorKind } from "./errors.js";
+export { VERSION } from "./version.js";

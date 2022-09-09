@@ -40,3 +40,4 @@ export function createFixture(t) {
   }));
   fs.writeFileSync(path.join(directory, "LICENSE"), "License fixture\n");
   const source = path.join(directory, "bindings/go");
+  fs.mkdirSync(path.join(source, "internal/native"), { recursive: true });

@@ -90,3 +90,7 @@ fn baseline() -> EmuCell {
 ///
 /// A style shift covers foreground, background and underline colors, the SGR
 /// attributes, the underline style and the link. The link is not an SGR
+/// attribute — `SGR 0` clears every other entry
+/// here and leaves it running — but it is carried on a cell the same way, so
+/// it is recorded with them rather than behind a second switch a reader has to
+/// remember to turn on.
