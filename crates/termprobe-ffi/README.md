@@ -55,3 +55,6 @@ The example starts a child terminal, submits input, checks its output, and print
 
 Build and run the JavaScript example from the repository root:
 
+```sh
+cd bindings/js
+npm ci
