@@ -48,3 +48,7 @@ impl TuiString {
                     "null native string with nonzero length",
                 ));
             }
+            return Ok(None);
+        }
+        let bytes = unsafe { slice(self.data, self.len)? };
+        std::str::from_utf8(bytes)
