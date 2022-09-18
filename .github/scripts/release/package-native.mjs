@@ -57,3 +57,4 @@ export function archiveBytes(entries) {
   }
   blocks.push(Buffer.alloc(1024));
   return gzipSync(Buffer.concat(blocks));
+}
