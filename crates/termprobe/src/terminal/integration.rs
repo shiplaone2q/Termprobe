@@ -97,3 +97,5 @@ impl CommandTracker {
 impl TrackerState {
     fn command_marker(&mut self, marker: &str, exit: Option<&str>) {
         match marker {
+            "A" => {
+                self.started = true;

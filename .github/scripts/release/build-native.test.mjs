@@ -26,3 +26,7 @@ childProcess.execFileSync = (command, args, options) => {
   if (command === "rustc") return "host: ${host}\\n";
   if (command !== "cargo" && command !== "docker") throw new Error("Unexpected command: " + command);
   fs.writeFileSync(path.join(options.cwd, "invocation.json"), JSON.stringify({
+    command, args, rustflags: options.env.RUSTFLAGS, targetDir: options.env.CARGO_TARGET_DIR,
+  }));
+  const index = args.indexOf("--target");
+  const target = command === "docker" ? args.at(-2) : index === -1 ? "" : args[index + 1];

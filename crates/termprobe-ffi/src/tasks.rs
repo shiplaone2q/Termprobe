@@ -47,3 +47,6 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
         .name("termprobe-call".into())
         .spawn(move || {
             let result = catch_unwind(AssertUnwindSafe(work)).unwrap_or_else(|payload| {
+                let message = payload
+                    .downcast_ref::<&str>()
+                    .copied()
