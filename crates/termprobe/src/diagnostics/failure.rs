@@ -78,3 +78,6 @@ impl FailureReport {
                     locator
                         .stages
                         .iter()
+                        .find(|stage| stage.stage_index == index)
+                })
+                .or_else(|| locator.stages.last());

@@ -27,3 +27,7 @@ export class ExpectationError extends TermprobeError {
 
 export class UsageError extends TermprobeError {
   constructor(message: string) {
+    super(message, "usage", 2);
+  }
+}
+

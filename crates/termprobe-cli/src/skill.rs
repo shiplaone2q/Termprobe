@@ -75,3 +75,5 @@ fn first_heading_anchor(document: &str) -> Option<String> {
     (!anchor.is_empty()).then_some(anchor)
 }
 
+fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), String> {
+    let theme = ColorfulTheme::default();
