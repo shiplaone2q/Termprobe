@@ -117,3 +117,6 @@ test("nested input buffers remain live during native start and marshaling", () =
     const expected = "nested-owned-buffer-".repeat(16000);
     const read = value => Buffer.from(koffi.decode(value.data, "uint8_t", value.len)).toString();
     let calls = 0;
+    const { NativeSession: TestSession } = createAdapter({
+      tui_run_start(context, options, program, argv, argc) {
+        for (let i = 0; i < 4; i++) {

@@ -14,3 +14,4 @@
   <TabPanel id="actions" {active}>{@render actionsPanel()}</TabPanel>
   <TabPanel id="metadata" {active} padding="metadata">{@render metadataPanel()}</TabPanel>
 </aside>
+
