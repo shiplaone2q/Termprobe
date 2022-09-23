@@ -79,3 +79,4 @@ export interface Colors {
   brightBlack?: string;
   brightRed?: string;
   brightGreen?: string;
+  brightYellow?: string;
