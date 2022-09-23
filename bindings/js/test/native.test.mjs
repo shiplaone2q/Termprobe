@@ -120,3 +120,7 @@ test("nested input buffers remain live during native start and marshaling", () =
     const { NativeSession: TestSession } = createAdapter({
       tui_run_start(context, options, program, argv, argc) {
         for (let i = 0; i < 4; i++) {
+          if (typeof globalThis.Bun !== "undefined") globalThis.Bun.gc(true);
+          else globalThis.gc();
+          Buffer.alloc(400000, 0x58);
+        }

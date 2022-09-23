@@ -26,3 +26,7 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 	if prefix == "" {
 		prefix = tb.Name()
 	}
+	terminal, err := termprobe.Ephemeral(prefix, options.Client)
+	if err != nil {
+		tb.Fatalf("create terminal: %v", err)
+		return nil
