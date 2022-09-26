@@ -28,3 +28,4 @@ MAPPING = {
         ("client", "get_size"),
         ("client", "get_viewport"),
         ("client", "get_title"),
+        ("client", "get_clipboard"),

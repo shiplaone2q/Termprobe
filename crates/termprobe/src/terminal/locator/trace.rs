@@ -124,3 +124,5 @@ impl Trace {
         if let Some(stage) = self
             .stages
             .iter_mut()
+            .find(|stage| stage.expression_path == path)
+        {

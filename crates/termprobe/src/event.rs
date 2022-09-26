@@ -30,3 +30,7 @@ pub(crate) struct BellSnapshot {
     pub events: Vec<BellEvent>,
 }
 
+impl Default for BellTracker {
+    fn default() -> Self {
+        Self::new(Instant::now())
+    }
