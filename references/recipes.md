@@ -56,3 +56,5 @@ await terminal.get_by_text("Ready").expect()
 ## Click with modifiers
 
 ```sh
+termprobe click text "Open" --button right --ctrl
+```

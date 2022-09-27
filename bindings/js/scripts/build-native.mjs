@@ -36,3 +36,6 @@ if (zigbuild && target.endsWith("-gnu")) {
   const arch = target.startsWith("aarch64") ? "aarch64" : "x86_64";
   const tools = join(root, "target/manylinux-tools", arch);
   mkdirSync(tools, { recursive: true });
+  // Ghostty's native Zig build detects the host libc, independently of cargo-zigbuild.
+  execFileSync("docker", [
+    "run", "--rm", "--platform", arch === "aarch64" ? "linux/arm64" : "linux/amd64",

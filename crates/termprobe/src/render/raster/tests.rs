@@ -218,3 +218,7 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
                     pixel_at(&image, x, y),
                     color_to_pixel(background),
                     "background gap before cursor at ({x}, {y}), zoom {zoom}"
+                );
+            }
+            for x in cursor_left..cursor_right {
+                assert_eq!(
