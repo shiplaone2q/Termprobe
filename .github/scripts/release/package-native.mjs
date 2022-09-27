@@ -58,3 +58,6 @@ export function archiveBytes(entries) {
   blocks.push(Buffer.alloc(1024));
   return gzipSync(Buffer.concat(blocks));
 }
+
+export function writeArchive(filename, entries) {
+  const data = archiveBytes(entries);

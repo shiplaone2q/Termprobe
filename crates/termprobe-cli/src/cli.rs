@@ -491,3 +491,7 @@ pub enum RecordCmd {
         #[arg(long, conflicts_with = "transparent")]
         background: Option<String>,
         /// Leave the APNG or GIF canvas transparent.
+        #[arg(long)]
+        transparent: bool,
+    },
+    /// Stop the active recording and finish its output file.
