@@ -81,3 +81,6 @@ impl FailureReport {
                         .find(|stage| stage.stage_index == index)
                 })
                 .or_else(|| locator.stages.last());
+            let candidates = stage.map_or(locator.selected.as_slice(), |stage| &stage.candidates);
+            let mismatches = stage.map_or(&[][..], |stage| stage.mismatches.as_slice());
+            *truncated |= candidates.len() > 4

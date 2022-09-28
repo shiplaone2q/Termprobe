@@ -81,3 +81,5 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 	path, err := nativeLibraryPath(map[string]bundledLibrary{target: library})
 	if err != nil {
 		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)

@@ -100,3 +100,5 @@ or the [Rust example](../crates/termprobe/examples/scrollback.rs).
 
 ## Wait
 
+| Command | Use |
+| --- | --- |
