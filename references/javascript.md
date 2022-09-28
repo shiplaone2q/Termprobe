@@ -47,3 +47,6 @@ const locator = terminal
 | `expect({ not?, timeout? })` | Assert. |
 | `click(options?)` | Click. |
 | `highlight({ timeout? })` | Highlight. |
+
+Text options: `regex`, `full`, `whitespace`, and chained `direction`.
+

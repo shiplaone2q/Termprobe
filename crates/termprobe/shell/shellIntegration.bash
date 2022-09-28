@@ -34,3 +34,6 @@ __su_preexec_invoke() {
     [ -n "$COMP_LINE" ] && return
     [ -z "$__su_preexec_armed" ] && return
     __su_preexec_armed=
+    __su_osc "C"
+}
+trap '__su_preexec_invoke' DEBUG
