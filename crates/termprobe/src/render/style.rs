@@ -209,3 +209,5 @@ pub struct PaddingSides {
     pub top: Option<u32>,
     pub right: Option<u32>,
     pub bottom: Option<u32>,
+    pub left: Option<u32>,
+}
