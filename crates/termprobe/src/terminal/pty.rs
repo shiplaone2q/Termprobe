@@ -159,3 +159,6 @@ pub struct SpawnOptions {
 pub(crate) struct ProcessExit {
     pub(crate) code: i32,
     pub(crate) signal: Option<String>,
+}
+
+impl From<ExitStatus> for ProcessExit {

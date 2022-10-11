@@ -22,3 +22,4 @@ test("viewport results preserve safe counts and reject lost precision", async ()
       assert.deepEqual(await terminal.getViewport(), { offset: count, history: count });
     }
   }
+  assert.equal(released, 3);
