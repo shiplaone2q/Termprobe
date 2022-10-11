@@ -157,3 +157,5 @@ impl TerminalMode {
     ///
     /// The counterpart to [`Self::set_sequence`]. `CSI ?1049 l` leaves the
     /// alternate screen whichever sequence entered it, since the three share
+    /// one screen.
+    pub const fn reset_sequence(self) -> &'static [u8] {

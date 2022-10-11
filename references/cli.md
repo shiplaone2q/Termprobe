@@ -102,3 +102,7 @@ or the [Rust example](../crates/termprobe/examples/scrollback.rs).
 
 | Command | Use |
 | --- | --- |
+| `wait command` | Wait for `submit`. |
+| `wait exit` | Wait for `run`. |
+| `wait ready` | Wait for a prompt. |
+| `wait idle` | Wait for the screen to settle. |
