@@ -302,3 +302,7 @@ impl Session {
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner);
                     st.exit_error = Some(error);
+                    break;
+                }
+            }
+        });

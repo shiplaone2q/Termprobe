@@ -20,3 +20,6 @@
     "native/*.d.ts",
     "README.md"
   ],
+  "engines": {
+    "node": ">=20"
+  },

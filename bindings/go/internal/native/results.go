@@ -51,3 +51,5 @@ func nativeError(result *abiResult) error {
 	if result.errorKind == 0 {
 		return nil
 	}
+	kind := InternalError
+	switch result.errorKind {
