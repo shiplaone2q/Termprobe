@@ -13,3 +13,5 @@ def __su_cwd [] {
         $env.PWD
     }
     let path = if ($path | str starts-with '/') { $path } else { $"/($path)" }
+    $"(ansi osc)7;file://($path | url encode)(char bel)"
+}

@@ -149,3 +149,4 @@ func (runtime *Session) Cells(column, row, width, height uint16) ([]Cell, error)
 
 func (runtime *Session) Resize(cols, rows uint16) error {
 	memory := nativeMemory{}
+	defer memory.release()
