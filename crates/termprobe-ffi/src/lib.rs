@@ -170,3 +170,7 @@ pub unsafe extern "C" fn tui_run(
                 timeouts: o.timeouts,
                 recording: o.recording,
             }))
+        })
+    }
+}
+#[no_mangle]
