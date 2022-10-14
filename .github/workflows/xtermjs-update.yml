@@ -24,3 +24,5 @@ jobs:
           node-version: "22"
 
       - name: Re-vendor at the latest releases
+        id: vendor
+        shell: bash

@@ -117,3 +117,5 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 | `scrollToTop()` / `scrollToBottom()` | Show the oldest output or the live screen. |
 | `getViewport()` | Return `{ offset, history }`, in rows. |
 | `signal(name)` | Send `INT`, `TERM`, `KILL`, or `QUIT`. |
+| `kill()` | Kill the child process. |
+
