@@ -30,3 +30,6 @@ export interface Geometry {
   readonly cell_height: number;
 }
 export interface Attachment {
+  readonly name: string;
+  readonly bytes: number;
+  readonly data: string;

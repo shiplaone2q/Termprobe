@@ -162,3 +162,7 @@ fn parameters(models: &Models, method: &str, variant: &str) -> Result<Vec<Field>
         "scroll" => {
             let mut fields = models.fields("ScrollTarget::Lines")?;
             fields[0].name = "lines".into();
+            fields
+        }
+        "scrollToTop" => models.fields("ScrollTarget::Top")?,
+        "scrollToBottom" => models.fields("ScrollTarget::Bottom")?,

@@ -383,3 +383,7 @@ fn write_cursor(
     {
         2.0
     } else {
+        1.0
+    };
+    let w = span * cell_w;
+    let x = style.content_left() + cx as f32 * cell_w;
