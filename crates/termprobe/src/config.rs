@@ -33,3 +33,5 @@ impl TimeoutClass {
     /// The environment variable consulted for this class.
     pub fn env_var(self) -> &'static str {
         match self {
+            TimeoutClass::Text => "TERMPROBE__TIMEOUT_TEXT_MS",
+            TimeoutClass::Idle => "TERMPROBE__TIMEOUT_IDLE_MS",

@@ -19,3 +19,6 @@ if (targets.length === 0) {
 }
 
 fs.mkdirSync(outputDirectory, { recursive: true });
+
+for (const tag of targets) {
+  const [platform, arch, abi] = tag.split("-");

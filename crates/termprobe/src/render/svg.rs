@@ -387,3 +387,5 @@ fn write_cursor(
     };
     let w = span * cell_w;
     let x = style.content_left() + cx as f32 * cell_w;
+    let y = header_h + style.content_top() + cy as f32 * cell_h;
+    let fill = hex(colors.color(ColorSlot::Cursor));
