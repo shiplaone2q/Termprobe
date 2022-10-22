@@ -455,3 +455,7 @@ pub struct LinkSelector {
     pub full: bool,
 }
 
+impl From<&str> for LinkSelector {
+    fn from(uri: &str) -> Self {
+        Self::from(uri.to_owned())
+    }

@@ -39,3 +39,4 @@ if (process.platform === "win32") {
     library.symbol("tui_abi_version"),
     [null],
   )) {
+    throw new Error("Failed to retain the termprobe native library for process lifetime");

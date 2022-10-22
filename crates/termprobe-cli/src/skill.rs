@@ -77,3 +77,6 @@ fn first_heading_anchor(document: &str) -> Option<String> {
 
 fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), String> {
     let theme = ColorfulTheme::default();
+    let scope_items = [
+        "Repository local (current project)",
+        "Global (all projects)",
