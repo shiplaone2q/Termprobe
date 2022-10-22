@@ -137,3 +137,7 @@ import (
 
     "github.com/microsoft/termprobe/bindings/go"
 )
+
+func main() {
+    terminal, err := termprobe.Ephemeral("example", termprobe.ClientOptions{})
+    if err != nil {
