@@ -37,3 +37,4 @@ impl FontSystem {
         })
     }
 
+    pub fn resolve(&mut self, key: GlyphKey) -> Option<&GlyphOutline> {

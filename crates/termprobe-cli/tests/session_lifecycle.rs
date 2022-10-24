@@ -544,3 +544,6 @@ fn monitor_frames_and_input_outlive_the_target() {
     sandbox.wait_for_text("restarted-monitor-marker", "5000");
 
     // The keystrokes are the human's, so they stay out of the agent's log.
+    let log = std::fs::read_to_string(sandbox.home.join(format!("{}.log", sandbox.session)))
+        .expect("read verbose log");
+    assert!(

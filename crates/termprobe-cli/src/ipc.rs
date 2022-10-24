@@ -66,3 +66,7 @@ pub fn exchange(conn: Stream, req: &Request) -> anyhow::Result<Response> {
     Ok(resp)
 }
 
+/// Is a daemon currently accepting connections on this socket?
+pub fn is_running(socket: &str) -> bool {
+    match to_name(socket) {
+        Ok(name) => Stream::connect(name).is_ok(),

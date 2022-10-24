@@ -40,3 +40,5 @@ const tagged = (variants) => (value, path) => {
   const kind = value.kind;
   if (typeof kind !== "string" || !Object.hasOwn(variants, kind)) invalid(`${path}.kind`, Object.keys(variants).join(" or "));
   variants[kind](value, path);
+};
+const position = shape({ column: integer, row: integer });
