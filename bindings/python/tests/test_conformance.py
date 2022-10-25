@@ -29,3 +29,7 @@ MAPPING = {
         ("client", "get_viewport"),
         ("client", "get_title"),
         ("client", "get_clipboard"),
+        ("client", "get_bell_count"),
+        ("client", "get_bell_events"),
+    ],
+    "type": [("client", "type")],

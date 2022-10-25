@@ -154,3 +154,7 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
             FailureReason::SessionExited => "Session exited",
             FailureReason::SnapshotMismatch => "Snapshot mismatch",
             FailureReason::EmulatorFault => "Emulator fault",
+            FailureReason::TimedOut => "Operation timed out",
+            _ => "Assertion failed",
+        }
+        .into(),

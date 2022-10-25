@@ -108,3 +108,4 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 | --- | --- |
 | `Termprobe.ephemeral(prefix=None, **options)` | Create a unique session. |
 | `await open(**options)` | Open a shell. |
+| `await run(program, *args, **options)` | Run a program. |
