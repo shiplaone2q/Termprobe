@@ -235,3 +235,6 @@ def _link_query_value(
     if not isinstance(uri, str):
         raise TypeError("get_by_link requires a URI string")
     if direction not in ("within", "after", "before"):
+        raise ValueError("locator direction must be within, after, or before")
+    return _append_node(
+        within,

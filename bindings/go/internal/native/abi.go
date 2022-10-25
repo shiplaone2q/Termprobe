@@ -65,3 +65,6 @@ type abiResult struct {
 	number        uint64
 	exitCode      abiOptionalI32
 	open          abiOpenResult
+	state         abiState
+	cursor        abiCursor
+	size          abiSize
