@@ -91,3 +91,7 @@ export interface TextPosition {
   column: number
 }
 
+export interface TextSpan {
+  row: number
+  start: number
+  end: number

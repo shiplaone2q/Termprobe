@@ -86,3 +86,6 @@ impl NerdFont {
             }
             glyphs.insert(
                 c,
+                Glyph {
+                    path: builder.path,
+                    advance: face
