@@ -43,3 +43,4 @@ function Global:Prompt() {
                 -not [object]::ReferenceEquals($lastError, $Global:__su_state.LastError) -and
                 $lastError.FullyQualifiedErrorId -ne 'NativeCommandError' -and
                 ($null -eq $errorException -or $errorException.GetType().FullName -ne 'System.Management.Automation.NativeCommandExitException')
+            # Native execution assigns a new boxed exit code, even for repeated

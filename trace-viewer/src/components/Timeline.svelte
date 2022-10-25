@@ -40,3 +40,7 @@
   .action-timeline { height: 23px; position: relative; border-top: 1px solid var(--border); background: repeating-linear-gradient(to right, transparent 0, transparent calc(20% - 1px), var(--border) 20%); }
   .action-bar { position: absolute; top: 6px; height: 10px; min-width: 4px; border: 0; padding: 0; border-radius: 2px; background: #7fb0eb; }
   .action-bar.failed { background: #d95c65; }
+  .action-bar[aria-current="true"] { outline: 2px solid var(--blue); }
+  .filmstrip { display: flex; align-items: stretch; gap: 7px; height: 78px; overflow-x: auto; }
+  .thumbnail { padding: 2px; min-width: 92px; max-width: 126px; flex-shrink: 0; text-align: left; border: 1px solid var(--border); background: var(--bg); }
+  .thumbnail img { width: 100%; height: 46px; object-fit: contain; background: #111; display: block; }
