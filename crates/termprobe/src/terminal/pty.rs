@@ -162,3 +162,7 @@ pub(crate) struct ProcessExit {
 }
 
 impl From<ExitStatus> for ProcessExit {
+    fn from(status: ExitStatus) -> Self {
+        Self {
+            code: status.exit_code() as i32,
+            signal: status.signal().map(str::to_string),

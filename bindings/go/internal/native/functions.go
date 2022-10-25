@@ -27,3 +27,5 @@ type nativeFunctionTable struct {
 	GetBellCount     func(abiString) *abiResult
 	GetBellEvents    func(abiString) *abiResult
 	StopRecording    func(abiString) *abiResult
+	Text             func(abiString, bool) *abiResult
+	PackedScreen     func(abiString, bool) *abiResult
