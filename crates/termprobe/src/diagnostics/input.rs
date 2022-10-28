@@ -81,3 +81,7 @@ impl InputDetails {
             }),
             Operation::Mouse {
                 action: MouseAction::Click { on_text, .. },
+            } => on_text.as_ref().map_or(0, String::len),
+            Operation::Mouse {
+                action: MouseAction::Scroll { direction, .. },
+            } => direction.len(),

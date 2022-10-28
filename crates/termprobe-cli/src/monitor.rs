@@ -239,3 +239,7 @@ impl Style {
             UnderlineStyle::Single => 1,
             UnderlineStyle::Double => 2,
             UnderlineStyle::Curly => 3,
+            UnderlineStyle::Dotted => 4,
+            UnderlineStyle::Dashed => 5,
+        };
+        if sub != 0 {
