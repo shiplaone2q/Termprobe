@@ -78,3 +78,4 @@ type Whitespace string
 const (
 	Exact     Whitespace = "exact"
 	Normalize Whitespace = "normalize"
+)
