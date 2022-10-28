@@ -132,3 +132,6 @@ impl Recorder {
         Capture {
             sender: self.sender.clone(),
         }
+    }
+
+    pub fn start(&self, request: StartRecording) -> Result<(), CaptureError> {

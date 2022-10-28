@@ -11,3 +11,4 @@
     "test": "npm run check && npm run test:unit && playwright test"
   },
   "dependencies": {
+    "svelte": "5.57.0"
