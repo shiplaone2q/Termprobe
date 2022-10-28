@@ -37,3 +37,6 @@ impl Backend {
         #[cfg(feature = "rio")]
         Self::Rio,
         #[cfg(feature = "xtermjs")]
+        Self::Xtermjs,
+    ];
+

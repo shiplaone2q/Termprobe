@@ -48,3 +48,4 @@ class Colors:
     white: Optional[str] = None
     bright_black: Optional[str] = None
     bright_red: Optional[str] = None
+    bright_green: Optional[str] = None
