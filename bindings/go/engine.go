@@ -75,3 +75,4 @@ func (runtime *nativeRuntime) write(text string) error {
 func (runtime *nativeRuntime) submit(text *string) error {
 	return engineError(runtime.session.Submit(text))
 }
+func (runtime *nativeRuntime) signal(name string) error {

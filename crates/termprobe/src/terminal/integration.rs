@@ -99,3 +99,7 @@ impl TrackerState {
         match marker {
             "A" => {
                 self.started = true;
+                self.prompt_active = false;
+                self.region = Region::None;
+            }
+            "B" => {

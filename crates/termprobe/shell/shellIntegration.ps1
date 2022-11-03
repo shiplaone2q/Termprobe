@@ -44,3 +44,6 @@ function Global:Prompt() {
                 $lastError.FullyQualifiedErrorId -ne 'NativeCommandError' -and
                 ($null -eq $errorException -or $errorException.GetType().FullName -ne 'System.Management.Automation.NativeCommandExitException')
             # Native execution assigns a new boxed exit code, even for repeated
+            # failures with the same value. Compare identity so Ignore errors
+            # (which do not enter $Error) cannot borrow a previous command's code.
+            # This also leaves the user's LASTEXITCODE intact.
