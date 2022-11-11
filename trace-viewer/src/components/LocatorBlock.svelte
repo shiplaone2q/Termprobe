@@ -5,3 +5,4 @@
 <div id={`${id}-section`} hidden={!locator}>
   <h2>Locator</h2><pre {id} class="locator-expression">{locator ?? ""}</pre>
 </div>
+

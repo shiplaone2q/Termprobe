@@ -222,3 +222,5 @@ impl Drop for GhosttyEmu {
         if let Some(worker) = self.worker.take() {
             let _ = worker.join();
         }
+    }
+}
