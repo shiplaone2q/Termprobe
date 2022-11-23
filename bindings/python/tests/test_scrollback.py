@@ -20,3 +20,4 @@ class ScrollbackTests(unittest.TestCase):
             pointer.contents.viewport = _abi.TuiViewport()
 
         library.tui_result_free.side_effect = release
+        with patch.object(_native, "_load", return_value=library):

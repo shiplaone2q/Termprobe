@@ -54,3 +54,4 @@ const MAPPING = {
   signal: [["client", "signal"]],
   kill: [["client", "kill"]],
   wait: [["client", "waitTitle"], ["client", "waitClipboard"], ["client", "waitIdle"], ["client", "waitCommand"], ["client", "waitExit"], ["client", "waitBell"]],
+  expect: [["client", "getByText"], ["client", "expectTitle"], ["client", "expectExitCode"], ["client", "expectOutput"], ["client", "expectBellCount"], ["client", "expectSnapshot"]],

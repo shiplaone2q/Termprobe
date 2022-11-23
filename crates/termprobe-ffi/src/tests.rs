@@ -100,3 +100,6 @@ fn missing_sessions_retain_structured_errors_and_owned_messages() {
 
 #[test]
 fn pointer_options_reject_null_and_preserve_validation() {
+    let session = text(r#"{"name":"go-abi-pointer-options"}"#);
+    let options = TuiOpenOptions {
+        cols: TuiOptionalU64 {
