@@ -26,3 +26,4 @@ jobs:
       - name: Re-vendor at the latest releases
         id: vendor
         shell: bash
+        run: |

@@ -88,3 +88,4 @@ class NativeSurfaceTests(unittest.TestCase):
             "packed_screen",
             "cells",
             "get_command",
+            "get_output",
