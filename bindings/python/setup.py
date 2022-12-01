@@ -44,3 +44,5 @@ class SourceDistribution(sdist):
         cargo_config = Path(base_dir) / ".cargo"
         cargo_config.mkdir(exist_ok=True)
         shutil.copy2(RUST_ROOT / ".cargo/config.toml", cargo_config / "config.toml")
+        for filename in ("Cargo.lock", "LICENSE", "README.md"):
+            shutil.copy2(RUST_ROOT / filename, destination / filename)

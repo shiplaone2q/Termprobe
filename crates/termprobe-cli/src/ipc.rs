@@ -70,3 +70,7 @@ pub fn exchange(conn: Stream, req: &Request) -> anyhow::Result<Response> {
 pub fn is_running(socket: &str) -> bool {
     match to_name(socket) {
         Ok(name) => Stream::connect(name).is_ok(),
+        Err(_) => false,
+    }
+}
+
