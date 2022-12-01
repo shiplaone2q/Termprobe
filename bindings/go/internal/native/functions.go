@@ -29,3 +29,5 @@ type nativeFunctionTable struct {
 	StopRecording    func(abiString) *abiResult
 	Text             func(abiString, bool) *abiResult
 	PackedScreen     func(abiString, bool) *abiResult
+	Cells            func(abiString, uint16, uint16, uint16, uint16) *abiResult
+	Write            func(abiString, abiString) *abiResult
