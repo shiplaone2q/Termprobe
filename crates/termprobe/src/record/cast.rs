@@ -127,3 +127,4 @@ impl CastWriter {
 
 /// Paint the active screen; the worker appends `seed::State` so subsequent
 /// output also retains the live rendition, modes and parser boundary.
+pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {

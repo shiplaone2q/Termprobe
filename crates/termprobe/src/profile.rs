@@ -319,3 +319,5 @@ pub struct Profile {
     pub scrollback: usize,
     pub colors: Colors,
 }
+
+impl Default for Profile {
