@@ -46,3 +46,7 @@ class SourceDistribution(sdist):
         shutil.copy2(RUST_ROOT / ".cargo/config.toml", cargo_config / "config.toml")
         for filename in ("Cargo.lock", "LICENSE", "README.md"):
             shutil.copy2(RUST_ROOT / filename, destination / filename)
+        manifest = (RUST_ROOT / "Cargo.toml").read_text(encoding="utf-8")
+        # An sdist needs only the shared ABI and its engine, not the CLI or other bindings.
+        for key in ("members", "default-members"):
+            manifest = re.sub(

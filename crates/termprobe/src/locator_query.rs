@@ -76,3 +76,6 @@ impl LocatorExpression {
             }
             if depth > 64 || size > 4096 {
                 return Err(error("locator expression exceeds the size or depth limit"));
+            }
+            let binary = matches!(node.kind, LocatorNodeKind::And | LocatorNodeKind::Or);
+            let filter = node.kind == LocatorNodeKind::Filter;
