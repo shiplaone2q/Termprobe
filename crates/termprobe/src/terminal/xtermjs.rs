@@ -171,3 +171,7 @@ impl XtermJsEmu {
     pub(crate) fn with_bell_tracker(
         cols: u16,
         rows: u16,
+        profile: &Profile,
+        bells: BellTracker,
+    ) -> anyhow::Result<Self> {
+        // The color every slot takes when no program has changed it. Resolved

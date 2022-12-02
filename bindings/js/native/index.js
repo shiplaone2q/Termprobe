@@ -40,3 +40,4 @@ if (process.platform === "win32") {
     [null],
   )) {
     throw new Error("Failed to retain the termprobe native library for process lifetime");
+  }
