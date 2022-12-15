@@ -472,3 +472,6 @@ macro_rules! emulator_conformance_tests {
         }
 
         /// Every SGR attribute the cell vocabulary exposes round-trips.
+        #[test]
+        fn conformance_sgr_attributes() {
+            let mut e = conformance_emu(20, 2, 100);

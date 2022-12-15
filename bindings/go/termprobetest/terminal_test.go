@@ -30,3 +30,7 @@ func helperOptions(t *testing.T) termprobetest.Options {
 	t.Helper()
 	executable, err := os.Executable()
 	if err != nil {
+		t.Fatal(err)
+	}
+	return termprobetest.Options{
+		Client:  termprobe.ClientOptions{Recording: &termprobe.AutomaticRecording{Mode: termprobe.RecordingDisabled}},

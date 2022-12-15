@@ -39,3 +39,6 @@ if (zigbuild && target.endsWith("-gnu")) {
   // Ghostty's native Zig build detects the host libc, independently of cargo-zigbuild.
   execFileSync("docker", [
     "run", "--rm", "--platform", arch === "aarch64" ? "linux/arm64" : "linux/amd64",
+    "--volume", `${root}:/io`, "--volume", `${tools}:/root`,
+    "--workdir", "/io", "--env", "RUSTFLAGS",
+    `quay.io/pypa/manylinux_2_28_${arch}`,

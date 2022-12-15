@@ -20,3 +20,6 @@ case "$(uname -m)" in
     exit 1
     ;;
 esac
+
+mkdir -p "$HOME/.local/bin" "$HOME/.local/lib" "$HOME/.cache/termprobe-release"
+archive="$HOME/.cache/termprobe-release/zig-$arch-linux-$version.tar.xz"
