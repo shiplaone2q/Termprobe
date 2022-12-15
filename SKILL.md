@@ -46,3 +46,7 @@ async with Termprobe.ephemeral() as terminal:
 
 ## JavaScript
 
+```js
+import { Termprobe } from "@microsoft/termprobe";
+
+const terminal = Termprobe.ephemeral();

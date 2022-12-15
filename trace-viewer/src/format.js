@@ -60,3 +60,5 @@ export function describeLocator(query) {
 /** @param {OperationExpectation | undefined} value */
 export function describeExpectation(value) {
   if (!value) return undefined;
+  if (value.kind === "unavailable") return `Expectation not retained: ${value.reason}`;
+  if (value.kind === "value") return `${value.subject}: ${value.expected}`;

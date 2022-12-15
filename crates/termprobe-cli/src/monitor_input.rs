@@ -61,3 +61,6 @@ impl Perform for InputState {
             let event = modifiers.get(1).copied().unwrap_or(1);
             let bits = modifiers.first().copied().unwrap_or(1).saturating_sub(1);
             const CTRL: u16 = 4;
+            const LOCKS: u16 = 64 | 128;
+            if matches!(event, 1 | 2) && bits & CTRL != 0 && bits & !(CTRL | LOCKS) == 0 {
+                self.event = Some(InputEvent::Detach);

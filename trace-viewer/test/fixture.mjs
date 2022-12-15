@@ -32,3 +32,7 @@ function operation(sequence, name, screen, expectation, result = "ok", input) {
     safe_summary: name, is_assertion: !!expectation, expectation, input,
   };
 }
+
+export function attachment(name, content) {
+  const bytes = Buffer.from(content);
+  return { name, bytes: bytes.length, data: bytes.toString("base64") };
