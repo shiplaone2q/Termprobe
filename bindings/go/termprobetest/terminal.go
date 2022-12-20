@@ -30,3 +30,6 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 	if err != nil {
 		tb.Fatalf("create terminal: %v", err)
 		return nil
+	}
+	tb.Cleanup(func() {
+		failed := tb.Failed()
