@@ -10,3 +10,5 @@
     Result: action?.result, Duration: action && time(action.duration), Started: action && time(action.started), Completed: action && time(action.ended),
     Screen: frame?.sequence, "Terminal cursor (column, row)": frame && `${frame.cursor.x}, ${frame.cursor.y}`,
     "Cursor appearance": frame?.cursorAppearance,
+  });
+  const evidence = $derived(json(frame ? { operation: action?.evidence ?? null, frame: frame.evidence }

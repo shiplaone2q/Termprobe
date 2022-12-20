@@ -55,3 +55,7 @@ fn commands_json(cmd: &Command) -> Value {
     }
     Value::Object(map)
 }
+
+fn command_json(cmd: &Command) -> Value {
+    let args: Vec<Value> = cmd
+        .get_arguments()
