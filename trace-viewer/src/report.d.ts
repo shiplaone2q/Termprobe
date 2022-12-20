@@ -109,3 +109,6 @@ export interface FailureLocatorQuery {
 export type OperationExpectation =
   | { readonly kind: "locator"; readonly query: FailureLocatorQuery; readonly outcome: "matches" | "visible" | "hidden" | "unique" | "actionable" }
   | { readonly kind: "value"; readonly subject: string; readonly expected: string }
+  | { readonly kind: "unavailable"; readonly reason: string };
+
+export interface FailureOperationDetails {

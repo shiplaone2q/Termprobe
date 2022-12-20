@@ -13,3 +13,4 @@ export function checkVersions(output) {
   if (newer.length) throw new Error(`Library requires glibc newer than 2.28: ${newer.join(", ")}`);
 }
 
+export function checkDependencies(output, target) {
