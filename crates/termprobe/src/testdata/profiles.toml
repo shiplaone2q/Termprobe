@@ -34,3 +34,4 @@ enabled = false
 canvas_background = "#f6f6f8"
 font_size = 20
 
+[profiles.demo.recording.style.window]

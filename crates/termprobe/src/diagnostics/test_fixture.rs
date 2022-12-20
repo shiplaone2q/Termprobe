@@ -36,3 +36,5 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
     history.pin_current();
     let observation = FailureObservation {
         rows: emu.viewable_rows(),
+        cols: emu.size().0,
+        title: emu.title(),
