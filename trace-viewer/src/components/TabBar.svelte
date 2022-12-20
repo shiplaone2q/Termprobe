@@ -11,3 +11,5 @@
     const next = (index + offsets[event.key] + tabs.length) % tabs.length;
     onselect(tabs[next].id);
     buttons[next]?.focus();
+  }
+</script>

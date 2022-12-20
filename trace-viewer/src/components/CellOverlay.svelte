@@ -10,3 +10,4 @@
 <svg id="overlay" aria-hidden="true" viewBox={frame.viewBox}>
   {#each locations as location (location)}
     {@const [x, y] = location.split(",").map(Number)}
+    <rect class="mismatch-cell" x={geometry.grid_x + x * geometry.cell_width} y={geometry.grid_y + y * geometry.cell_height}

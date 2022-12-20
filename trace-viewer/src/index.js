@@ -21,3 +21,5 @@ try {
   if (!target) throw new Error("Missing workbench root");
   const model = parseReport(source);
   const resources = createResources(model);
+  try {
+    mount(App, { target, props: { model, resources, hash: location.hash } });
