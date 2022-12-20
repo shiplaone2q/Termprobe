@@ -19,3 +19,5 @@ try {
   if (!source) throw new Error("Missing embedded report-data");
   const target = document.getElementById("workbench");
   if (!target) throw new Error("Missing workbench root");
+  const model = parseReport(source);
+  const resources = createResources(model);

@@ -17,3 +17,5 @@ class TuiTest < Formula
   end
 
   on_linux do
+    on_arm do
+      url "https://github.com/microsoft/tui-test/releases/download/0.1.1/tui-test-aarch64-unknown-linux-gnu.tar.gz"

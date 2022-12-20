@@ -389,3 +389,7 @@ fn write_cursor(
     let x = style.content_left() + cx as f32 * cell_w;
     let y = header_h + style.content_top() + cy as f32 * cell_h;
     let fill = hex(colors.color(ColorSlot::Cursor));
+
+    let (rx, ry, rw, rh) = match colors.cursor_shape() {
+        CursorShape::Block => (x, y, w, cell_h),
+        CursorShape::Underline => (x, y + cell_h - CURSOR_THICKNESS, w, CURSOR_THICKNESS),

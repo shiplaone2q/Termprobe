@@ -27,3 +27,7 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 	}
 	if state.Colors.Palette[1] != "#123456" || state.Colors.Foreground != "#ffffff" {
 		t.Fatalf("colors=%+v", state.Colors)
+	}
+}
+
+func TestNativeCellsPreserveLinks(t *testing.T) {
