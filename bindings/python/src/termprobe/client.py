@@ -238,3 +238,4 @@ def _link_query_value(
         raise ValueError("locator direction must be within, after, or before")
     return _append_node(
         within,
+        {

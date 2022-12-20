@@ -33,3 +33,7 @@ MAPPING = {
         ("client", "get_bell_events"),
     ],
     "type": [("client", "type")],
+    "submit": [("client", "submit")],
+    "key": [("client", "keyboard")],
+    "press": [("client", "press")],
+    "mouse": [("client", "mouse")],

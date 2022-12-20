@@ -166,3 +166,5 @@ fn c_type(ty: &str) -> Result<String> {
     })
 }
 fn c_output(ty: &str, value: &str) -> Result<String> {
+    Ok(match ty {
+        "String" => format!("s.string({value})"),
