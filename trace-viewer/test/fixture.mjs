@@ -36,3 +36,7 @@ function operation(sequence, name, screen, expectation, result = "ok", input) {
 export function attachment(name, content) {
   const bytes = Buffer.from(content);
   return { name, bytes: bytes.length, data: bytes.toString("base64") };
+}
+
+export function fixture() {
+  const frames = [frame(1, 20, 4, "READY"), frame(2, 20, 4, "WORKING"), frame(3, 24, 5, "A\u4f60e\u0301")];

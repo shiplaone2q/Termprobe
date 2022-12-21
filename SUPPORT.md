@@ -7,3 +7,4 @@ issues before filing new issues to avoid duplicates. For new issues, file your b
 feature request as a new Issue.
 
 For help and questions about using this project, create a new Github Discussion.
+
