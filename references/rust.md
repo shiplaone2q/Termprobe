@@ -18,3 +18,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.get_by_text("Continue").click()?;
     terminal.close()?;
     Ok(())
+}

@@ -53,3 +53,7 @@ func bundleTarget(goos, goarch, libc string) (string, error) {
 			if libc == "gnu" || libc == "musl" {
 				return arch + "-unknown-linux-" + libc, nil
 			}
+		case "windows":
+			if goarch == "amd64" {
+				return arch + "-pc-windows-msvc", nil
+			}
