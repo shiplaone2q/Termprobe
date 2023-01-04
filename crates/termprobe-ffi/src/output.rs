@@ -61,3 +61,7 @@ impl Storage {
         self.spans.push(spans);
         result
     }
+}
+fn integer(value: Option<i32>) -> TuiOptionalI32 {
+    TuiOptionalI32 {
+        present: value.is_some(),

@@ -608,3 +608,7 @@ fn map_occurrence(
     if let Some(index) = nth {
         return MatchOccurrence::Nth(index);
     }
+    match mode {
+        Some(MatchArg::Any) => MatchOccurrence::Any,
+        Some(MatchArg::Unique) => MatchOccurrence::Unique,
+        Some(MatchArg::First) => MatchOccurrence::First,

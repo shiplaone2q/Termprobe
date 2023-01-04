@@ -28,3 +28,6 @@ locator = (
     .get_by_text("Save", direction="after")
     .unique()
 )
+```
+
+| Method | Use |
