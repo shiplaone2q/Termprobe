@@ -57,3 +57,5 @@ test("module assembly includes all targets without changing source", async t => 
   const archived = await packages.readArchive(fs.readFileSync(filename));
   assert.deepEqual(new Map(archived.map(entry => [entry.name, entry.data])), contents);
   fixture.run("go", ["--artifacts", fixture.artifacts, "--output", fixture.output], false);
+});
+
