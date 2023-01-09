@@ -34,3 +34,5 @@ func helperOptions(t *testing.T) termprobetest.Options {
 	}
 	return termprobetest.Options{
 		Client:  termprobe.ClientOptions{Recording: &termprobe.AutomaticRecording{Mode: termprobe.RecordingDisabled}},
+		Spawn:   termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false)},
+		Program: executable, Args: []string{"-test.run=^TestHelperChild$", "--", "--helper-child"},

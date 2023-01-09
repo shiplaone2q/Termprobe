@@ -33,3 +33,5 @@ export interface Attachment {
   readonly name: string;
   readonly bytes: number;
   readonly data: string;
+}
+export interface ReportData {

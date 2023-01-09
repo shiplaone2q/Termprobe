@@ -224,3 +224,6 @@ impl Drop for GhosttyEmu {
         }
     }
 }
+
+impl Emulator for GhosttyEmu {
+    fn process(&mut self, bytes: &[u8]) {
