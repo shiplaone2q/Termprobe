@@ -184,3 +184,7 @@ fn timeline_with_limit(
                 }
                 frame.grid.push(indices);
             }
+            if serde_json::to_vec(&frame)?.len() > remaining + reserved {
+                frame.cells.clear();
+                frame.grid.clear();
+                frame.omission = Some("Cell grid and SVG omitted: timeline byte limit.".into());

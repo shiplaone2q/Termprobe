@@ -26,3 +26,4 @@ from .types import (
     Colors,
     Cursor,
     Viewport,
+    LocatorDirection,
