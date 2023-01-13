@@ -239,3 +239,4 @@ def _link_query_value(
     return _append_node(
         within,
         {
+            "kind": "link",

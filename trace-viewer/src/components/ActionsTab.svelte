@@ -13,3 +13,7 @@
 
 <div class="action-filter">
   <input id="action-filter" type="search" aria-label="Filter actions" placeholder="Filter actions"
+    value={filter} oninput={(event) => onfilter(event.currentTarget.value)} />
+  <label><input id="assertions-only" type="checkbox" checked={assertionsOnly}
+    onchange={(event) => onassertions(event.currentTarget.checked)} /> Assertions and waits only</label>
+</div>

@@ -9,3 +9,4 @@ publish = false
 
 [lib]
 name = "termprobe_ffi"
+crate-type = ["cdylib", "rlib"]
