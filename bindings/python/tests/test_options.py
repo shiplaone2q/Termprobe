@@ -246,3 +246,6 @@ class RecordingResolutionTests(unittest.TestCase):
             cfg.normalize_trace({"mode": "always"})
         with self.assertRaises(TypeError):
             cfg.normalize_trace({"directory": ""})
+
+
+class FailureDiagnosticsTests(unittest.TestCase):

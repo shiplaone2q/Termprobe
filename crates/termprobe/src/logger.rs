@@ -35,3 +35,7 @@ impl Logger {
             sink: Some(Mutex::new(BufWriter::new(file))),
         })
     }
+
+    pub fn enabled(&self) -> bool {
+        self.sink.is_some()
+    }

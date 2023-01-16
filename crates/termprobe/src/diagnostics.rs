@@ -465,3 +465,5 @@ pub struct DiagnosticHint {
     pub message: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ComparisonDiagnostics {

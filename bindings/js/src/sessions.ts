@@ -9,3 +9,4 @@ export async function closeAll(): Promise<void> {
   await native.closeAll();
 }
 
+export async function getRecording(session?: string): Promise<string> {
