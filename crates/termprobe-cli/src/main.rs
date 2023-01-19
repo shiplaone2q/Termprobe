@@ -612,3 +612,7 @@ fn map_occurrence(
         Some(MatchArg::Any) => MatchOccurrence::Any,
         Some(MatchArg::Unique) => MatchOccurrence::Unique,
         Some(MatchArg::First) => MatchOccurrence::First,
+        Some(MatchArg::Last) => MatchOccurrence::Last,
+        None => default,
+    }
+}

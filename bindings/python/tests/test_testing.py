@@ -58,3 +58,4 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual((a.closed, b.closed), (1, 1))
         self.assertEqual(testing.tracked_count(), 0)
 
+    def test_untracking_exempts_a_terminal(self):

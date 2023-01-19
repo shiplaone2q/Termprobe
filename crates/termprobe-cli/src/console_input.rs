@@ -20,3 +20,7 @@ impl ConsoleInput {
 }
 
 impl Read for ConsoleInput {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        if buffer.is_empty() {
+            return Ok(0);
+        }
