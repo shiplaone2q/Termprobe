@@ -9,3 +9,4 @@
   } = $props();
   const tabs: readonly { id: DetailsTab; label: string }[] = $derived([
     { id: "errors", label: hasFailure ? "Error" : "Result" }, { id: "cell", label: "Cell" },
+    { id: "call", label: "Call" }, { id: "attachments", label: "Attachments" },

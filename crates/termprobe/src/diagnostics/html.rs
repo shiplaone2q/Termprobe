@@ -188,3 +188,5 @@ fn timeline_with_limit(
                 frame.cells.clear();
                 frame.grid.clear();
                 frame.omission = Some("Cell grid and SVG omitted: timeline byte limit.".into());
+            } else {
+                frame.omission = None;

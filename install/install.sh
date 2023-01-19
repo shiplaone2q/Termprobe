@@ -58,3 +58,7 @@ download() {
         -O "$destination" "$url"
     else
       wget -q -O "$destination" "$url"
+    fi
+  else
+    fail "curl or wget is required."
+  fi
