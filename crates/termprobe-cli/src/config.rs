@@ -58,3 +58,4 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
     {
         let user = format!(
             "{}\\{}",
+            std::env::var("USERDOMAIN").unwrap_or_default(),

@@ -95,3 +95,6 @@ export interface TextSpan {
   row: number
   start: number
   end: number
+}
+
+export interface TextMatch {
