@@ -28,3 +28,7 @@
   }
 </script>
 
+<div class="viewport" class:fit={zoom === "fit"} id="viewport">
+  <button id="terminal" type="button" style:width={width} hidden={!url}
+    aria-label="Terminal cell inspector. Click a cell or use arrow keys."
+    onclick={(event) => inspect(event, event.currentTarget)} onkeydown={move}>
