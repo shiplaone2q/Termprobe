@@ -53,3 +53,6 @@ pub fn generate(
         for item in structs {
             let id = item.ident.to_string();
             if emitted.contains(&id) {
+                continue;
+            }
+            let ready = item.fields.iter().all(|f| {

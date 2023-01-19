@@ -23,3 +23,7 @@ const formula = `class Termprobe < Formula
   desc "Control, inspect, test, and record terminal sessions"
   homepage "https://github.com/microsoft/termprobe"
   version "${version}"
+  license "MIT"
+
+  on_macos do
+    on_arm do

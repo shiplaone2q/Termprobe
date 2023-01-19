@@ -616,3 +616,4 @@ fn map_occurrence(
         None => default,
     }
 }
+
