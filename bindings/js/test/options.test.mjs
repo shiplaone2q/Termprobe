@@ -199,3 +199,4 @@ test("mouse helpers encode named buttons and modifiers", async () => {
       ],
       ["down", 1, 2, 17],
       ["up", 3, 4, 10],
+      ["drag", 5, 6, 7, 8, 4],

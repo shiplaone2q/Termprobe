@@ -103,3 +103,5 @@ fn pointer_options_reject_null_and_preserve_validation() {
     let session = text(r#"{"name":"go-abi-pointer-options"}"#);
     let options = TuiOpenOptions {
         cols: TuiOptionalU64 {
+            present: true,
+            value: 65_536,

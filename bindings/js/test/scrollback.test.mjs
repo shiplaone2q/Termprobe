@@ -23,3 +23,7 @@ test("viewport results preserve safe counts and reject lost precision", async ()
     }
   }
   assert.equal(released, 3);
+});
+
+test("native scroll validates signed integer amounts", async () => {
+  const terminal = Termprobe.ephemeral();
