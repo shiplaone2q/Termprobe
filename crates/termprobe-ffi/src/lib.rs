@@ -174,3 +174,6 @@ pub unsafe extern "C" fn tui_run(
     }
 }
 #[no_mangle]
+/// Pointer form for foreign callers with limited by-value argument space.
+///
+/// # Safety
