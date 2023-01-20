@@ -475,3 +475,5 @@ macro_rules! emulator_conformance_tests {
         #[test]
         fn conformance_sgr_attributes() {
             let mut e = conformance_emu(20, 2, 100);
+            // bold, dim, italic, underline, inverse, hidden, strikethrough
+            e.process(b"\x1b[1;2;3;4;7;8;9mX\x1b[0mY");

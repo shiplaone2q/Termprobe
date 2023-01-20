@@ -19,3 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.close()?;
     Ok(())
 }
+```
+
+Core types:
+

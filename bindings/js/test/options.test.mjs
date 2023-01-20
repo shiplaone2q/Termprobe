@@ -197,3 +197,5 @@ test("mouse helpers encode named buttons and modifiers", async () => {
           clicks: 2,
         },
       ],
+      ["down", 1, 2, 17],
+      ["up", 3, 4, 10],
