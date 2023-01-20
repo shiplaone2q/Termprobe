@@ -42,3 +42,6 @@ let defaults: Partial<CreateTerminalOptions> = {};
 export function setTerminalDefaults(values: Partial<CreateTerminalOptions>): void {
   defaults = { ...defaults, ...values };
 }
+
+export function resetTerminalDefaults(): void {
+  defaults = {};

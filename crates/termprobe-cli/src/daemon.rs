@@ -141,3 +141,4 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
     drop(operations);
     let response = shutdown_engine(Arc::clone(&host));
     if let Some(mut conn) = closing_client {
+        let _ = ipc::write_response(&mut conn, &response);

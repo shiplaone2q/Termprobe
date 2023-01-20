@@ -547,3 +547,5 @@ fn monitor_frames_and_input_outlive_the_target() {
     let log = std::fs::read_to_string(sandbox.home.join(format!("{}.log", sandbox.session)))
         .expect("read verbose log");
     assert!(
+        !log.lines()
+            .any(|line| line.contains("WRITE") && line.contains(secret)),
