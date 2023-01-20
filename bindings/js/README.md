@@ -119,3 +119,4 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 | `signal(name)` | Send `INT`, `TERM`, `KILL`, or `QUIT`. |
 | `kill()` | Kill the child process. |
 
+#### Native history
