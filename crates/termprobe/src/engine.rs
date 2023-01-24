@@ -1125,3 +1125,4 @@ impl Engine {
                 exports_truncated |= export_details.truncated;
                 if is_trace && artifact.status != FailureArtifactStatus::Written {
                     if let Some(primary) = error.artifact.as_mut() {
+                        if primary.status == FailureArtifactStatus::Written {

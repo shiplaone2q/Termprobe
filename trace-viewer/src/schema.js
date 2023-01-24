@@ -42,3 +42,7 @@ const tagged = (variants) => (value, path) => {
   variants[kind](value, path);
 };
 const position = shape({ column: integer, row: integer });
+const size = shape({ cols: dimension, rows: dimension });
+const cursor = shape({ column: integer, row: integer, shape: text, visible: bool });
+/** @type {Validator} */
+const occurrence = (value, path) => typeof value === "string"
