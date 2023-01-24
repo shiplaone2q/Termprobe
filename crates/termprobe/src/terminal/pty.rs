@@ -166,3 +166,7 @@ impl From<ExitStatus> for ProcessExit {
         Self {
             code: status.exit_code() as i32,
             signal: status.signal().map(str::to_string),
+        }
+    }
+}
+

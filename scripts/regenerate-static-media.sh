@@ -44,3 +44,5 @@ done
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/.." && pwd)
 static_dir="$repo_root/static"
+temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/termprobe-static-media.XXXXXX")
+session_prefix="static-media-$$"
