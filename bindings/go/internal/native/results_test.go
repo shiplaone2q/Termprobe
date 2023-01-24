@@ -31,3 +31,7 @@ func TestNativeStatePreservesRichTerminalMetadata(t *testing.T) {
 }
 
 func TestNativeCellsPreserveLinks(t *testing.T) {
+	memory := nativeMemory{}
+	defer memory.release()
+	values := []abiCell{{character: memory.text("x"), link: memory.text("https://example.test"), linkID: memory.text("docs")}}
+	memory.pinner.Pin(&values[0])
