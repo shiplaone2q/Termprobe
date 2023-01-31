@@ -177,3 +177,6 @@ pub unsafe extern "C" fn tui_run(
 /// Pointer form for foreign callers with limited by-value argument space.
 ///
 /// # Safety
+/// options must be NULL or point to a valid TuiOpenOptions for this call.
+/// All borrowed buffers follow the same contract as tui_run.
+pub unsafe extern "C" fn tui_run_ptr(

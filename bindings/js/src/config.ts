@@ -70,3 +70,7 @@ export function resolveTimeout(
   const scoped = options.timeouts?.[cls];
   if (scoped !== undefined && scoped !== null) {
     return scoped;
+  }
+  return undefined;
+}
+
