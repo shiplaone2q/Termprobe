@@ -182,3 +182,4 @@ impl FrameRenderer for GridRenderer {
         } else {
             svg::pixel_size(cols, rows, style)
         };
+        let panel_width = scaled_dimension(base_width, f64::from(self.scale), "frame width")?;

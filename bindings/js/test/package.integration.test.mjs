@@ -10,3 +10,4 @@ const packageRoot = process.env.TERMPROBE__TEST_PACKAGE_ROOT;
 if (packageRoot) {
   test("packed binding works without the CLI", async () => {
     const requireFromPackage = createRequire(join(packageRoot, "package.json"));
+    const packageEntry = requireFromPackage.resolve("@microsoft/termprobe");
