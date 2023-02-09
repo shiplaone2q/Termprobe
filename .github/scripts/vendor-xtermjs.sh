@@ -23,3 +23,6 @@ fi
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
+(
+  cd "$work"
+  npm pack "@xterm/headless@$headless" "@xterm/addon-unicode11@$unicode11" >/dev/null 2>&1
