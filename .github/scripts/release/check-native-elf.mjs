@@ -14,3 +14,6 @@ export function checkVersions(output) {
 }
 
 export function checkDependencies(output, target) {
+  const arch = target.startsWith("aarch64-") ? "aarch64" : "x86_64";
+  const allowed = new Set(target.endsWith("-gnu") ? [
+    "libc.so.6", "libdl.so.2", "libpthread.so.0", "libm.so.6", "librt.so.1", "libutil.so.1",
