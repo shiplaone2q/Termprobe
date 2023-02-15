@@ -34,3 +34,5 @@ impl Default for BellTracker {
     fn default() -> Self {
         Self::new(Instant::now())
     }
+}
+

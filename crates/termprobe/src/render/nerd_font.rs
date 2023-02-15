@@ -89,3 +89,6 @@ impl NerdFont {
                 Glyph {
                     path: builder.path,
                     advance: face
+                        .glyph_hor_advance(glyph_id)
+                        .unwrap_or(face.units_per_em()),
+                    bounds,

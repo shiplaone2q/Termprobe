@@ -15,3 +15,5 @@ def __su_cwd [] {
     let path = if ($path | str starts-with '/') { $path } else { $"/($path)" }
     $"(ansi osc)7;file://($path | url encode)(char bel)"
 }
+
+$env.PROMPT_COMMAND = {|| $"(__su_cwd)> " }
