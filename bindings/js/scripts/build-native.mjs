@@ -42,3 +42,6 @@ if (zigbuild && target.endsWith("-gnu")) {
     "--volume", `${root}:/io`, "--volume", `${tools}:/root`,
     "--workdir", "/io", "--env", "RUSTFLAGS",
     `quay.io/pypa/manylinux_2_28_${arch}`,
+    "bash", "-euc", `
+export CARGO_HOME="$HOME/.cargo" RUSTUP_HOME="$HOME/.rustup"
+export PATH="$CARGO_HOME/bin:$HOME/.local/bin:$PATH"
