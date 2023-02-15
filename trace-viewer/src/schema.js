@@ -46,3 +46,7 @@ const size = shape({ cols: dimension, rows: dimension });
 const cursor = shape({ column: integer, row: integer, shape: text, visible: bool });
 /** @type {Validator} */
 const occurrence = (value, path) => typeof value === "string"
+  ? choice(["any", "unique", "first", "last"])(value, path) : shape({ nth: integer })(value, path);
+const style = shape({
+  foreground: nullable(text), background: nullable(text), underline_color: nullable(text), underline_style: nullable(text),
+  bold: nullable(bool), dim: nullable(bool), italic: nullable(bool), inverse: nullable(bool), hidden: nullable(bool),

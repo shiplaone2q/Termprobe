@@ -81,3 +81,7 @@ export interface Colors {
   brightGreen?: string;
   brightYellow?: string;
   brightBlue?: string;
+  brightMagenta?: string;
+  brightCyan?: string;
+  brightWhite?: string;
+}

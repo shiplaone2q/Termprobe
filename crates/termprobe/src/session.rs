@@ -306,3 +306,5 @@ impl Session {
                 }
             }
         });
+
+        logger.event(&format!(
