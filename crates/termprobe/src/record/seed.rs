@@ -86,3 +86,4 @@ impl State {
             0
         };
         if !modes.contains(TermMode::LINE_WRAP) {
+            output.push_str("\x1b[?7l");

@@ -465,3 +465,5 @@ impl From<String> for LinkSelector {
     fn from(uri: String) -> Self {
         Self { uri, full: false }
     }
+}
+
