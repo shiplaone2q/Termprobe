@@ -617,3 +617,7 @@ fn map_occurrence(
     }
 }
 
+fn map_anchor(
+    text: Option<String>,
+    regex: bool,
+    mode: Option<MatchArg>,

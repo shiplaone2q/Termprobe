@@ -45,3 +45,6 @@ export function setTerminalDefaults(values: Partial<CreateTerminalOptions>): voi
 
 export function resetTerminalDefaults(): void {
   defaults = {};
+}
+
+const tracked = new Set<Termprobe>();

@@ -33,3 +33,5 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 	}
 	tb.Cleanup(func() {
 		failed := tb.Failed()
+		if closeErr := terminal.Close(termprobe.CloseOptions{Failed: termprobe.Ptr(failed)}); closeErr != nil {
+			tb.Errorf("close terminal: %v", closeErr)
