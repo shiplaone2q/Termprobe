@@ -24,3 +24,4 @@ function fixture(t) {
     dependencies: { koffi: "^3.3.3" },
     nativeTargets,
   }));
+  fs.writeFileSync(path.join(bindings, "index.js"), "export {};\n");
