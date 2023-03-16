@@ -495,3 +495,6 @@ pub enum RecordCmd {
         transparent: bool,
     },
     /// Stop the active recording and finish its output file.
+    Stop,
+}
+
