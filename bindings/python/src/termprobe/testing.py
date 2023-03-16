@@ -60,3 +60,4 @@ class TerminalOptions:
     trace: Optional[TraceOptions] = None
 
 
+_DEFAULTABLE = frozenset(TerminalOptions.__dataclass_fields__)

@@ -467,3 +467,7 @@ impl From<String> for LinkSelector {
     }
 }
 
+impl LocatorSelector {
+    pub fn full(&self) -> bool {
+        match self {
+            Self::Text(selector) => selector.full,

@@ -239,3 +239,6 @@ fn named_wait_allows_concurrent_input_resize_and_submit() {
         .unwrap();
     finished_rx
         .recv_timeout(Duration::from_secs(2))
+        .unwrap()
+        .unwrap();
+    waiter.join().unwrap();
