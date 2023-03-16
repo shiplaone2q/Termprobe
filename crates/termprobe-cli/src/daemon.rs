@@ -142,3 +142,7 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
     let response = shutdown_engine(Arc::clone(&host));
     if let Some(mut conn) = closing_client {
         let _ = ipc::write_response(&mut conn, &response);
+        ipc::drain_peer(conn, Duration::from_millis(config::SHUTDOWN_DRAIN_MS));
+    }
+    cleanup(&session_name);
+    listener_error.map_or(Ok(()), |error| Err(error.into()))

@@ -27,3 +27,4 @@ jobs:
         id: vendor
         shell: bash
         run: |
+          set -euo pipefail
