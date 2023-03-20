@@ -22,3 +22,6 @@ fs.mkdirSync(outputDirectory, { recursive: true });
 
 for (const tag of targets) {
   const [platform, arch, abi] = tag.split("-");
+  const extension = { darwin: "dylib", linux: "so", win32: "dll" }[platform];
+  if (!extension) throw new Error(`Unsupported native platform: ${platform}`);
+  const filename = `termprobe.${tag}.${extension}`;

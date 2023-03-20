@@ -146,3 +146,7 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
     }
     cleanup(&session_name);
     listener_error.map_or(Ok(()), |error| Err(error.into()))
+}
+
+fn handle_connection(
+    conn: Stream,
