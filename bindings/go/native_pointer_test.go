@@ -24,3 +24,5 @@ func TestNativeOptionPointersPreserveValidation(t *testing.T) {
 		_, runErr := terminal.Run("unused-program", nil, options)
 		requireNativeUsageError(t, runErr)
 	})
+}
+

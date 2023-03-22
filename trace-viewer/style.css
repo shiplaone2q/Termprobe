@@ -9,3 +9,4 @@ button { cursor: pointer; }
 button:hover:not(:disabled) { background: var(--selected); }
 button:disabled { opacity: .45; cursor: default; }
 input { min-width: 0; background: var(--bg); border: 1px solid var(--border); padding: 4px 6px; border-radius: 3px; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }

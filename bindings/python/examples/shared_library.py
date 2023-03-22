@@ -12,3 +12,4 @@ async def main():
             sys.executable, "-u", "-c",
             "print('Shared typed ABI: Python'); input()",
         )
+        await terminal.get_by_text("Shared typed ABI: Python").expect()
