@@ -44,3 +44,5 @@
   .filmstrip { display: flex; align-items: stretch; gap: 7px; height: 78px; overflow-x: auto; }
   .thumbnail { padding: 2px; min-width: 92px; max-width: 126px; flex-shrink: 0; text-align: left; border: 1px solid var(--border); background: var(--bg); }
   .thumbnail img { width: 100%; height: 46px; object-fit: contain; background: #111; display: block; }
+  .thumbnail span { display: block; padding: 1px 4px; font-size: 10px; color: var(--muted); }
+  .thumbnail[aria-current="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }

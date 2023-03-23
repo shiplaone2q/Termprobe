@@ -72,3 +72,7 @@ fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
         ),
         (
             "shellIntegration.fish",
+            include_str!("../../shell/shellIntegration.fish"),
+        ),
+        (
+            "shellIntegration.ps1",
