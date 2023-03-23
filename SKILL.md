@@ -52,3 +52,4 @@ import { Termprobe } from "@microsoft/termprobe";
 const terminal = Termprobe.ephemeral();
 try {
   await terminal.run("my-app");
+  await terminal.getByText("Ready").expect();

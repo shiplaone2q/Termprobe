@@ -6,3 +6,4 @@
 </script>
 
 <div class="tab-panel" id={`${id}-panel`} role="tabpanel" tabindex="0" aria-labelledby={`${id}-tab`} hidden={active !== id}
+  class:metadata={padding === "metadata"} class:details={padding === "details"}>
