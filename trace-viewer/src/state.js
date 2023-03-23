@@ -30,3 +30,4 @@ function select(model, state, frameIndex, actionId, missingScreen) {
 }
 
 /** @param {TraceModel} model @param {ViewerState} state @param {ViewerEvent} event @returns {ViewerState} */
+export function update(model, state, event) {

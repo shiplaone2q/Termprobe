@@ -36,3 +36,7 @@ impl ProtectedFile {
         } else {
             Ok(())
         }
+    }
+}
+
+#[cfg(unix)]

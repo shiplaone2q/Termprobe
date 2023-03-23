@@ -103,3 +103,4 @@ impl TrackerState {
                 self.region = Region::None;
             }
             "B" => {
+                self.started = true;
