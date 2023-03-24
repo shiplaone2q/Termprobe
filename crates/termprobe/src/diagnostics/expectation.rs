@@ -66,3 +66,4 @@ impl OperationExpectation {
             Operation::HighlightLocator { query, .. } => Self::Locator {
                 query: Box::new(query.clone()),
                 outcome: LocatorExpectation::Visible,
+            },

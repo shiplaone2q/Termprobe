@@ -92,3 +92,7 @@ impl NerdFont {
                         .glyph_hor_advance(glyph_id)
                         .unwrap_or(face.units_per_em()),
                     bounds,
+                },
+            );
+        }
+
