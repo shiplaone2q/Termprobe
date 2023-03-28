@@ -67,3 +67,7 @@ impl OperationExpectation {
                 query: Box::new(query.clone()),
                 outcome: LocatorExpectation::Visible,
             },
+            Operation::WaitTitle {
+                text, regex, not, ..
+            }
+            | Operation::ExpectTitle {

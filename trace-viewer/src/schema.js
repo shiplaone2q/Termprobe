@@ -50,3 +50,6 @@ const occurrence = (value, path) => typeof value === "string"
 const style = shape({
   foreground: nullable(text), background: nullable(text), underline_color: nullable(text), underline_style: nullable(text),
   bold: nullable(bool), dim: nullable(bool), italic: nullable(bool), inverse: nullable(bool), hidden: nullable(bool),
+  strikethrough: nullable(bool), blink: nullable(bool),
+});
+const anchor = shape({ text, regex: bool, occurrence });
