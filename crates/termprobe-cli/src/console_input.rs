@@ -24,3 +24,7 @@ impl Read for ConsoleInput {
         if buffer.is_empty() {
             return Ok(0);
         }
+        loop {
+            let read = self.bytes.read(buffer)?;
+            if read != 0 {
+                return Ok(read);

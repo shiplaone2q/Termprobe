@@ -58,3 +58,5 @@ Build and run the JavaScript example from the repository root:
 ```sh
 cd bindings/js
 npm ci
+npm run build:native:debug
+npm run build:ts

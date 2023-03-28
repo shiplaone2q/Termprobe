@@ -75,3 +75,5 @@ pub struct TuiResult {
     pub number: u64,
     pub exit_code: TuiOptionalI32,
     pub open: TuiOpenResult,
+    pub state: TuiState,
+    pub cursor: TuiCursor,

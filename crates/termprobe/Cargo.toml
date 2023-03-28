@@ -37,3 +37,5 @@ png = { workspace = true, optional = true }
 portable-pty.workspace = true
 regex.workspace = true
 rio-vt = { workspace = true, optional = true }
+rquickjs = { workspace = true, optional = true }
+serde.workspace = true
