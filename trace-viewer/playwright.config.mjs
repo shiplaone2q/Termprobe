@@ -4,3 +4,4 @@ export default defineConfig({
   testDir: "./test",
   testMatch: "**/*.spec.mjs",
   fullyParallel: true,
+  workers: 2,

@@ -85,3 +85,7 @@ export interface Colors {
   brightCyan?: string;
   brightWhite?: string;
 }
+
+export interface Profile {
+  scrollback?: number;
+  colors?: Colors;

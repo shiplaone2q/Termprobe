@@ -6,3 +6,4 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node", "svelte"],
     "allowJs": true,
+    "checkJs": true,
