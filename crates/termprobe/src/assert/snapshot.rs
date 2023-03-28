@@ -94,3 +94,7 @@ fn baseline() -> EmuCell {
 /// here and leaves it running — but it is carried on a cell the same way, so
 /// it is recorded with them rather than behind a second switch a reader has to
 /// remember to turn on.
+pub fn serialize(
+    rows: &[Vec<EmuCell>],
+    cols: u16,
+    include_style: bool,

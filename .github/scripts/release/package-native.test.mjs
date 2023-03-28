@@ -59,3 +59,4 @@ test("module assembly includes all targets without changing source", async t => 
   fixture.run("go", ["--artifacts", fixture.artifacts, "--output", fixture.output], false);
 });
 
+test("generated embeds select and build for every Go platform", t => {

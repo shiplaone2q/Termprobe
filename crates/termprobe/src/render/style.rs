@@ -212,3 +212,4 @@ pub struct PaddingSides {
     pub left: Option<u32>,
 }
 
+impl Padding {

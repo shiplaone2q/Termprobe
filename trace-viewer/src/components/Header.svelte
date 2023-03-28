@@ -16,3 +16,5 @@
   </div>
   <button id="failure" class="failure-button" disabled={!canJump} onclick={onjump}>
     {hasFailure ? "Jump to failure" : "Jump to end"}
+  </button>
+</header>
