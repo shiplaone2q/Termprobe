@@ -53,3 +53,4 @@ const style = shape({
   strikethrough: nullable(bool), blink: nullable(bool),
 });
 const anchor = shape({ text, regex: bool, occurrence });
+const direction = choice(["within", "before", "after"]);

@@ -27,3 +27,4 @@
       evidence: json({ screen_sequence: inspection.frame.sequence, column: x, row: y, ...cell, codepoints, lead_column: leadColumn ?? null }),
     };
   });
+</script>

@@ -243,3 +243,5 @@ impl Style {
             UnderlineStyle::Dashed => 5,
         };
         if sub != 0 {
+            s.push_str(&format!(";4:{sub}"));
+            // SGR 58 takes its arguments as colon-joined subparameters. Mixing
