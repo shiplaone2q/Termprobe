@@ -215,3 +215,5 @@ fn build_catalog(font: &FontFamilies) -> anyhow::Result<Catalog> {
         database: Arc::new(database),
         candidates,
         nerd_faces,
+    })
+}

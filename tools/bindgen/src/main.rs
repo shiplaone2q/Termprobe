@@ -97,3 +97,7 @@ fn main() -> Result<()> {
     emit(
         &root,
         "bindings/go/internal/native/functions.go",
+        &format_source("gofmt", &[], &go_functions(&functions)?)?,
+        check,
+    )?;
+    emit(

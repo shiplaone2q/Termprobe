@@ -61,3 +61,5 @@ termprobe click text "Open" --button right --ctrl
 
 ```python
 await terminal.get_by_text("Open").click(button="right", ctrl=True)
+```
+
