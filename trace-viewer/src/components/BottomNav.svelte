@@ -11,3 +11,5 @@
     { id: "errors", label: hasFailure ? "Error" : "Result" }, { id: "cell", label: "Cell" },
     { id: "call", label: "Call" }, { id: "attachments", label: "Attachments" },
   ]);
+</script>
+

@@ -52,3 +52,6 @@ func (memory *nativeMemory) openOptions(options OpenOptions, recording *Automati
 	if options.Restart != nil {
 		result.restart = *options.Restart
 	}
+	result.env, result.envLen = memory.pairs(options.Env)
+	if options.Profile != nil {
+		result.scrollback = nativeUint(options.Profile.Scrollback)
