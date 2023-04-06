@@ -32,3 +32,6 @@ func initializeNativeEngine() error {
 
 func loadNativeFunctions(path string) (nativeFunctionTable, error) {
 	table := nativeFunctionTable{}
+	library, err := openNativeLibrary(path)
+	if err != nil {
+		return table, err

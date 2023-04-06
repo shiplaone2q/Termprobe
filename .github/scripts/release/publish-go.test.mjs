@@ -34,3 +34,6 @@ function publicationFixture(t) {
   git(["remote", "add", "origin", remote]);
   git(["push", "-q", "origin", "main", "--tags"]);
   for (const target of Object.keys(targets)) fixture.writeNative(target);
+  fixture.assemble();
+  return {
+    fixture, remote, git,

@@ -43,3 +43,5 @@ fn demonstrate(backend: Backend) -> Result<()> {
         let full = text(&session, true)?;
         println!("{} live:\n{}", backend.as_str(), text(&session, false)?);
         session.execute(Operation::Scroll {
+            target: ScrollTarget::Top,
+        })?;

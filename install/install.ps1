@@ -52,3 +52,5 @@ elseif ($version -eq "beta") {
             $_.tag_name -match "^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$"
         } |
         Select-Object -First 1
+    if ($null -eq $latestBeta -or [string]::IsNullOrWhiteSpace($latestBeta.tag_name)) {
+        throw "No beta release was found."
