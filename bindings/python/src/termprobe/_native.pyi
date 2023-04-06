@@ -30,3 +30,7 @@ class NativeInternalError(builtins.Exception):
 class NativeNoSessionError(builtins.Exception):
     r"""
     Native session was not found.
+    """
+    ...
+
+@typing.final

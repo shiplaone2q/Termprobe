@@ -59,3 +59,7 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
         let user = format!(
             "{}\\{}",
             std::env::var("USERDOMAIN").unwrap_or_default(),
+            std::env::var("USERNAME").unwrap_or_default(),
+        )
+        .to_lowercase();
+        pipe_name_in(home, &user, session)
