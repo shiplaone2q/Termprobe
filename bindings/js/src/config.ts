@@ -76,3 +76,6 @@ export function resolveTimeout(
 
 export function backendPayload(backend?: unknown): Backend | undefined {
   if (backend === undefined || backend === null) {
+    return undefined;
+  }
+  if (typeof backend !== "string") {
