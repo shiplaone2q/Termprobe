@@ -13,3 +13,6 @@
     buttons[next]?.focus();
   }
 </script>
+
+<div class="tabs" role="tablist" aria-label={label}>
+  {#each tabs as tab, index (tab.id)}

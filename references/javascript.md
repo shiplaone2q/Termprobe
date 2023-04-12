@@ -50,3 +50,7 @@ const locator = terminal
 
 Text options: `regex`, `full`, `whitespace`, and chained `direction`.
 
+Style/link options are `full` and chained `direction`. Filter accepts locators
+only; use `getByText()` for text containment. A partially linked text match
+passes `filter({ has: terminal.getByLink(uri) })` but fails chained
+`getByLink(uri)`. `.and(terminal.getByLink(uri))` returns its linked cells.
