@@ -84,3 +84,4 @@ impl FailureReport {
             let candidates = stage.map_or(locator.selected.as_slice(), |stage| &stage.candidates);
             let mismatches = stage.map_or(&[][..], |stage| stage.mismatches.as_slice());
             *truncated |= candidates.len() > 4
+                || mismatches.len() > 4
