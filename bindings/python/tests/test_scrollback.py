@@ -21,3 +21,6 @@ class ScrollbackTests(unittest.TestCase):
 
         library.tui_result_free.side_effect = release
         with patch.object(_native, "_load", return_value=library):
+            viewport = _native._invoke("get_viewport", (), "viewport")
+        self.assertEqual(viewport, {"offset": maximum - 1, "history": maximum})
+        library.tui_result_free.assert_called_once()
