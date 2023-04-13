@@ -105,3 +105,5 @@ fn pointer_options_reject_null_and_preserve_validation() {
         cols: TuiOptionalU64 {
             present: true,
             value: 65_536,
+        },
+        ..Default::default()

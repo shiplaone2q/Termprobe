@@ -222,3 +222,7 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
             }
             for x in cursor_left..cursor_right {
                 assert_eq!(
+                    pixel_at(&image, x, y),
+                    [cursor.r, cursor.g, cursor.b, 255],
+                    "misaligned cursor pixel at ({x}, {y}), zoom {zoom}"
+                );

@@ -71,3 +71,7 @@ impl OperationExpectation {
                 text, regex, not, ..
             }
             | Operation::ExpectTitle {
+                text, regex, not, ..
+            } => value(
+                "Terminal title",
+                format!(
