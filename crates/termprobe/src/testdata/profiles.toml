@@ -35,3 +35,6 @@ canvas_background = "#f6f6f8"
 font_size = 20
 
 [profiles.demo.recording.style.window]
+background = "#e8e8ef"
+foreground = "#33333a"
+

@@ -7,3 +7,4 @@ export function verifyGoVersion(root, version) {
     const text = fs.readFileSync(path.join(root, name), "utf8");
     const commands = [...text.matchAll(/go get github\.com\/microsoft\/termprobe\/bindings\/go@([^\s`]+)/g)];
     if (!commands.length || commands.some(match => match[1] !== `v${version}`)) {
+      throw new Error(`${name} must use go get github.com/microsoft/termprobe/bindings/go@v${version}`);

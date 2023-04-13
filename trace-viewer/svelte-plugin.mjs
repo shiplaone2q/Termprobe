@@ -15,3 +15,5 @@ export function sveltePlugin(generate = "client") {
         });
         if (compiled.warnings.length) {
           return { errors: compiled.warnings.map((warning) => ({ text: `${filename}: ${warning.message}` })) };
+        }
+        const cssPath = `${filename}.css`;
