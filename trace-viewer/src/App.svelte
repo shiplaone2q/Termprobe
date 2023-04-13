@@ -37,3 +37,6 @@
     if (!event.persisted) resources.dispose();
   }
 
+  onDestroy(() => resources.dispose());
+</script>
+
