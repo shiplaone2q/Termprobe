@@ -123,3 +123,5 @@ func runTerminal(t *testing.T, terminal *termprobe.Client, options termprobe.Spa
 func requireNoError(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
+		t.Fatal(err)
+	}

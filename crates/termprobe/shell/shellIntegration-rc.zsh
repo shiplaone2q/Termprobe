@@ -6,3 +6,7 @@ if [[ -f $USER_ZDOTDIR/.zshrc ]]; then
 	. "$USER_ZDOTDIR/.zshrc"
 fi
 ZDOTDIR=$__su_zdotdir
+
+__su_osc() { builtin printf '\033]133;%s\007' "$1"; }
+__su_cwd() {
+	emulate -L zsh
