@@ -14,3 +14,4 @@
     {#each files as file (file.id)}
       <div class="attachment">
         <button data-attachment={file.name} onclick={() => onselect(file.id)}>{file.name} ({file.byteLength.toLocaleString("en-US")} B)</button>
+        <a href={urls[file.id]} download={file.name} data-download={file.name}>Download</a>

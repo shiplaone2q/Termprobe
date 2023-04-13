@@ -23,3 +23,4 @@ try {
   const resources = createResources(model);
   try {
     mount(App, { target, props: { model, resources, hash: location.hash } });
+  } catch (error) {

@@ -112,3 +112,6 @@ export type OperationExpectation =
   | { readonly kind: "unavailable"; readonly reason: string };
 
 export interface FailureOperationDetails {
+  readonly name: string;
+  readonly timeout_ms?: number;
+  readonly elapsed_ms: number;

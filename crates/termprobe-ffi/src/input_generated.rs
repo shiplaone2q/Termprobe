@@ -27,3 +27,6 @@ unsafe fn open_input(
         restart: value.restart,
         timeouts: timeouts(value.timeouts),
         recording: AutomaticRecording {
+            mode,
+            directory: unsafe { value.recording_directory.optional()? }.map(Into::into),
+        },
