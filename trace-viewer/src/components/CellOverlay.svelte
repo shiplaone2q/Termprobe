@@ -11,3 +11,5 @@
   {#each locations as location (location)}
     {@const [x, y] = location.split(",").map(Number)}
     <rect class="mismatch-cell" x={geometry.grid_x + x * geometry.cell_width} y={geometry.grid_y + y * geometry.cell_height}
+      width={geometry.cell_width} height={geometry.cell_height} />
+  {/each}

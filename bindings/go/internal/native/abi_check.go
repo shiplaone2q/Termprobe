@@ -38,3 +38,5 @@ func nativeLayoutPairs() []nativeLayoutPair {
 		{reflect.TypeFor[abiSpan](), reflect.TypeFor[C.TuiSpan]()},
 		{reflect.TypeFor[abiMatch](), reflect.TypeFor[C.TuiMatch]()},
 		{reflect.TypeFor[abiBellEvent](), reflect.TypeFor[C.TuiBellEvent]()},
+		{reflect.TypeFor[abiResult](), reflect.TypeFor[C.TuiResult]()},
+		{reflect.TypeFor[abiOpenOptions](), reflect.TypeFor[C.TuiOpenOptions]()},
