@@ -159,3 +159,5 @@ impl TerminalMode {
     /// alternate screen whichever sequence entered it, since the three share
     /// one screen.
     pub const fn reset_sequence(self) -> &'static [u8] {
+        match self {
+            TerminalMode::ApplicationCursorKeys => b"\x1b[?1l",

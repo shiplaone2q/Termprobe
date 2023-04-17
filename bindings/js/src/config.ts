@@ -79,3 +79,5 @@ export function backendPayload(backend?: unknown): Backend | undefined {
     return undefined;
   }
   if (typeof backend !== "string") {
+    throw new TypeError("backend must be a string");
+  }
