@@ -282,3 +282,7 @@ struct TuiResult *tui_scroll(struct TuiString session, int32_t lines);
 /**
  * # Safety
  * The session buffer must remain readable throughout this call.
+ */
+struct TuiResult *tui_scroll_to_top(struct TuiString session);
+
+/**
