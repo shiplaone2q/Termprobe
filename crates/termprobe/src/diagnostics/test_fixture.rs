@@ -38,3 +38,5 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
         rows: emu.viewable_rows(),
         cols: emu.size().0,
         title: emu.title(),
+        cursor: None,
+        cursor_position: emu.cursor(),

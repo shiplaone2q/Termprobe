@@ -39,3 +39,6 @@ export type {
   ArtifactOptions,
   AutomaticRecording,
   TraceOptions,
+  Backend,
+  BellEvent,
+  Cell,
