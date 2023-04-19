@@ -183,3 +183,6 @@ impl FrameRenderer for GridRenderer {
             svg::pixel_size(cols, rows, style)
         };
         let panel_width = scaled_dimension(base_width, f64::from(self.scale), "frame width")?;
+        let panel_height = scaled_dimension(base_height, f64::from(self.scale), "frame height")?;
+        // Center smaller frames inside the configured padding after a resize.
+        let pad_left = style.canvas_left() as f32 * scale;

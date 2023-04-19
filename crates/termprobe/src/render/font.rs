@@ -217,3 +217,4 @@ fn build_catalog(font: &FontFamilies) -> anyhow::Result<Catalog> {
         nerd_faces,
     })
 }
+

@@ -113,3 +113,4 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 | `await close()` | Close the session. |
 | `await close_quiet()` | Close without raising. |
 | `async with Termprobe()` | Close on exit. |
+

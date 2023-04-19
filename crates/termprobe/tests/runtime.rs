@@ -727,3 +727,6 @@ fn restart_preserves_recording_without_a_trace_override_and_honors_an_explicit_o
     session.close().unwrap();
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn on_failure_recording_is_kept_only_after_an_operation_failure() {
