@@ -68,3 +68,4 @@ type abiResult struct {
 	state         abiState
 	cursor        abiCursor
 	size          abiSize
+	viewport      abiViewport

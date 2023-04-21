@@ -244,3 +244,6 @@ class Keyboard {
 
   async repeat(...keys: string[]): Promise<void> {
     await this.#runtime.repeat(keys);
+  }
+
+  async up(...keys: string[]): Promise<void> {

@@ -179,3 +179,7 @@ export function mapNativeError(error: unknown): TermprobeError {
       });
       return mapped;
     }
+  }
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String(error.code)
