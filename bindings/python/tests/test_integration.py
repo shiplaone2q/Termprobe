@@ -252,3 +252,4 @@ class IntegrationTests(unittest.TestCase):
             su = self._client()
             try:
                 with self.assertRaises(UsageError):
+                    await su.open(shell="not-a-real-shell")

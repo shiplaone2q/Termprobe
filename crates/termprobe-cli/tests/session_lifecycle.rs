@@ -549,3 +549,4 @@ fn monitor_frames_and_input_outlive_the_target() {
     assert!(
         !log.lines()
             .any(|line| line.contains("WRITE") && line.contains(secret)),
+        "monitor keystrokes appeared in the verbose write log: {log}"
