@@ -104,3 +104,7 @@ impl TrackerState {
             }
             "B" => {
                 self.started = true;
+                self.prompt_active = true;
+                self.region = Region::Command;
+                self.command_buf.clear();
+            }
