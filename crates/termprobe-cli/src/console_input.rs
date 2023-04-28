@@ -28,3 +28,5 @@ impl Read for ConsoleInput {
             let read = self.bytes.read(buffer)?;
             if read != 0 {
                 return Ok(read);
+            }
+

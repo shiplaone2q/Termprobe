@@ -115,3 +115,4 @@ export interface FailureOperationDetails {
   readonly name: string;
   readonly timeout_ms?: number;
   readonly elapsed_ms: number;
+  readonly started_screen_sequence: number;

@@ -190,3 +190,6 @@ fn timeline_with_limit(
                 frame.omission = Some("Cell grid and SVG omitted: timeline byte limit.".into());
             } else {
                 frame.omission = None;
+                let cursor = &frame.screen.cursor;
+                frame.svg = Some(svg::render_svg(
+                    &source.rows,

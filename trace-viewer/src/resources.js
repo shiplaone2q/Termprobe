@@ -33,3 +33,5 @@ export function createResources(model) {
     urls.length = 0;
   };
   try {
+    return { images: model.frames.map(image), attachments: model.attachments.map((file) => url(file.blob)), dispose };
+  } catch (error) {
