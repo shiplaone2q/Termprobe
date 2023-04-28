@@ -16,3 +16,5 @@ test("release checks require every Go installation example to match the tag", t 
     for (const text of ["", "go get github.com/microsoft/termprobe/bindings/go@v<version>",
       current.replace("1.2.3", "1.2.2"), `${current}\n${current.replace("1.2.3", "1.2.2")}`]) {
       fs.writeFileSync(filename, text);
+      assert.throws(() => verifyGoVersion(fixture.root, "1.2.3"), /must use go get/);
+    }

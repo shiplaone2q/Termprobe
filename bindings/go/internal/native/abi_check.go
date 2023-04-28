@@ -40,3 +40,7 @@ func nativeLayoutPairs() []nativeLayoutPair {
 		{reflect.TypeFor[abiBellEvent](), reflect.TypeFor[C.TuiBellEvent]()},
 		{reflect.TypeFor[abiResult](), reflect.TypeFor[C.TuiResult]()},
 		{reflect.TypeFor[abiOpenOptions](), reflect.TypeFor[C.TuiOpenOptions]()},
+		{reflect.TypeFor[abiMouseOptions](), reflect.TypeFor[C.TuiMouseOptions]()},
+		{reflect.TypeFor[abiWaitOptions](), reflect.TypeFor[C.TuiWaitOptions]()},
+		{reflect.TypeFor[abiRecordingOptions](), reflect.TypeFor[C.TuiRecordingOptions]()},
+		{reflect.TypeFor[abiScreenshotOptions](), reflect.TypeFor[C.TuiScreenshotOptions]()},

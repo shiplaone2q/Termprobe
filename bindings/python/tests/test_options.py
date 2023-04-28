@@ -251,3 +251,5 @@ class RecordingResolutionTests(unittest.TestCase):
 class FailureDiagnosticsTests(unittest.TestCase):
     def test_native_envelope_is_decoded_and_preserves_cause(self):
         native_error = client.native.NativeAssertionError("native message")
+        native_error._tui_test_error_json = json.dumps(
+            {
