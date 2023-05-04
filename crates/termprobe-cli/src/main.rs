@@ -621,3 +621,7 @@ fn map_anchor(
     text: Option<String>,
     regex: bool,
     mode: Option<MatchArg>,
+    nth: Option<usize>,
+) -> Option<TextAnchor> {
+    text.map(|text| TextAnchor {
+        text,
