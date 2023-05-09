@@ -31,3 +31,5 @@ type nativeFunctionTable struct {
 	PackedScreen     func(abiString, bool) *abiResult
 	Cells            func(abiString, uint16, uint16, uint16, uint16) *abiResult
 	Write            func(abiString, abiString) *abiResult
+	Type             func(abiString, abiString) *abiResult
+	Submit           func(abiString, abiString) *abiResult

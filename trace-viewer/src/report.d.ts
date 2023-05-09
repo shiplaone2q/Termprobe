@@ -116,3 +116,7 @@ export interface FailureOperationDetails {
   readonly timeout_ms?: number;
   readonly elapsed_ms: number;
   readonly started_screen_sequence: number;
+  readonly failed_screen_sequence: number;
+}
+
+export interface FailureCellMismatch {

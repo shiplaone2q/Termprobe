@@ -63,3 +63,7 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
             text: "missing output".into(),
             regex: false,
         })
+        .unwrap_err();
+    let internal = session
+        .execute(Operation::Screenshot {
+            full: false,
