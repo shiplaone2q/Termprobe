@@ -27,3 +27,4 @@ test("viewport results preserve safe counts and reject lost precision", async ()
 
 test("native scroll validates signed integer amounts", async () => {
   const terminal = Termprobe.ephemeral();
+  const native = new NativeSession(`${terminal.session}-native`);

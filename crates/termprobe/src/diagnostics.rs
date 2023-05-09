@@ -467,3 +467,5 @@ pub struct DiagnosticHint {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ComparisonDiagnostics {
+    pub kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]

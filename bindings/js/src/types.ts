@@ -89,3 +89,4 @@ export interface Colors {
 export interface Profile {
   scrollback?: number;
   colors?: Colors;
+}
