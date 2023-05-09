@@ -253,3 +253,7 @@ class IntegrationTests(unittest.TestCase):
             try:
                 with self.assertRaises(UsageError):
                     await su.open(shell="not-a-real-shell")
+            finally:
+                await su.close_quiet()
+
+        run(scenario())

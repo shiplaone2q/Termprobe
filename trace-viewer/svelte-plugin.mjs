@@ -17,3 +17,4 @@ export function sveltePlugin(generate = "client") {
           return { errors: compiled.warnings.map((warning) => ({ text: `${filename}: ${warning.message}` })) };
         }
         const cssPath = `${filename}.css`;
+        styles.set(cssPath, compiled.css?.code ?? "");
