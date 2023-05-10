@@ -60,3 +60,6 @@ cd bindings/js
 npm ci
 npm run build:native:debug
 npm run build:ts
+node --input-type=module -e '
+  import { Termprobe } from "./dist/index.js";
+  const terminal = Termprobe.ephemeral();

@@ -25,3 +25,4 @@ sha2.workspace = true
 vte.workspace = true
 termprobe = { workspace = true, features = [
     "ghostty",
+    "rio",

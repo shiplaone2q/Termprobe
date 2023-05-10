@@ -625,3 +625,6 @@ fn map_anchor(
 ) -> Option<TextAnchor> {
     text.map(|text| TextAnchor {
         text,
+        regex,
+        occurrence: map_occurrence(mode, nth, MatchOccurrence::Unique),
+    })
