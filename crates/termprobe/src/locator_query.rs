@@ -79,3 +79,5 @@ impl LocatorExpression {
             }
             let binary = matches!(node.kind, LocatorNodeKind::And | LocatorNodeKind::Or);
             let filter = node.kind == LocatorNodeKind::Filter;
+            let leaf = !binary && !filter;
+            if (node.kind != LocatorNodeKind::Text

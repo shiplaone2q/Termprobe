@@ -30,3 +30,5 @@
 <section class="viewer" aria-label="Terminal snapshot">
   <div class="viewer-toolbar">
     <strong id="frame-heading">{action?.name ?? "Terminal snapshot"}</strong>
+    <div class="toolbar">
+      <button id="previous-point" aria-label="Previous action" disabled={!actions.length || position === 0} onclick={() => onaction(-1)}>Prev action</button>

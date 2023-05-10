@@ -26,3 +26,4 @@ vte.workspace = true
 termprobe = { workspace = true, features = [
     "ghostty",
     "rio",
+    "xtermjs",
