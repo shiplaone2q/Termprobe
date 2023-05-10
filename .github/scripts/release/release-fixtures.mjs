@@ -41,3 +41,6 @@ export function createFixture(t) {
   fs.writeFileSync(path.join(directory, "LICENSE"), "License fixture\n");
   const source = path.join(directory, "bindings/go");
   fs.mkdirSync(path.join(source, "internal/native"), { recursive: true });
+  fs.writeFileSync(path.join(source, "go.mod"), "module example.com/fixture\n\ngo 1.23\n");
+  fs.writeFileSync(path.join(source, "internal/native/registry.go"),
+    "package native\n"
