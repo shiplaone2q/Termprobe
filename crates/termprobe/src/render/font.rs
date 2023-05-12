@@ -218,3 +218,4 @@ fn build_catalog(font: &FontFamilies) -> anyhow::Result<Catalog> {
     })
 }
 
+fn load_bundled_fonts(database: &mut fontdb::Database) {

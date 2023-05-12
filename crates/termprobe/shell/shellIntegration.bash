@@ -37,3 +37,5 @@ __su_preexec_invoke() {
     __su_osc "C"
 }
 trap '__su_preexec_invoke' DEBUG
+
+__su_precmd() {

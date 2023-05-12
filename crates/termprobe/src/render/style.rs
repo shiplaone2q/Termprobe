@@ -213,3 +213,4 @@ pub struct PaddingSides {
 }
 
 impl Padding {
+    fn side(self, pick: fn(PaddingSides) -> Option<u32>, fallback: u32) -> u32 {
