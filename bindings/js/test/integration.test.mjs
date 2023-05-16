@@ -304,3 +304,5 @@ test("recording API writes an asciicast file", async () => {
       await su.startRecording(path, {
         format: "cast",
         fps: 24,
+        speed: 1,
+        idleTimeLimit: 2,
