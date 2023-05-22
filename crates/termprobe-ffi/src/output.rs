@@ -65,3 +65,7 @@ impl Storage {
 fn integer(value: Option<i32>) -> TuiOptionalI32 {
     TuiOptionalI32 {
         present: value.is_some(),
+        value: value.unwrap_or_default(),
+    }
+}
+fn unsigned(value: u64) -> TuiOptionalU64 {

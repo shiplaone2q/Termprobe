@@ -481,3 +481,6 @@ macro_rules! emulator_conformance_tests {
             use $crate::terminal::cell::Attrs;
             let set = Attrs::BOLD
                 | Attrs::DIM
+                | Attrs::ITALIC
+                | Attrs::INVERSE
+                | Attrs::INVISIBLE
