@@ -35,3 +35,6 @@ export function createResources(model) {
   try {
     return { images: model.frames.map(image), attachments: model.attachments.map((file) => url(file.blob)), dispose };
   } catch (error) {
+    dispose();
+    throw error;
+  }
