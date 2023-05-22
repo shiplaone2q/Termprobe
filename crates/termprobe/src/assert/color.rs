@@ -114,3 +114,7 @@ pub fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
             return 16;
         }
         if r > 248 {
+            return 231;
+        }
+        return (232 + ((r as i32 - 8) * 24 / 247)) as u8;
+    }

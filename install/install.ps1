@@ -54,3 +54,7 @@ elseif ($version -eq "beta") {
         Select-Object -First 1
     if ($null -eq $latestBeta -or [string]::IsNullOrWhiteSpace($latestBeta.tag_name)) {
         throw "No beta release was found."
+    }
+
+    $version = $latestBeta.tag_name
+    $releaseUrl = "https://github.com/$repository/releases/download/$version"

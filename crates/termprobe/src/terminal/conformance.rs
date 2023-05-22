@@ -484,3 +484,7 @@ macro_rules! emulator_conformance_tests {
                 | Attrs::ITALIC
                 | Attrs::INVERSE
                 | Attrs::INVISIBLE
+                | Attrs::STRIKE;
+
+            let x = &rows[0][0];
+            assert_eq!(x.attrs, set, "every attribute in the SGR must be set");
