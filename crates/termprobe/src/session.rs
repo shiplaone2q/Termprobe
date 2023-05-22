@@ -308,3 +308,7 @@ impl Session {
         });
 
         logger.event(&format!(
+            "session open shell={:?} program={:?} backend={} {}x{}",
+            shell,
+            program,
+            backend.as_str(),

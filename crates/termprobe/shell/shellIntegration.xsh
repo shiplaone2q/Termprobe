@@ -19,3 +19,4 @@ def __su_post(cmd, rtn, **kw):
 def __su_prompt():
     # Xonsh passes SOH/STX-bracketed escapes through without rendering or measuring them.
     # Keep them before a visible cell: prompt_toolkit drops trailing zero-width escapes.
+    return f'\001\033]133;A\007{__su_cwd()}\033]133;B\007\002> '
