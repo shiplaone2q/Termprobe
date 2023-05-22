@@ -290,3 +290,7 @@ impl Locator {
         self.target
             .execute(
                 "locator.wait",
+                Operation::WaitLocator {
+                    query: self.query.clone(),
+                    not,
+                    timeout_ms,

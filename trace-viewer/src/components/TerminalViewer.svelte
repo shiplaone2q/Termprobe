@@ -32,3 +32,6 @@
     <strong id="frame-heading">{action?.name ?? "Terminal snapshot"}</strong>
     <div class="toolbar">
       <button id="previous-point" aria-label="Previous action" disabled={!actions.length || position === 0} onclick={() => onaction(-1)}>Prev action</button>
+      <button id="next-point" aria-label="Next action" disabled={!actions.length || position === actions.length - 1} onclick={() => onaction(1)}>Next action</button>
+      <label class="zoom-label">Zoom <select id="zoom" aria-label="Terminal zoom" value={zoom} onchange={changeZoom}>
+        <option value="fit">Fit</option><option value="1">100%</option><option value="1.5">150%</option>
