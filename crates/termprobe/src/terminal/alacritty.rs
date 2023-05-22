@@ -224,3 +224,5 @@ impl CaptureProxy {
     fn push_reply(&self, reply: Reply, color_query: bool) {
         if let Ok(mut queue) = self.pending.lock() {
             queue.push(reply);
+            if color_query {
+                self.color_query_pending.store(true, Ordering::Release);

@@ -79,3 +79,4 @@ func (runtime *nativeRuntime) signal(name string) error {
 	return engineError(runtime.session.Signal(name))
 }
 func (runtime *nativeRuntime) resize(cols, rows uint16) error {
+	return engineError(runtime.session.Resize(cols, rows))
