@@ -108,3 +108,5 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
         &mut grid,
         2,
         0,
+        "truecolor background",
+        CellStyle {

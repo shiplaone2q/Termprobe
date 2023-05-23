@@ -243,3 +243,4 @@ fn named_wait_allows_concurrent_input_resize_and_submit() {
         .unwrap();
     waiter.join().unwrap();
     session.close().unwrap();
+}

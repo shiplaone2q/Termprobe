@@ -52,3 +52,7 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
                     .copied()
                     .or_else(|| payload.downcast_ref::<String>().map(String::as_str))
                     .unwrap_or("non-string panic payload");
+                Err(TermprobeError::internal(format!(
+                    "native engine adapter panicked: {message}"
+                )))
+            });
