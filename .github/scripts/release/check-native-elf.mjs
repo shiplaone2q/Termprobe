@@ -17,3 +17,6 @@ export function checkDependencies(output, target) {
   const arch = target.startsWith("aarch64-") ? "aarch64" : "x86_64";
   const allowed = new Set(target.endsWith("-gnu") ? [
     "libc.so.6", "libdl.so.2", "libpthread.so.0", "libm.so.6", "librt.so.1", "libutil.so.1",
+    "libgcc_s.so.1", "ld-linux-x86-64.so.2", "ld-linux-aarch64.so.1",
+  ] : ["libc.so", `libc.musl-${arch}.so.1`]);
+  const needed = [...output.matchAll(/\(NEEDED\).*?\[([^\]]+)\]/g)].map(match => match[1]);

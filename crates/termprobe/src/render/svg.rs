@@ -393,3 +393,5 @@ fn write_cursor(
     let (rx, ry, rw, rh) = match colors.cursor_shape() {
         CursorShape::Block => (x, y, w, cell_h),
         CursorShape::Underline => (x, y + cell_h - CURSOR_THICKNESS, w, CURSOR_THICKNESS),
+        CursorShape::Bar => (x, y, CURSOR_THICKNESS, cell_h),
+    };
