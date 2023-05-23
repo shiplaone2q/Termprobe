@@ -26,3 +26,5 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 				t.Errorf("alignment: Go=%d, C=%d", pair.binding.Align(), pair.compiler.Align())
 			}
 			fields := nativeFields(pair.compiler)
+			for name, field := range nativeFields(pair.binding) {
+				native, found := fields[name]

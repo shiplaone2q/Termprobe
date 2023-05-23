@@ -161,3 +161,7 @@ impl TerminalMode {
     pub const fn reset_sequence(self) -> &'static [u8] {
         match self {
             TerminalMode::ApplicationCursorKeys => b"\x1b[?1l",
+            TerminalMode::ApplicationKeypad => b"\x1b>",
+            TerminalMode::Origin => b"\x1b[?6l",
+            TerminalMode::Wraparound => b"\x1b[?7l",
+            TerminalMode::Insert => b"\x1b[4l",

@@ -64,3 +64,5 @@ await terminal.get_by_text("Open").click(button="right", ctrl=True)
 ```
 
 ```js
+await terminal.getByText("Open").click({ button: "right", ctrl: true });
+```
