@@ -56,3 +56,7 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
                     "native engine adapter panicked: {message}"
                 )))
             });
+            // Dropping the receiver abandons the result, which remains fully owned.
+            drop(sender.send(result));
+        }) {
+        Ok(_) => std::ptr::null_mut(),
