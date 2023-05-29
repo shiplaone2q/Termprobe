@@ -19,3 +19,5 @@
   {/if}
 </div>
 
+<style>
+  #attachment-preview { min-width: 0; }
