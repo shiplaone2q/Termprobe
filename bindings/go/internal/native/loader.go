@@ -35,3 +35,4 @@ func loadNativeFunctions(path string) (nativeFunctionTable, error) {
 	library, err := openNativeLibrary(path)
 	if err != nil {
 		return table, err
+	}
