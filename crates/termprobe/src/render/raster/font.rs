@@ -38,3 +38,7 @@ impl FontSystem {
     }
 
     pub fn resolve(&mut self, key: GlyphKey) -> Option<&GlyphOutline> {
+        if !self.glyphs.contains_key(&key) {
+            let glyph = self.load(key);
+            self.glyphs.insert(key, glyph);
+        }
