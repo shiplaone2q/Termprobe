@@ -9,3 +9,4 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "strict": true,

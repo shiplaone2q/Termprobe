@@ -135,3 +135,6 @@ impl Recorder {
     }
 
     pub fn start(&self, request: StartRecording) -> Result<(), CaptureError> {
+        let (reply, response) = mpsc::sync_channel(0);
+        self.sender
+            .send(Message::Start {
