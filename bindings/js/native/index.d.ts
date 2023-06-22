@@ -98,3 +98,4 @@ export interface TextSpan {
 }
 
 export interface TextMatch {
+  text: string
