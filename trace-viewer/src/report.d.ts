@@ -120,3 +120,5 @@ export interface FailureOperationDetails {
 }
 
 export interface FailureCellMismatch {
+  readonly location: FailureTextPosition;
+  readonly grapheme: string;

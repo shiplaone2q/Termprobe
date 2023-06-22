@@ -253,3 +253,7 @@ class FailureDiagnosticsTests(unittest.TestCase):
         native_error = client.native.NativeAssertionError("native message")
         native_error._tui_test_error_json = json.dumps(
             {
+                "kind": "assertion",
+                "message": "structured message",
+                "details": {
+                    "schema_version": 1,
