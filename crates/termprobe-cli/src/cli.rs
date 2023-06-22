@@ -498,3 +498,7 @@ pub enum RecordCmd {
     Stop,
 }
 
+/// Signals deliverable to a session's child process.
+#[derive(Clone, Copy, clap::ValueEnum)]
+#[clap(rename_all = "upper")]
+pub enum SignalArg {

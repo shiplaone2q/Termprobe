@@ -89,3 +89,5 @@ impl State {
             output.push_str("\x1b[?7l");
         }
         restore_cursor(&mut output, grid, &grid.cursor, origin);
+        if self.controls.blink {
+            output.push_str("\x1b[5m");

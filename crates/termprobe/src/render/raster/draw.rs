@@ -85,3 +85,5 @@ pub(super) fn fill_pixel_rect(
 ) {
     if left >= right || top >= bottom {
         return;
+    }
+    let Some(rect) = Rect::from_xywh(
