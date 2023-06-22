@@ -109,3 +109,6 @@ impl FrameCapture {
     fn push(&mut self, emulator: &dyn Emulator, at: Instant) -> anyhow::Result<()> {
         let at = self.clock.advance(
             at.saturating_duration_since(self.started).as_secs_f64(),
+            &self.options,
+        )?;
+        let next = TimedGrid::capture(emulator, at)?;

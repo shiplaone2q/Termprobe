@@ -75,3 +75,4 @@ impl OperationExpectation {
             } => value(
                 "Terminal title",
                 format!(
+                    "{}{}",
