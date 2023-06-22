@@ -97,3 +97,5 @@ func validateArtifactOptions(options *ArtifactOptions) error {
 	return nil
 }
 
+// Ephemeral creates a handle with a unique, filename-safe session name.
+func Ephemeral(prefix string, options ClientOptions) (*Client, error) {

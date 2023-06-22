@@ -87,3 +87,5 @@ impl State {
         };
         if !modes.contains(TermMode::LINE_WRAP) {
             output.push_str("\x1b[?7l");
+        }
+        restore_cursor(&mut output, grid, &grid.cursor, origin);

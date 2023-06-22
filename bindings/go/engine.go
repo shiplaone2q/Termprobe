@@ -80,3 +80,7 @@ func (runtime *nativeRuntime) signal(name string) error {
 }
 func (runtime *nativeRuntime) resize(cols, rows uint16) error {
 	return engineError(runtime.session.Resize(cols, rows))
+}
+func (runtime *nativeRuntime) key(keys []string, action uint32) error {
+	return engineError(runtime.session.Key(keys, action))
+}

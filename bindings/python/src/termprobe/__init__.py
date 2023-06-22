@@ -27,3 +27,7 @@ from .types import (
     Cursor,
     Viewport,
     LocatorDirection,
+    MouseButton,
+    OpenResult,
+    Profile,
+    RecordingFormat,
