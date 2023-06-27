@@ -37,3 +37,6 @@ const options = {
   plugins: [sveltePlugin(), {
     name: "standalone-report",
     setup(build) {
+      build.onEnd(async (result) => {
+        if (result.errors.length) return;
+        for (const input of Object.keys(result.metafile.inputs)) {
