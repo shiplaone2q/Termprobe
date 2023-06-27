@@ -13,3 +13,4 @@
   ]);
 </script>
 
+<section class="details-panel" aria-label="Action details">

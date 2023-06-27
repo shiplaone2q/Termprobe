@@ -40,3 +40,4 @@ impl Backend {
         Self::Xtermjs,
     ];
 
+    pub const fn as_str(self) -> &'static str {

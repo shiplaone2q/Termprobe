@@ -84,3 +84,4 @@ func (runtime *nativeRuntime) resize(cols, rows uint16) error {
 func (runtime *nativeRuntime) key(keys []string, action uint32) error {
 	return engineError(runtime.session.Key(keys, action))
 }
+func (runtime *nativeRuntime) waitIdle(timeout *time.Duration) error {
