@@ -83,3 +83,4 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 		t.Fatal(err)
 	}
 	data, err := os.ReadFile(path)
+	if err != nil || string(data) != "selected library" {

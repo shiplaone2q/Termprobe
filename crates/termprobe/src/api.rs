@@ -471,3 +471,4 @@ impl LocatorSelector {
     pub fn full(&self) -> bool {
         match self {
             Self::Text(selector) => selector.full,
+            Self::Style(selector) => selector.full,

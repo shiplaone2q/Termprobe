@@ -107,3 +107,5 @@ fn pointer_options_reject_null_and_preserve_validation() {
             value: 65_536,
         },
         ..Default::default()
+    };
+    let results = unsafe {
