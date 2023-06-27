@@ -28,3 +28,7 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 			fields := nativeFields(pair.compiler)
 			for name, field := range nativeFields(pair.binding) {
 				native, found := fields[name]
+				if !found {
+					t.Errorf("field %s has no C counterpart", field.Name)
+					continue
+				}
