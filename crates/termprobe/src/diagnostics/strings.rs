@@ -77,3 +77,4 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::PackedScreen { .. } => "packed_screen",
         Operation::Cells { .. } => "cells",
         Operation::GetCommand => "get.command",
+        Operation::GetOutput => "get.output",

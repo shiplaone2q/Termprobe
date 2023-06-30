@@ -14,3 +14,4 @@ pub const BRACKETED_PASTE_ENABLE: &str = "\x1b[?2004h";
 pub const BRACKETED_PASTE_DISABLE: &str = "\x1b[?2004l";
 pub const BRACKETED_PASTE_SAVE: &[u8] = b"\x1b[?2004s";
 pub const BRACKETED_PASTE_RESTORE: &[u8] = b"\x1b[?2004r";
+
