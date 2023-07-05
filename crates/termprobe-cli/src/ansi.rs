@@ -15,3 +15,6 @@ pub const BRACKETED_PASTE_DISABLE: &str = "\x1b[?2004l";
 pub const BRACKETED_PASTE_SAVE: &[u8] = b"\x1b[?2004s";
 pub const BRACKETED_PASTE_RESTORE: &[u8] = b"\x1b[?2004r";
 
+pub const KITTY_KEYBOARD_SAVE_AND_RESET: &[u8] = b"\x1b[>0u";
+pub const KITTY_KEYBOARD_POP: &[u8] = b"\x1b[<u";
+

@@ -151,3 +151,4 @@ def _copy(value):
         if name + "_len" in fields:
             item = [_copy(item[index]) for index in range(getattr(value, name + "_len"))]
         elif isinstance(item, C.Structure):
+            item = _copy(item)

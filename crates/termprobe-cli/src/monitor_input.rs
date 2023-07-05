@@ -64,3 +64,4 @@ impl Perform for InputState {
             const LOCKS: u16 = 64 | 128;
             if matches!(event, 1 | 2) && bits & CTRL != 0 && bits & !(CTRL | LOCKS) == 0 {
                 self.event = Some(InputEvent::Detach);
+            }
