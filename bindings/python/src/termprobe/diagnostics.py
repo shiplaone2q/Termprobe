@@ -45,3 +45,7 @@ class FailureCellMismatch:
     grapheme: str
     property: str
     operator: str
+    expected: str
+    actual: str
+    reason: str
+    resolved: Optional[str] = None

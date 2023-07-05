@@ -69,3 +69,7 @@ fn integer(value: Option<i32>) -> TuiOptionalI32 {
     }
 }
 fn unsigned(value: u64) -> TuiOptionalU64 {
+    TuiOptionalU64 {
+        present: true,
+        value,
+    }
