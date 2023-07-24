@@ -62,3 +62,7 @@ download() {
   else
     fail "curl or wget is required."
   fi
+}
+
+if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
+  RELEASE_URL="https://github.com/${REPOSITORY}/releases/latest/download"

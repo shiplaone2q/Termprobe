@@ -54,3 +54,6 @@ Style/link options are `full` and chained `direction`. Filter accepts locators
 only; use `getByText()` for text containment. A partially linked text match
 passes `filter({ has: terminal.getByLink(uri) })` but fails chained
 `getByLink(uri)`. `.and(terminal.getByLink(uri))` returns its linked cells.
+Appearance refinement skips blanks when the match has visible characters;
+link refinement checks blanks too.
+
