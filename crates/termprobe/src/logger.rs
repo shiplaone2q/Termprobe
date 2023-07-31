@@ -42,3 +42,5 @@ impl Logger {
 
     pub fn event(&self, msg: &str) {
         self.write_line("EVENT", msg);
+    }
+

@@ -31,3 +31,6 @@ pub(crate) fn execute(
 ) -> Result<OperationResult> {
     global_registry()
         .session(name)
+        .execute_with_context(operation, context.with_operation(operation_name))
+}
+
