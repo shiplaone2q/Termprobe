@@ -34,3 +34,7 @@ pub(crate) fn execute(
         .execute_with_context(operation, context.with_operation(operation_name))
 }
 
+pub(crate) fn close(
+    name: String,
+    context: ExecutionContext,
+    failed: Option<bool>,
