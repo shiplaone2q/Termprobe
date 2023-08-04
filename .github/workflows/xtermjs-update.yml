@@ -28,3 +28,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          was_headless="$(jq -r '."@xterm/headless"' crates/termprobe/assets/xtermjs/pinned.json)"

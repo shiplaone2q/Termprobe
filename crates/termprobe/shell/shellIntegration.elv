@@ -25,3 +25,5 @@ fn __su_before_readline {
   __su_osc "133;A"
   __su_cwd
   __su_osc "133;B"
+}
+
