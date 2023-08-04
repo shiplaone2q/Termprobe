@@ -19,3 +19,5 @@ class TuiTest < Formula
   on_linux do
     on_arm do
       url "https://github.com/microsoft/tui-test/releases/download/0.1.1/tui-test-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "99588dd2e296f9b2685d7fb71d68a3dde3b1fed8c0e8f1af4d215538e858bd09"
+    end

@@ -106,3 +106,7 @@ or the [Rust example](../crates/termprobe/examples/scrollback.rs).
 | `wait exit` | Wait for `run`. |
 | `wait ready` | Wait for a prompt. |
 | `wait idle` | Wait for the screen to settle. |
+| `wait title TEXT` | Wait for a title. |
+| `wait clipboard [TEXT]` | Wait for a clipboard change or match. |
+| `wait bell` | Wait for a bell. |
+
