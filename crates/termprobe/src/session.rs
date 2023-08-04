@@ -312,3 +312,4 @@ impl Session {
             shell,
             program,
             backend.as_str(),
+            cols,

@@ -243,3 +243,7 @@ fn encode_gif(
     path: &Path,
     frames: &[Frame],
     renderer: &mut dyn FrameRenderer,
+) -> anyhow::Result<()> {
+    let (width, height) = renderer.pixel_size();
+    let width: u16 = width.try_into()?;
+    let height: u16 = height.try_into()?;

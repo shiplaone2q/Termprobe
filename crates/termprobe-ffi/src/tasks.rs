@@ -60,3 +60,4 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
             drop(sender.send(result));
         }) {
         Ok(_) => std::ptr::null_mut(),
+        Err(error) => {
