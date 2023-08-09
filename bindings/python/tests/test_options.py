@@ -257,3 +257,7 @@ class FailureDiagnosticsTests(unittest.TestCase):
                 "message": "structured message",
                 "details": {
                     "schema_version": 1,
+                    "operation": "locator.location",
+                    "reason": "locator_no_match",
+                    "summary": "missing",
+                    "truncated": False,

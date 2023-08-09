@@ -172,3 +172,6 @@ impl From<ExitStatus> for ProcessExit {
 
 impl Pty {
     /// Spawn a program in a fresh PTY, returning the controller and a reader
+    /// for its output.
+    pub fn spawn(
+        target: &str,

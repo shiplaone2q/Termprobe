@@ -29,3 +29,6 @@ jobs:
         run: |
           set -euo pipefail
           was_headless="$(jq -r '."@xterm/headless"' crates/termprobe/assets/xtermjs/pinned.json)"
+          was_unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/termprobe/assets/xtermjs/pinned.json)"
+
+          ./.github/scripts/vendor-xtermjs.sh --latest
