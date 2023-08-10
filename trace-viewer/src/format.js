@@ -63,3 +63,6 @@ export function describeExpectation(value) {
   if (value.kind === "unavailable") return `Expectation not retained: ${value.reason}`;
   if (value.kind === "value") return `${value.subject}: ${value.expected}`;
   if (value.outcome === "matches") return `Resolve ${describeLocator(value.query)} (zero or more matches)`;
+  const outcome = { visible: "to be visible", hidden: "to be absent", unique: "to resolve to one unambiguous match", actionable: "to be actionable" }[value.outcome];
+  return `Expect ${describeLocator(value.query)} ${outcome}`;
+}
