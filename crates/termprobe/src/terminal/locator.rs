@@ -429,3 +429,5 @@ where
             }
             LocatorSelector::Link(selector) => {
                 let matches = locate_cells_within(grid, allowed.as_deref(), &mut |cell| {
+                    cell_has_link(cell, &selector.uri)
+                })?;

@@ -118,3 +118,7 @@ pub fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
         }
         return (232 + ((r as i32 - 8) * 24 / 247)) as u8;
     }
+    let cube = |v: u8| -> i32 {
+        if v < 48 {
+            0
+        } else if v < 115 {

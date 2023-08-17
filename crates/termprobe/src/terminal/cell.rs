@@ -93,3 +93,4 @@ impl Color {
         match NamedColor::from_index(i) {
             Some(named) => Color::Named(named),
             None => Color::Idx(i),
+        }
