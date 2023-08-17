@@ -175,3 +175,5 @@ impl XtermJsEmu {
         bells: BellTracker,
     ) -> anyhow::Result<Self> {
         // The color every slot takes when no program has changed it. Resolved
+        // here rather than in the shim so a query is answered with the same
+        // value whichever backend a session runs on.

@@ -125,3 +125,7 @@ func requireNoError(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+func requireKind(t *testing.T, err error, kind termprobe.ErrorKind) {
+	t.Helper()
+	var failure *termprobe.Error

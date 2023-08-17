@@ -94,3 +94,4 @@ impl Color {
             Some(named) => Color::Named(named),
             None => Color::Idx(i),
         }
+    }

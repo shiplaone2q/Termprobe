@@ -45,3 +45,7 @@ impl Logger {
     }
 
     pub fn read(&self, bytes: &[u8]) {
+        if self.sink.is_some() {
+            self.write_line("READ ", &escape(bytes));
+        }
+    }
