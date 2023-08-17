@@ -55,3 +55,6 @@ func (memory *nativeMemory) openOptions(options OpenOptions, recording *Automati
 	result.env, result.envLen = memory.pairs(options.Env)
 	if options.Profile != nil {
 		result.scrollback = nativeUint(options.Profile.Scrollback)
+		result.colors, result.colorsLen = memory.colors(options.Profile.Colors)
+	}
+	if recording != nil {

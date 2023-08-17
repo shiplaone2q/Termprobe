@@ -42,3 +42,6 @@ impl FontSystem {
             let glyph = self.load(key);
             self.glyphs.insert(key, glyph);
         }
+        self.glyphs.get(&key).and_then(Option::as_ref)
+    }
+

@@ -35,3 +35,6 @@ impl TimeoutClass {
         match self {
             TimeoutClass::Text => "TERMPROBE__TIMEOUT_TEXT_MS",
             TimeoutClass::Idle => "TERMPROBE__TIMEOUT_IDLE_MS",
+            TimeoutClass::Command => "TERMPROBE__TIMEOUT_COMMAND_MS",
+            TimeoutClass::Exit => "TERMPROBE__TIMEOUT_EXIT_MS",
+            TimeoutClass::Ready => "TERMPROBE__TIMEOUT_READY_MS",
