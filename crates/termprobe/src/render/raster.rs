@@ -186,3 +186,6 @@ impl FrameRenderer for GridRenderer {
         let panel_height = scaled_dimension(base_height, f64::from(self.scale), "frame height")?;
         // Center smaller frames inside the configured padding after a resize.
         let pad_left = style.canvas_left() as f32 * scale;
+        let pad_top = style.canvas_top() as f32 * scale;
+        let pad_right = style.canvas_right() as f32 * scale;
+        let pad_bottom = style.canvas_bottom() as f32 * scale;

@@ -87,3 +87,6 @@ pub(super) fn fill_pixel_rect(
         return;
     }
     let Some(rect) = Rect::from_xywh(
+        left as f32,
+        top as f32,
+        (right - left) as f32,

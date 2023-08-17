@@ -67,3 +67,5 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
     let internal = session
         .execute(Operation::Screenshot {
             full: false,
+            path: Some(
+                root.join("missing")
