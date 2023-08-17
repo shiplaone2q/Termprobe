@@ -158,3 +158,7 @@ func (runtime *Session) Resize(cols, rows uint16) error {
 func (runtime *Session) Submit(text *string) error {
 	memory := nativeMemory{}
 	defer memory.release()
+	result := nativeFunctions.Submit(memory.text(runtime.name), memory.optionalText(text))
+	defer nativeFunctions.ResultFree(result)
+	return nativeError(result)
+}

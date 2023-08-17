@@ -12,3 +12,4 @@
       observed: action?.failed ? "The selected operation did not complete successfully." : "The selected operation completed successfully.",
     };
     return { outcome: "unknown", summary: expectation || "Expectation not captured for this operation.", observed: "" };
+  });
