@@ -472,3 +472,7 @@ impl LocatorSelector {
         match self {
             Self::Text(selector) => selector.full,
             Self::Style(selector) => selector.full,
+            Self::Link(selector) => selector.full,
+            _ => self.children().iter().any(|query| query.uses_full_grid()),
+        }
+    }

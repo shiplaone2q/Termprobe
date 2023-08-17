@@ -44,3 +44,4 @@ impl Logger {
         self.write_line("EVENT", msg);
     }
 
+    pub fn read(&self, bytes: &[u8]) {

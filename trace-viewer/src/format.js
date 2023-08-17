@@ -66,3 +66,4 @@ export function describeExpectation(value) {
   const outcome = { visible: "to be visible", hidden: "to be absent", unique: "to resolve to one unambiguous match", actionable: "to be actionable" }[value.outcome];
   return `Expect ${describeLocator(value.query)} ${outcome}`;
 }
+

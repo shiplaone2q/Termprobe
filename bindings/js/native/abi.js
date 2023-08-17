@@ -109,3 +109,6 @@ spans_len: "size_t",
 });
 types.TuiTimeouts = koffi.struct({
 text: types.TuiOptionalU64,
+idle: types.TuiOptionalU64,
+command: types.TuiOptionalU64,
+exit: types.TuiOptionalU64,
