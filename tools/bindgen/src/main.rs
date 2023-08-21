@@ -101,3 +101,4 @@ fn main() -> Result<()> {
         check,
     )?;
     emit(
+        &root,

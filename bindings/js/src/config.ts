@@ -81,3 +81,7 @@ export function backendPayload(backend?: unknown): Backend | undefined {
   if (typeof backend !== "string") {
     throw new TypeError("backend must be a string");
   }
+  const normalized = backend.trim().toLowerCase();
+  if ((BACKENDS as readonly string[]).includes(normalized)) {
+    return normalized as Backend;
+  }
