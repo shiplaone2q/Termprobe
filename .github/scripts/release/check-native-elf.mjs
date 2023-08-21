@@ -20,3 +20,7 @@ export function checkDependencies(output, target) {
     "libgcc_s.so.1", "ld-linux-x86-64.so.2", "ld-linux-aarch64.so.1",
   ] : ["libc.so", `libc.musl-${arch}.so.1`]);
   const needed = [...output.matchAll(/\(NEEDED\).*?\[([^\]]+)\]/g)].map(match => match[1]);
+  if (!needed.length || needed.some(library => !allowed.has(library))) {
+    throw new Error(`Unexpected native dependencies for ${target}: ${[...new Set(needed)].sort().join(", ")}`);
+  }
+  if (/\((?:RPATH|RUNPATH)\)/.test(output)) throw new Error("Native release library must not contain RPATH or RUNPATH");

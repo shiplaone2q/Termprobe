@@ -37,3 +37,5 @@ function publicationFixture(t) {
   fixture.assemble();
   return {
     fixture, remote, git,
+    ref(name) { return git(["rev-parse", name], remote).trim(); },
+    publish(version = "1.2.3") {
