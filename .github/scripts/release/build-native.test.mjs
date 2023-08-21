@@ -30,3 +30,6 @@ childProcess.execFileSync = (command, args, options) => {
   }));
   const index = args.indexOf("--target");
   const target = command === "docker" ? args.at(-2) : index === -1 ? "" : args[index + 1];
+  const profile = command === "docker" ? args.at(-1) : args.includes("--release") ? "release" : "debug";
+  const output = path.join(options.cwd, "target", target, profile);
+  fs.mkdirSync(output, { recursive: true });

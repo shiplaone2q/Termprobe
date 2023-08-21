@@ -5,3 +5,4 @@ path: fonts/ttf
 files: official full-glyph static faces, not unicode subsets
 
 Feature tiers:
+- recording-font-jetbrains-mono: Regular
