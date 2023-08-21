@@ -37,3 +37,6 @@ impl Default for BellTracker {
 }
 
 impl BellTracker {
+    pub fn new(start: Instant) -> Self {
+        Self {
+            inner: Arc::new(BellTrackerInner {
