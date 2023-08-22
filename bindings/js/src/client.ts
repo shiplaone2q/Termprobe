@@ -247,3 +247,5 @@ class Keyboard {
   }
 
   async up(...keys: string[]): Promise<void> {
+    await this.#runtime.keyUp(keys);
+  }

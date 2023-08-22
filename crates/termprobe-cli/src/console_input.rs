@@ -30,3 +30,6 @@ impl Read for ConsoleInput {
                 return Ok(read);
             }
 
+            let mut utf16 = [0u16; 1024];
+            let offset = if let Some(high) = self.high_surrogate.take() {
+                utf16[0] = high;

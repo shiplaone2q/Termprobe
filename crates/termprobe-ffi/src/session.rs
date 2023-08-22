@@ -38,3 +38,4 @@ pub(crate) fn close(
     name: String,
     context: ExecutionContext,
     failed: Option<bool>,
+) -> Result<OperationResult> {
