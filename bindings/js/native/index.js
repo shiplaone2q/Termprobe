@@ -42,3 +42,6 @@ if (process.platform === "win32") {
     throw new Error("Failed to retain the termprobe native library for process lifetime");
   }
 } else {
+  platformLibrary = koffi.load(null);
+  const open = platformLibrary.func("void *dlopen(const char *path, int flags)");
+  const close = platformLibrary.func("int dlclose(void *handle)");

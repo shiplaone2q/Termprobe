@@ -226,3 +226,7 @@ impl CaptureProxy {
             queue.push(reply);
             if color_query {
                 self.color_query_pending.store(true, Ordering::Release);
+            }
+        }
+    }
+

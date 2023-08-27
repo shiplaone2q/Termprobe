@@ -60,3 +60,4 @@ class RegistryTests(unittest.TestCase):
 
     def test_untracking_exempts_a_terminal(self):
         a = _FakeTerminal()
+        testing.track_terminal(a)
