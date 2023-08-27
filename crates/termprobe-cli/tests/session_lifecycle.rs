@@ -550,3 +550,6 @@ fn monitor_frames_and_input_outlive_the_target() {
         !log.lines()
             .any(|line| line.contains("WRITE") && line.contains(secret)),
         "monitor keystrokes appeared in the verbose write log: {log}"
+    );
+
+    // Typing at an exited child is a normal race, not a daemon failure.

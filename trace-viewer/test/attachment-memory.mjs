@@ -13,3 +13,4 @@ const data = fixture();
 data.timeline.frames = [];
 data.attachments = [attachment("session.cast", "x".repeat(64 * 1024 * 1024))];
 const source = JSON.stringify(data);
+const baseline = await retainedBytes();
