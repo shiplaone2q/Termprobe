@@ -230,3 +230,7 @@ impl CaptureProxy {
         }
     }
 
+    fn set_title(&self, title: Option<String>) {
+        if let Ok(mut current) = self.title.lock() {
+            *current = title;
+        }

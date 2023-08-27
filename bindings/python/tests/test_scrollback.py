@@ -24,3 +24,6 @@ class ScrollbackTests(unittest.TestCase):
             viewport = _native._invoke("get_viewport", (), "viewport")
         self.assertEqual(viewport, {"offset": maximum - 1, "history": maximum})
         library.tui_result_free.assert_called_once()
+
+    def test_signed_integer_validation(self):
+        async def scenario():

@@ -45,3 +45,5 @@ if (zigbuild && target.endsWith("-gnu")) {
     "bash", "-euc", `
 export CARGO_HOME="$HOME/.cargo" RUSTUP_HOME="$HOME/.rustup"
 export PATH="$CARGO_HOME/bin:$HOME/.local/bin:$PATH"
+bash .github/scripts/release/prepare-linux.sh
+cargo install --locked --version 0.23.4 cargo-zigbuild
