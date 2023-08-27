@@ -33,3 +33,5 @@ type nativeFunctionTable struct {
 	Write            func(abiString, abiString) *abiResult
 	Type             func(abiString, abiString) *abiResult
 	Submit           func(abiString, abiString) *abiResult
+	Signal           func(abiString, abiString) *abiResult
+	Key              func(abiString, *abiString, uintptr, uint32) *abiResult

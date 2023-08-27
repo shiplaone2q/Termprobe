@@ -114,3 +114,7 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 | `await close_quiet()` | Close without raising. |
 | `async with Termprobe()` | Close on exit. |
 
+`open()` options are `shell`, `backend`, `cols`, `rows`, `cwd`, `env`, `wait_ready`, `restart`, `retries`, `profile`, and `timeouts`. `run()` accepts the same options except `shell`.
+
+The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, and 30 seconds for command, exit, and ready.
+
