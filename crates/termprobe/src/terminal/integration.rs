@@ -108,3 +108,4 @@ impl TrackerState {
                 self.region = Region::Command;
                 self.command_buf.clear();
             }
+            "C" => {

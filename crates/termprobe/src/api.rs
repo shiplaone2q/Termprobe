@@ -476,3 +476,6 @@ impl LocatorSelector {
             _ => self.children().iter().any(|query| query.uses_full_grid()),
         }
     }
+
+    pub fn description(&self) -> String {
+        match self {
