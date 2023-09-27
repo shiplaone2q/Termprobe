@@ -53,3 +53,7 @@ func launchTimeoutCases() []launchTimeoutCase {
 		{name: "inherit", expected: termprobe.EffectiveTimeouts{Text: 11 * time.Millisecond, Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 15 * time.Millisecond}},
 		{name: "partial override", options: termprobe.Timeouts{Text: &zero, Ready: termprobe.Ptr(42 * time.Millisecond)}, expected: termprobe.EffectiveTimeouts{Idle: 12 * time.Millisecond, Command: 13 * time.Millisecond, Exit: 14 * time.Millisecond, Ready: 42 * time.Millisecond}},
 		{name: "explicit zero", options: termprobe.Timeouts{Text: &zero, Idle: &zero, Command: &zero, Exit: &zero, Ready: &zero}},
+	}
+}
+
+func TestClientTimeoutDefaultsReachLaunch(t *testing.T) {

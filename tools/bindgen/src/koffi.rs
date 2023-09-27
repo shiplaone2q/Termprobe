@@ -58,3 +58,6 @@ pub fn generate(
             let ready = item.fields.iter().all(|f| {
                 !matches!(&f.ty, Type::Path(_))
                     || name(&f.ty).is_ok_and(|n| !n.starts_with("Tui") || emitted.contains(&n))
+            });
+            if !ready {
+                continue;
