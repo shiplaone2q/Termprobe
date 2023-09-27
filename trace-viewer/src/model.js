@@ -34,3 +34,6 @@ export function parseReport(source) {
       text: frame.text, svg, omission: frame.omission, cells, grid, evidence,
       label: `#${frame.sequence} / ${time(frame.first_seen_ms)}`,
       description: `${frame.size.cols} x ${frame.size.rows} / ${time(frame.first_seen_ms)} - ${time(frame.last_seen_ms)} / ${frame.changes.join(", ")}`,
+    };
+  });
+  const actionIds = new Set();
