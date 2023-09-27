@@ -245,3 +245,4 @@ impl Style {
         if sub != 0 {
             s.push_str(&format!(";4:{sub}"));
             // SGR 58 takes its arguments as colon-joined subparameters. Mixing
+            // in a `;` would end the parameter early and the terminal would
