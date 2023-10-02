@@ -285,3 +285,7 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
         }
         ControlKey::Escape => {
             if mods.alt {
+                sequence.push_str(ESC);
+            }
+            sequence.push_str(ESC);
+        }
