@@ -50,3 +50,6 @@ class SourceDistribution(sdist):
         # An sdist needs only the shared ABI and its engine, not the CLI or other bindings.
         for key in ("members", "default-members"):
             manifest = re.sub(
+                r"(?m)^" + key + r"\s*=\s*\[[^\]]*\]",
+                key + ' = ["crates/tui-test", "crates/tui-test-ffi"]',
+                manifest,

@@ -110,3 +110,7 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
         0,
         "truecolor background",
         CellStyle {
+            fg: Some(Color::Rgb(250, 245, 235)),
+            bg: Some(Color::Rgb(96, 48, 128)),
+            ..CellStyle::default()
+        },

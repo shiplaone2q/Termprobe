@@ -13,3 +13,4 @@ async def main():
             "print('Shared typed ABI: Python'); input()",
         )
         await terminal.get_by_text("Shared typed ABI: Python").expect()
+        packed, cols, rows = await terminal._packed_screen()
