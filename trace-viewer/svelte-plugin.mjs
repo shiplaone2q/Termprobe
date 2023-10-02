@@ -18,3 +18,4 @@ export function sveltePlugin(generate = "client") {
         }
         const cssPath = `${filename}.css`;
         styles.set(cssPath, compiled.css?.code ?? "");
+        return {

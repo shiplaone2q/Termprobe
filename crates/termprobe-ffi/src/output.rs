@@ -73,3 +73,7 @@ fn unsigned(value: u64) -> TuiOptionalU64 {
         present: true,
         value,
     }
+}
+fn color(value: CellColor) -> TuiColor {
+    match value {
+        CellColor::Default => TuiColor::default(),

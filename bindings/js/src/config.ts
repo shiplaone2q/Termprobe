@@ -85,3 +85,5 @@ export function backendPayload(backend?: unknown): Backend | undefined {
   if ((BACKENDS as readonly string[]).includes(normalized)) {
     return normalized as Backend;
   }
+  throw new TypeError(
+    `unknown backend "${backend}"; expected one of ${BACKENDS.join(", ")}`,
