@@ -77,3 +77,7 @@ fn unsigned(value: u64) -> TuiOptionalU64 {
 fn color(value: CellColor) -> TuiColor {
     match value {
         CellColor::Default => TuiColor::default(),
+        CellColor::Indexed(index) => TuiColor {
+            kind: 1,
+            index,
+            ..Default::default()

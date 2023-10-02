@@ -261,3 +261,6 @@ class FailureDiagnosticsTests(unittest.TestCase):
                     "reason": "locator_no_match",
                     "summary": "missing",
                     "truncated": False,
+                    "unknown_additive_field": True,
+                },
+                "artifact": {

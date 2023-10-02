@@ -34,3 +34,4 @@ pub fn drag_motion(x: u16, y: u16, options: MouseOptions) -> String {
     format!(
         "{CSI}<{};{};{}M",
         options.sgr_code() | 32,
+        u32::from(x) + 1,
