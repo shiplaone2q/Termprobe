@@ -246,3 +246,4 @@ impl Style {
             s.push_str(&format!(";4:{sub}"));
             // SGR 58 takes its arguments as colon-joined subparameters. Mixing
             // in a `;` would end the parameter early and the terminal would
+            // read whatever follows as the underline's color instead.

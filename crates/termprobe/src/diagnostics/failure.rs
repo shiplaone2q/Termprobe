@@ -86,3 +86,7 @@ impl FailureReport {
             *truncated |= candidates.len() > 4
                 || mismatches.len() > 4
                 || stage
+                    .is_some_and(|stage| stage.candidates_truncated || stage.mismatches_truncated);
+            let mut selectors = Vec::new();
+            for entry in &locator.stages {
+                if let Some(selector) = &entry.selector {
