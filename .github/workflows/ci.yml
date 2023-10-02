@@ -77,3 +77,4 @@ jobs:
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo clippy -p termprobe-rs --all-targets --no-default-features -- -D warnings
       - run: cargo build -p termprobe-cli -p termprobe-ffi
+      - run: cargo test --workspace -- --test-threads=1

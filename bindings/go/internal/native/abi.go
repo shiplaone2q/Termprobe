@@ -69,3 +69,4 @@ type abiResult struct {
 	cursor        abiCursor
 	size          abiSize
 	viewport      abiViewport
+	cells         *abiCell
