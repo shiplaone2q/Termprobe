@@ -92,3 +92,4 @@ pub(super) fn fill_pixel_rect(
         (right - left) as f32,
         (bottom - top) as f32,
     ) else {
+        return;
