@@ -62,3 +62,7 @@ pub(super) fn worker_loop(
                 if let Some(writer) = primary.as_mut() {
                     if let Err(error) = writer.write_resize(at, cols, rows) {
                         logger.event(&format!("automatic recording failed: {error}"));
+                        primary = None;
+                    }
+                }
+                if let Some(recording) = active.as_mut().filter(|recording| at >= recording.started)

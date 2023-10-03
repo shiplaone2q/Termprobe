@@ -180,3 +180,7 @@ pub unsafe extern "C" fn tui_run(
 /// options must be NULL or point to a valid TuiOpenOptions for this call.
 /// All borrowed buffers follow the same contract as tui_run.
 pub unsafe extern "C" fn tui_run_ptr(
+    session: TuiString,
+    options: *const TuiOpenOptions,
+    program: TuiString,
+    args: *const TuiString,
