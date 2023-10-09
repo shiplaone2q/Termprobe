@@ -479,3 +479,5 @@ impl LocatorSelector {
 
     pub fn description(&self) -> String {
         match self {
+            Self::Text(selector) => selector.text.clone(),
+            Self::Style(_) => "style".to_string(),

@@ -489,3 +489,7 @@ macro_rules! emulator_conformance_tests {
             let x = &rows[0][0];
             assert_eq!(x.attrs, set, "every attribute in the SGR must be set");
             assert!(x.underline.is_underlined(), "underline");
+
+            let y = &rows[0][1];
+            assert_eq!(y.ch, "Y");
+            assert_eq!(y.attrs, Attrs::empty(), "SGR 0 must reset");
