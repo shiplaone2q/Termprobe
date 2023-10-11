@@ -135,3 +135,6 @@ pub unsafe extern "C" fn tui_get_cursor_start(session: TuiString) -> *mut TuiTas
     tasks::start(|| unsafe { tui_get_cursor(session) })
 }
 #[no_mangle]
+/// Start a typed call after copying all borrowed inputs.
+/// # Safety
+/// Inputs follow the synchronous function contract through this call only.

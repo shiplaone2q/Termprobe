@@ -54,3 +54,7 @@ const style = shape({
 });
 const anchor = shape({ text, regex: bool, occurrence });
 const direction = choice(["within", "before", "after"]);
+/** @type {Validator} */
+function locator(value, path) {
+  if (path.split(".").length > 128) invalid(path, "a locator nested at most 64 levels deep");
+  shape({ selector, occurrence, direction, style, within: nullable(locator) })(value, path);

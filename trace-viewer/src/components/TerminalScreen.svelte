@@ -32,3 +32,5 @@
   <button id="terminal" type="button" style:width={width} hidden={!url}
     aria-label="Terminal cell inspector. Click a cell or use arrow keys."
     onclick={(event) => inspect(event, event.currentTarget)} onkeydown={move}>
+    {#if url && frame}
+      <img id="screen-image" src={url} alt="Captured terminal screen" draggable="false" onerror={() => onimageerror(frame.index)} />

@@ -257,3 +257,4 @@ class IntegrationTests(unittest.TestCase):
                 await su.close_quiet()
 
         run(scenario())
+
