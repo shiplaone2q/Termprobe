@@ -289,3 +289,6 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
             }
             sequence.push_str(ESC);
         }
+        ControlKey::Tab if mods.shift => {
+            if mods.alt {
+                sequence.push_str(ESC);
