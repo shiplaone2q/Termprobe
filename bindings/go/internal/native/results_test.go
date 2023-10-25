@@ -35,3 +35,5 @@ func TestNativeCellsPreserveLinks(t *testing.T) {
 	defer memory.release()
 	values := []abiCell{{character: memory.text("x"), link: memory.text("https://example.test"), linkID: memory.text("docs")}}
 	memory.pinner.Pin(&values[0])
+	cells := nativeCells(&abiResult{cells: &values[0], cellsLen: 1})
+	if len(cells) != 1 || cells[0].Link != "https://example.test" || cells[0].LinkID != "docs" {

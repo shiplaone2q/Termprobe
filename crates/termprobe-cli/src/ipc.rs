@@ -75,3 +75,4 @@ pub fn is_running(socket: &str) -> bool {
 }
 
 /// Open a raw connection to a running daemon (for streaming, e.g. the monitor).
+pub fn connect(socket: &str) -> std::io::Result<Stream> {

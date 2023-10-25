@@ -23,3 +23,7 @@
   "engines": {
     "node": ">=20"
   },
+  "sideEffects": false,
+  "nativeTargets": {
+    "x86_64-pc-windows-msvc": "win32-x64-msvc",
+    "x86_64-apple-darwin": "darwin-x64",
