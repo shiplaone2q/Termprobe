@@ -313,3 +313,4 @@ impl Session {
             program,
             backend.as_str(),
             cols,
+            rows

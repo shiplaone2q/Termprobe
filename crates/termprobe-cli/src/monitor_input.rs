@@ -65,3 +65,7 @@ impl Perform for InputState {
             if matches!(event, 1 | 2) && bits & CTRL != 0 && bits & !(CTRL | LOCKS) == 0 {
                 self.event = Some(InputEvent::Detach);
             }
+        } else if intermediates == b"<" && matches!(action, 'M' | 'm') {
+            if let ([button], Some([x]), Some([y]), None) =
+                (key, params.next(), params.next(), params.next())
+            {
