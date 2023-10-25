@@ -24,3 +24,7 @@ export function checkDependencies(output, target) {
     throw new Error(`Unexpected native dependencies for ${target}: ${[...new Set(needed)].sort().join(", ")}`);
   }
   if (/\((?:RPATH|RUNPATH)\)/.test(output)) throw new Error("Native release library must not contain RPATH or RUNPATH");
+}
+
+export function checkSymbols(output) {
+  for (const line of output.split("\n")) {

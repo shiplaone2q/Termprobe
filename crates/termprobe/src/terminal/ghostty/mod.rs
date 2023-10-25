@@ -227,3 +227,5 @@ impl Drop for GhosttyEmu {
 
 impl Emulator for GhosttyEmu {
     fn process(&mut self, bytes: &[u8]) {
+        self.clipboard_validator.process(bytes);
+        let mut start = 0;

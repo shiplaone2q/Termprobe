@@ -40,3 +40,7 @@
   onDestroy(() => resources.dispose());
 </script>
 
+<svelte:head><title>{model.title}</title></svelte:head>
+<svelte:window onpagehide={pagehide} />
+<svelte:document onvisibilitychange={() => { if (document.hidden) send({ type: "pause" }); }} />
+
