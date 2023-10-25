@@ -258,3 +258,4 @@ class IntegrationTests(unittest.TestCase):
 
         run(scenario())
 
+    def test_bell_state_waits_and_expectations(self):

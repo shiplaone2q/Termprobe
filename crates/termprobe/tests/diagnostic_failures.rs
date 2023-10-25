@@ -69,3 +69,6 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
             full: false,
             path: Some(
                 root.join("missing")
+                    .join("screen.svg")
+                    .to_string_lossy()
+                    .into_owned(),

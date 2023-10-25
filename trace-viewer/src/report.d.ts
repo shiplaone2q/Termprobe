@@ -122,3 +122,7 @@ export interface FailureOperationDetails {
 export interface FailureCellMismatch {
   readonly location: FailureTextPosition;
   readonly grapheme: string;
+  readonly property: string;
+  readonly operator: string;
+  readonly expected: string;
+  readonly actual: string;

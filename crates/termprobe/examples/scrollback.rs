@@ -45,3 +45,5 @@ fn demonstrate(backend: Backend) -> Result<()> {
         session.execute(Operation::Scroll {
             target: ScrollTarget::Top,
         })?;
+        let history = text(&session, false)?;
+        ensure!(history.contains("row00"));
