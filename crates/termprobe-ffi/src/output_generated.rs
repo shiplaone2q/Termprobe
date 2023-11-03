@@ -56,3 +56,6 @@ fn bell_event(s: &mut Storage, v: termprobe::api::BellEvent) -> TuiBellEvent {
 fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
     let modes = s.modes(v.modes);
     TuiState {
+        session_shell: s.optional(v.session_shell),
+        cols: v.cols,
+        rows: v.rows,

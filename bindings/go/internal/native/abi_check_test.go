@@ -32,3 +32,4 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 					t.Errorf("field %s has no C counterpart", field.Name)
 					continue
 				}
+				if field.Offset != native.Offset || field.Type.Size() != native.Type.Size() {
