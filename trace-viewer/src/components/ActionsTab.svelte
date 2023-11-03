@@ -17,3 +17,5 @@
   <label><input id="assertions-only" type="checkbox" checked={assertionsOnly}
     onchange={(event) => onassertions(event.currentTarget.checked)} /> Assertions and waits only</label>
 </div>
+<nav id="points" bind:this={points} aria-label="Recorded actions">
+  {#each actions as action (action.id)}
