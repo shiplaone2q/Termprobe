@@ -64,3 +64,7 @@ _DEFAULTABLE = frozenset(TerminalOptions.__dataclass_fields__)
 _defaults = TerminalOptions()
 _defaults_lock = threading.Lock()
 
+
+def set_terminal_defaults(**values: Any) -> None:
+    unknown = sorted(set(values) - _DEFAULTABLE)
+    if unknown:

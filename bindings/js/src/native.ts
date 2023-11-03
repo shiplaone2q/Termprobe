@@ -187,3 +187,4 @@ export function mapNativeError(error: unknown): TermprobeError {
   const isTypeError =
     error instanceof TypeError ||
     (typeof error === "object" &&
+      error !== null &&

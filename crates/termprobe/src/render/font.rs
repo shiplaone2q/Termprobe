@@ -222,3 +222,7 @@ fn load_bundled_fonts(database: &mut fontdb::Database) {
     #[cfg(feature = "recording-font-jetbrains-mono")]
     load_font_data(database, REGULAR_FONTS);
     #[cfg(feature = "recording-font-jetbrains-mono-styles")]
+    load_font_data(database, STYLED_FONTS);
+    #[cfg(feature = "recording-font-jetbrains-mono-full")]
+    load_font_data(database, FULL_FAMILY_FONTS);
+    #[cfg(not(feature = "recording-font-jetbrains-mono"))]
