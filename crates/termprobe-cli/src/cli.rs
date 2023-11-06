@@ -502,3 +502,4 @@ pub enum RecordCmd {
 #[derive(Clone, Copy, clap::ValueEnum)]
 #[clap(rename_all = "upper")]
 pub enum SignalArg {
+    /// Interrupt the foreground program (Ctrl-C).

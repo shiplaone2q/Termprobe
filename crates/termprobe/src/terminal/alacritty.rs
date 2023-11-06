@@ -234,3 +234,4 @@ impl CaptureProxy {
         if let Ok(mut current) = self.title.lock() {
             *current = title;
         }
+    }

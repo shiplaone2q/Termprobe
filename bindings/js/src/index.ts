@@ -42,3 +42,7 @@ export type {
   Backend,
   BellEvent,
   Cell,
+  ClientOptions,
+  Color,
+  Colors,
+  Cursor,
