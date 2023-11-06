@@ -13,3 +13,4 @@ bindings/js/npm/*/*.dylib
 bindings/js/npm/*/*.dll
 .termprobe/
 bindings/js/target
+bindings/js/native/target
