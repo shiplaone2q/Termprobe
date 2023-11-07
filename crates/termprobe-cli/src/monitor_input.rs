@@ -69,3 +69,4 @@ impl Perform for InputState {
             if let ([button], Some([x]), Some([y]), None) =
                 (key, params.next(), params.next(), params.next())
             {
+                self.event = Some(InputEvent::Mouse {

@@ -18,3 +18,4 @@ func (handle *nativeLibraryHandle) symbol(name string) (uintptr, error) {
 	procedure, err := handle.library.FindProc(name)
 	if err != nil {
 		return 0, fmt.Errorf("find native symbol %q: %w", name, err)
+	}

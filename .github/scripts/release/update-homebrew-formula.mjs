@@ -28,3 +28,6 @@ const formula = `class Termprobe < Formula
   on_macos do
     on_arm do
       url "https://github.com/microsoft/termprobe/releases/download/${version}/termprobe-aarch64-apple-darwin.tar.gz"
+      sha256 "${macosArm}"
+    end
+
