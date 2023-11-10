@@ -52,3 +52,4 @@ impl TuiString {
         }
         let bytes = unsafe { slice(self.data, self.len)? };
         std::str::from_utf8(bytes)
+            .map(|s| Some(s.to_owned()))

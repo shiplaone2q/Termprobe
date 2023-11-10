@@ -80,3 +80,6 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
     let scope_items = [
         "Repository local (current project)",
         "Global (all projects)",
+    ];
+    let scope = match Select::with_theme(&theme)
+        .with_prompt("Install scope")
