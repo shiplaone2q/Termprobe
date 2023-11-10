@@ -99,3 +99,5 @@ export interface TextSpan {
 
 export interface TextMatch {
   text: string
+  start: TextPosition
+  end: TextPosition

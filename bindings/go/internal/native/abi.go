@@ -70,3 +70,6 @@ type abiResult struct {
 	size          abiSize
 	viewport      abiViewport
 	cells         *abiCell
+	cellsLen      uintptr
+	matches       *abiMatch
+	matchesLen    uintptr

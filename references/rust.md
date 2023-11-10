@@ -24,3 +24,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 Core types:
 
 | Type | Use |
+| --- | --- |
