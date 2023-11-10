@@ -38,3 +38,5 @@ font_size = 20
 background = "#e8e8ef"
 foreground = "#33333a"
 
+[profiles.demo.recording.style.border]
+width = 2

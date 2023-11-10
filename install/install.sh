@@ -67,3 +67,4 @@ download() {
 if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
   RELEASE_URL="https://github.com/${REPOSITORY}/releases/latest/download"
 elif [ "$VERSION" = "beta" ]; then
+  command -v awk >/dev/null 2>&1 || fail "awk is required to resolve beta releases."
