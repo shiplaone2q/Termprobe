@@ -102,3 +102,7 @@ fn main() -> Result<()> {
     )?;
     emit(
         &root,
+        "bindings/python/src/termprobe/_abi.py",
+        &python(&structs, &functions, &version)?,
+        check,
+    )?;

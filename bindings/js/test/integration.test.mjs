@@ -306,3 +306,5 @@ test("recording API writes an asciicast file", async () => {
         fps: 24,
         speed: 1,
         idleTimeLimit: 2,
+      });
+      await su.submit("echo sdk-recording");

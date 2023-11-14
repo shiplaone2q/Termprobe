@@ -81,3 +81,7 @@ fn color(value: CellColor) -> TuiColor {
             kind: 1,
             index,
             ..Default::default()
+        },
+        CellColor::Rgb(red, green, blue) => TuiColor {
+            kind: 2,
+            red,
