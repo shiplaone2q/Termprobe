@@ -169,3 +169,7 @@ fn c_output(ty: &str, value: &str) -> Result<String> {
     Ok(match ty {
         "String" => format!("s.string({value})"),
         "Option<String>" => format!("s.optional({value})"),
+        "Option<i32>" => format!("integer({value})"),
+        "Option<u32>" => format!("TuiOptionalU64 {{ present: {value}.is_some(), value: u64::from({value}.unwrap_or_default()) }}"),
+        "CellColor" => format!("color({value})"),
+        t if OUTPUTS.contains(&t) => format!("{}(s, {value})", snake(t)),

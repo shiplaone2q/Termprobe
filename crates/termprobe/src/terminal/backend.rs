@@ -43,3 +43,4 @@ impl Backend {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Alacritty => "alacritty",
+            #[cfg(feature = "ghostty")]
