@@ -19,3 +19,4 @@
 </div>
 <nav id="points" bind:this={points} aria-label="Recorded actions">
   {#each actions as action (action.id)}
+    <button class="point" class:failed={action.failed} data-operation={action.id} aria-current={selected === action.id}

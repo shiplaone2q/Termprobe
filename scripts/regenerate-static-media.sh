@@ -47,3 +47,7 @@ static_dir="$repo_root/static"
 temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/termprobe-static-media.XXXXXX")
 session_prefix="static-media-$$"
 sessions=()
+
+close_session() {
+    local session=$1
+    local exit_code

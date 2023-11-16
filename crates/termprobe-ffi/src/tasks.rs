@@ -63,3 +63,5 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
         Err(error) => {
             START.with(|slot| *slot.borrow_mut() = Some(None));
             output::error(TermprobeError::internal(format!(
+                "native worker failed: {error}"
+            )))
