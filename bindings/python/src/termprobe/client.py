@@ -240,3 +240,4 @@ def _link_query_value(
         within,
         {
             "kind": "link",
+            "link": uri,

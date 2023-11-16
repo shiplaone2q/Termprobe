@@ -37,3 +37,7 @@ MAPPING = {
     "key": [("client", "keyboard")],
     "press": [("client", "press")],
     "mouse": [("client", "mouse")],
+    "resize": [("client", "resize")],
+    "scroll": [("client", "scroll"), ("client", "scroll_to_top"), ("client", "scroll_to_bottom")],
+    "write": [("client", "write")],
+    "signal": [("client", "signal")],
