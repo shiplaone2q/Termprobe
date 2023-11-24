@@ -98,3 +98,5 @@ test("evicted completion checkpoints never substitute a retained frame", async (
   await page.locator("#failure").click();
   await expect(page.locator("#frame-count")).toHaveText("3 / 3");
 });
+
+test("filters search locator and input text and drive action navigation", async ({ page, openReport }) => {

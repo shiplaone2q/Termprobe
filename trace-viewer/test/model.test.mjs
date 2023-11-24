@@ -74,3 +74,4 @@ for (const [name, change, error] of [
   ["duplicate operation IDs", (data) => { data.details.recent_operations[1].sequence = 1; }, /Duplicate action sequence/],
   ["invalid operation time", (data) => { data.details.recent_operations[0].ended_ms = 0; }, /end precedes start/],
   ["invalid expectation", (data) => { data.details.recent_operations[0].expectation.kind = "unknown"; }, /expectation.kind/],
+  ["invalid input variant", (data) => { data.details.recent_operations[3].input.arguments.kind = "unknown"; }, /arguments.kind/],
