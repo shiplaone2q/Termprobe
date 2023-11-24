@@ -91,3 +91,5 @@ impl State {
         restore_cursor(&mut output, grid, &grid.cursor, origin);
         if self.controls.blink {
             output.push_str("\x1b[5m");
+        }
+        for (mode, number, private) in [

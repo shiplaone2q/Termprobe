@@ -238,3 +238,7 @@ pub enum Request {
         rows: u16,
         #[serde(default)]
         interactive: bool,
+    },
+    MonitorInputStream {
+        cols: u16,
+        rows: u16,

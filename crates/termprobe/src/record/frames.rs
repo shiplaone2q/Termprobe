@@ -114,3 +114,4 @@ impl FrameCapture {
         let next = TimedGrid::capture(emulator, at)?;
         let previous = std::mem::replace(&mut self.pending, next);
         let duration = at.saturating_sub(previous.at);
+        self.collector.push(previous.into_frame(duration));
