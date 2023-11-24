@@ -64,3 +64,5 @@ export function writeArchive(filename, entries) {
   fs.writeFileSync(filename, data);
   fs.writeFileSync(`${filename}.sha256`, `${sha256(data)}  ${path.basename(filename)}\n`);
 }
+
+export function nativeFilename(version, target) {

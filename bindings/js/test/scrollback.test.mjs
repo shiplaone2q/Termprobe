@@ -31,3 +31,4 @@ test("native scroll validates signed integer amounts", async () => {
   for (const amount of [1.5, NaN, Infinity, -Infinity, 2147483648, -2147483649, "1", true]) {
     await assert.rejects(terminal.scroll(amount), UsageError);
     await assert.rejects(async () => native.scroll(amount));
+  }

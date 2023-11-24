@@ -175,3 +175,5 @@ impl Pty {
     /// for its output.
     pub fn spawn(
         target: &str,
+        args: &[String],
+        opts: &SpawnOptions,

@@ -15,3 +15,4 @@ try {
   await terminal.scroll(-2);
   console.log("Two rows toward live:", await terminal.getViewport());
   await terminal.scrollToBottom();
+  console.log("Live viewport:", await terminal.getViewport());
