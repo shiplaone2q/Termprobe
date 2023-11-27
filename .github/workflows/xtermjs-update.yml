@@ -32,3 +32,4 @@ jobs:
           was_unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/termprobe/assets/xtermjs/pinned.json)"
 
           ./.github/scripts/vendor-xtermjs.sh --latest
+

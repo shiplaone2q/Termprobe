@@ -14,3 +14,5 @@
 </script>
 
 <section class="details-panel" aria-label="Action details">
+  <TabBar {tabs} {active} {onselect} group="details" label="Action details" />
+  <TabPanel id="errors" {active} padding="details">{@render resultPanel()}</TabPanel>

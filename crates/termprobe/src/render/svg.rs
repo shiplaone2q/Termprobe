@@ -396,3 +396,7 @@ fn write_cursor(
         CursorShape::Bar => (x, y, CURSOR_THICKNESS, cell_h),
     };
     let _ = write!(
+        out,
+        r#"<rect x="{rx:.2}" y="{ry:.2}" width="{rw:.2}" height="{rh:.2}" fill="{fill}"/>"#
+    );
+

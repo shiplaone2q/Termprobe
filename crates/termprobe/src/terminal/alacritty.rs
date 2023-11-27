@@ -235,3 +235,4 @@ impl CaptureProxy {
             *current = title;
         }
     }
+}
