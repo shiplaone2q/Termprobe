@@ -395,3 +395,4 @@ fn write_cursor(
         CursorShape::Underline => (x, y + cell_h - CURSOR_THICKNESS, w, CURSOR_THICKNESS),
         CursorShape::Bar => (x, y, CURSOR_THICKNESS, cell_h),
     };
+    let _ = write!(

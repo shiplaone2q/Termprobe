@@ -242,3 +242,7 @@ pub enum Request {
     MonitorInputStream {
         cols: u16,
         rows: u16,
+    },
+    Shutdown,
+}
+
