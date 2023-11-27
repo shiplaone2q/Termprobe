@@ -94,3 +94,6 @@ impl Drop for TestDirectory {
         }
     }
 }
+
+struct TestShell {
+    child: Box<dyn Child + Send + Sync>,
