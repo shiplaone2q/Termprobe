@@ -188,3 +188,7 @@ export function mapNativeError(error: unknown): TermprobeError {
     error instanceof TypeError ||
     (typeof error === "object" &&
       error !== null &&
+      "name" in error &&
+      error.name === "TypeError");
+  return isTypeError || (code !== undefined && USAGE_NAPI_CODES.has(code))
+    ? new UsageError(message)

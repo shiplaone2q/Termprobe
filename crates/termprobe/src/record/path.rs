@@ -43,3 +43,5 @@ impl ProtectedFile {
 fn identity(file: &File) -> io::Result<Option<(u64, u64)>> {
     use std::os::unix::fs::MetadataExt;
     let metadata = file.metadata()?;
+    Ok(Some((metadata.dev(), metadata.ino())))
+}

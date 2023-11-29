@@ -96,3 +96,5 @@ impl NerdFont {
             );
         }
 
+        Self {
+            glyphs,

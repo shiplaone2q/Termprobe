@@ -152,3 +152,5 @@ def _copy(value):
             item = [_copy(item[index]) for index in range(getattr(value, name + "_len"))]
         elif isinstance(item, C.Structure):
             item = _copy(item)
+        result["char" if name == "character" else name] = item
+    if isinstance(value, abi.TuiState):
