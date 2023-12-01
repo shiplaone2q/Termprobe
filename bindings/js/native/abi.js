@@ -112,3 +112,7 @@ text: types.TuiOptionalU64,
 idle: types.TuiOptionalU64,
 command: types.TuiOptionalU64,
 exit: types.TuiOptionalU64,
+ready: types.TuiOptionalU64,
+});
+types.TuiOpenOptions = koffi.struct({
+backend: types.TuiString,

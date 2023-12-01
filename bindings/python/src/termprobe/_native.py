@@ -154,3 +154,6 @@ def _copy(value):
             item = _copy(item)
         result["char" if name == "character" else name] = item
     if isinstance(value, abi.TuiState):
+        result["modes"] = {entry["name"]: entry["enabled"] for entry in result["modes"]}
+    if isinstance(value, abi.TuiTerminalColors):
+        result["palette"] = {int(entry["key"]): entry["value"] for entry in result["palette"]}

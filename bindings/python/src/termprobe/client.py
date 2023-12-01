@@ -241,3 +241,7 @@ def _link_query_value(
         {
             "kind": "link",
             "link": uri,
+            "full": full,
+            "direction": direction,
+            **_occurrence_fields("any"),
+        },
