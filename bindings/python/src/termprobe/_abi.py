@@ -156,3 +156,5 @@ TuiQuery._fields_ = [
 TuiMode._fields_ = [
     ("name", TuiString),
     ("enabled", ctypes.c_bool),
+]
+
