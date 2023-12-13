@@ -126,3 +126,6 @@ impl Trace {
             .iter_mut()
             .find(|stage| stage.expression_path == path)
         {
+            stage.evaluations += 1;
+            stage.input_candidate_count = stage.input_candidate_count.saturating_add(stats.input);
+            stage.raw_candidate_count = stage.raw_candidate_count.saturating_add(stats.raw);

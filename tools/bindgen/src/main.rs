@@ -106,3 +106,7 @@ fn main() -> Result<()> {
         &python(&structs, &functions, &version)?,
         check,
     )?;
+    Ok(())
+}
+
+fn emit(root: &Path, path: &str, content: &str, check: bool) -> Result<()> {

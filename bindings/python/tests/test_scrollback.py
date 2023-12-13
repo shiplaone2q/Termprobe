@@ -27,3 +27,4 @@ class ScrollbackTests(unittest.TestCase):
 
     def test_signed_integer_validation(self):
         async def scenario():
+            terminal = TuiTest.ephemeral()
