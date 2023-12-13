@@ -100,3 +100,5 @@ test("evicted completion checkpoints never substitute a retained frame", async (
 });
 
 test("filters search locator and input text and drive action navigation", async ({ page, openReport }) => {
+  await openReport();
+  await page.locator("#action-filter").fill('getByText("READY")');

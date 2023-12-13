@@ -40,3 +40,7 @@ impl BellTracker {
     pub fn new(start: Instant) -> Self {
         Self {
             inner: Arc::new(BellTrackerInner {
+                start,
+                published_sequence: AtomicU64::new(0),
+                state: Mutex::new(BellState::default()),
+            }),
