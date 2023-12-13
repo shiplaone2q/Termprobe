@@ -24,3 +24,5 @@ func (handle *nativeLibraryHandle) symbol(name string) (uintptr, error) {
 	}
 	return address, nil
 }
+func (handle *nativeLibraryHandle) close() error {
+	if err := purego.Dlclose(handle.library); err != nil {

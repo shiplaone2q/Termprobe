@@ -308,3 +308,5 @@ test("recording API writes an asciicast file", async () => {
         idleTimeLimit: 2,
       });
       await su.submit("echo sdk-recording");
+      await su.waitCommand();
+      assert.equal(await su.stopRecording(), path);
