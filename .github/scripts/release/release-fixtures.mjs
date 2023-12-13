@@ -44,3 +44,4 @@ export function createFixture(t) {
   fs.writeFileSync(path.join(source, "go.mod"), "module example.com/fixture\n\ngo 1.23\n");
   fs.writeFileSync(path.join(source, "internal/native/registry.go"),
     "package native\n"
+    + "type bundledLibrary struct { name string; checksum string; archive []byte }\n"
