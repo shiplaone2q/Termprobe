@@ -93,3 +93,4 @@ impl State {
             output.push_str("\x1b[5m");
         }
         for (mode, number, private) in [
+            (TermMode::INSERT, 4, false),

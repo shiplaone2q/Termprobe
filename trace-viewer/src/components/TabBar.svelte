@@ -19,3 +19,5 @@
     <button bind:this={buttons[index]} role="tab" id={`${tab.id}-tab`} data-group={group}
       aria-controls={`${tab.id}-panel`} aria-selected={active === tab.id} tabindex={active === tab.id ? 0 : -1}
       onclick={() => onselect(tab.id)} onkeydown={(event) => navigate(event, index)}>
+      {tab.label}
+    </button>
