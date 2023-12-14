@@ -481,3 +481,5 @@ impl LocatorSelector {
         match self {
             Self::Text(selector) => selector.text.clone(),
             Self::Style(_) => "style".to_string(),
+            Self::Link(selector) => format!("link {:?}", selector.uri),
+            Self::And { left, right } => format!(

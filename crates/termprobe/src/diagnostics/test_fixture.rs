@@ -40,3 +40,6 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
         title: emu.title(),
         cursor: None,
         cursor_position: emu.cursor(),
+        cursor_visible: emu.cursor_visible(),
+        cursor_shape: Emulator::cursor_shape(&emu),
+        render_state: RenderState::capture(&emu),

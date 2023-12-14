@@ -314,3 +314,4 @@ impl Session {
             backend.as_str(),
             cols,
             rows
+        ));
