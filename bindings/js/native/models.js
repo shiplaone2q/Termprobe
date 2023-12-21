@@ -112,3 +112,4 @@ TraceOptions: {
 },
 FailureArtifactOptions: {
 "directory": ["directory", "PathBuf"],
+"mode": ["mode", "Option<FailureArtifactMode>"],

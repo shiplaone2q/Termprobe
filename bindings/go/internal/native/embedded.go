@@ -62,3 +62,6 @@ func bundleTarget(goos, goarch, libc string) (string, error) {
 	return "", fmt.Errorf("no bundled native engine supports %s/%s with libc %q", goos, goarch, libc)
 }
 
+func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr error) {
+	directory := filepath.Join(cache, "termprobe", "native", library.checksum)
+	if err := os.MkdirAll(directory, 0o700); err != nil {

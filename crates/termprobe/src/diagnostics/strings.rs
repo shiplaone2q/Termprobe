@@ -78,3 +78,5 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::Cells { .. } => "cells",
         Operation::GetCommand => "get.command",
         Operation::GetOutput => "get.output",
+        Operation::GetExitCode => "get.exit_code",
+        Operation::GetCwd => "get.cwd",
