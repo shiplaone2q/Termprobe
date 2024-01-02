@@ -43,3 +43,5 @@ and the shim supplies them rather than the Rust side working around them:
 | Window title | `onTitleChange`, with `windowOptions.pushTitle`/`popTitle` enabling the `CSI 22/23 t` stack the bundle implements but leaves off |
 | Cursor visibility | `coreService.isCursorHidden` |
 | Cursor shape | `coreService.decPrivateModes.cursorStyle`, absent until `DECSCUSR` sets one, so it reads as a block until then |
+| `OSC 4/10/11/12` set, query, and reset | `parser.registerOscHandler`, answering out of the same reply queue the terminal's own replies use so answers keep the order they were asked in |
+| `SGR 59` | xterm.js stores the reset as an explicit white, indistinguishable from a real `58;2;255;255;255` once written; the shim clears it where the parser sets it, while the two are still apart |

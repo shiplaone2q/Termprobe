@@ -87,3 +87,5 @@ export function backendPayload(backend?: unknown): Backend | undefined {
   }
   throw new TypeError(
     `unknown backend "${backend}"; expected one of ${BACKENDS.join(", ")}`,
+  );
+}

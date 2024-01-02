@@ -88,3 +88,4 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 	}
 }
 
+func TestCacheLibraryReusesFileAndSeparatesVersions(t *testing.T) {

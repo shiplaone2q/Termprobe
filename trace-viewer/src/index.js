@@ -26,3 +26,4 @@ try {
   } catch (error) {
     resources.dispose();
     throw error;
+  }
