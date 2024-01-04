@@ -45,3 +45,4 @@ impl FontSystem {
         self.glyphs.get(&key).and_then(Option::as_ref)
     }
 
+    fn load(&self, key: GlyphKey) -> Option<GlyphOutline> {

@@ -192,3 +192,7 @@ export function mapNativeError(error: unknown): TermprobeError {
       error.name === "TypeError");
   return isTypeError || (code !== undefined && USAGE_NAPI_CODES.has(code))
     ? new UsageError(message)
+    : new InternalError(message);
+}
+
+async function invoke<T>(action: () => Promise<T>): Promise<T> {

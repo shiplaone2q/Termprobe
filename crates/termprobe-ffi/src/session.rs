@@ -39,3 +39,7 @@ pub(crate) fn close(
     context: ExecutionContext,
     failed: Option<bool>,
 ) -> Result<OperationResult> {
+    let handle = global_registry().session(name);
+    if let Some(failed) = failed {
+        return finish_trace_and_close(
+            || {
