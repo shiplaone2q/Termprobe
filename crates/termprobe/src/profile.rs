@@ -321,3 +321,6 @@ pub struct Profile {
 }
 
 impl Default for Profile {
+    fn default() -> Self {
+        Profile {
+            scrollback: DEFAULT_SCROLLBACK,

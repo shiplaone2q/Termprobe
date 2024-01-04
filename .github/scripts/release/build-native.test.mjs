@@ -33,3 +33,4 @@ childProcess.execFileSync = (command, args, options) => {
   const profile = command === "docker" ? args.at(-1) : args.includes("--release") ? "release" : "debug";
   const output = path.join(options.cwd, "target", target, profile);
   fs.mkdirSync(output, { recursive: true });
+  const library = target.includes("windows") ? "termprobe_ffi.dll"

@@ -73,3 +73,5 @@ type abiResult struct {
 	cellsLen      uintptr
 	matches       *abiMatch
 	matchesLen    uintptr
+	bells         *abiBellEvent
+	bellsLen      uintptr
