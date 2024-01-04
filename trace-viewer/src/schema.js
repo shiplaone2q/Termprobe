@@ -58,3 +58,7 @@ const direction = choice(["within", "before", "after"]);
 function locator(value, path) {
   if (path.split(".").length > 128) invalid(path, "a locator nested at most 64 levels deep");
   shape({ selector, occurrence, direction, style, within: nullable(locator) })(value, path);
+}
+const selector = tagged({
+  text: shape({ selector: shape({ text, regex: bool, full: bool, whitespace: choice(["exact", "normalize"]),
+    scope: shape({ after: nullable(anchor), before: nullable(anchor) }) }) }),

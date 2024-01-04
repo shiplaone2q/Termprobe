@@ -25,3 +25,7 @@ function fixture(t) {
     nativeTargets,
   }));
   fs.writeFileSync(path.join(bindings, "index.js"), "export {};\n");
+  for (const platform of targets) {
+    fs.writeFileSync(path.join(bindings, "artifacts", library(platform)), "shared library fixture");
+  }
+  return directory;

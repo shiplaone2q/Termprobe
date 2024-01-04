@@ -109,3 +109,6 @@ fn pointer_options_reject_null_and_preserve_validation() {
         ..Default::default()
     };
     let results = unsafe {
+        [
+            tui_open_ptr(session, std::ptr::null()),
+            tui_run_ptr(session, std::ptr::null(), text(""), std::ptr::null(), 0),
