@@ -57,3 +57,4 @@ passes `filter({ has: terminal.getByLink(uri) })` but fails chained
 Appearance refinement skips blanks when the match has visible characters;
 link refinement checks blanks too.
 
+Composition requires operands from the same terminal instance. It is lazy,
