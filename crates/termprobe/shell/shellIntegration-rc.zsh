@@ -10,3 +10,5 @@ ZDOTDIR=$__su_zdotdir
 __su_osc() { builtin printf '\033]133;%s\007' "$1"; }
 __su_cwd() {
 	emulate -L zsh
+	local LC_ALL=C p=$PWD encoded='' byte c hex i
+	for ((i = 1; i <= ${#p}; i++)); do
