@@ -1127,3 +1127,4 @@ impl Engine {
                     if let Some(primary) = error.artifact.as_mut() {
                         if primary.status == FailureArtifactStatus::Written {
                             primary.status = FailureArtifactStatus::Partial;
+                        }

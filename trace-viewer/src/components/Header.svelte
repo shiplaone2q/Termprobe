@@ -21,3 +21,5 @@
 
 <style>
   .topbar { min-height: 52px; display: flex; gap: 24px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; line-height: 20px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 15px; color: var(--green); }
+  .brand span { color: var(--muted); font-size: 12px; font-weight: 400; }
