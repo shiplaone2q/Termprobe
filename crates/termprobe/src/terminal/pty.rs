@@ -177,3 +177,5 @@ impl Pty {
         target: &str,
         args: &[String],
         opts: &SpawnOptions,
+    ) -> anyhow::Result<(Pty, Box<dyn Read + Send>)> {
+        Self::spawn_with_cwd(target, args, opts, opts.cwd.as_deref().map(Path::new))
