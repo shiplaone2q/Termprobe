@@ -38,3 +38,5 @@ export function parseReport(source) {
   });
   const actionIds = new Set();
   const operations = details.recent_operations ?? [];
+  /** @type {TraceAction[]} */
+  const actions = operations.map((operation) => {

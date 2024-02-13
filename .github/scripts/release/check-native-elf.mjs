@@ -28,3 +28,7 @@ export function checkDependencies(output, target) {
 
 export function checkSymbols(output) {
   for (const line of output.split("\n")) {
+    const fields = line.trim().split(/\s+/);
+    if (fields.length >= 8 && fields[4] === "GLOBAL" && fields[6] === "UND" && !fields[7].includes("@")) {
+      throw new Error(`Unversioned required symbol bypasses the glibc baseline: ${fields[7]}`);
+    }

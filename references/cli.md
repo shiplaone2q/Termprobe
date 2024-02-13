@@ -110,3 +110,7 @@ or the [Rust example](../crates/termprobe/examples/scrollback.rs).
 | `wait clipboard [TEXT]` | Wait for a clipboard change or match. |
 | `wait bell` | Wait for a bell. |
 
+Most waits accept `--timeout MS`. `expect`, `click`, and `highlight` retry. `find` reads the current screen.
+
+## Inspect
+
