@@ -159,3 +159,6 @@ impl ColorState {
             ColorSlot::Indexed(index) => index as usize,
             ColorSlot::Foreground => RioNamedColor::Foreground as usize,
             ColorSlot::Background => RioNamedColor::Background as usize,
+            ColorSlot::Cursor => RioNamedColor::Cursor as usize,
+        }
+    }

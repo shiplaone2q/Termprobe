@@ -206,3 +206,4 @@ impl GhosttyCore {
             .context("setting scrollback limit")?;
 
         terminal
+            .set_default_fg_color(Some(to_ghostty_rgb(profile.colors.foreground)))

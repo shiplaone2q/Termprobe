@@ -41,3 +41,6 @@ MAPPING = {
     "scroll": [("client", "scroll"), ("client", "scroll_to_top"), ("client", "scroll_to_bottom")],
     "write": [("client", "write")],
     "signal": [("client", "signal")],
+    "kill": [("client", "kill")],
+    "wait": [("client", "wait_title"), ("client", "wait_clipboard"), ("client", "wait_idle"), ("client", "wait_command"), ("client", "wait_exit"), ("client", "wait_bell")],
+    "expect": [("client", "get_by_text"), ("client", "expect_title"), ("client", "expect_exit_code"), ("client", "expect_output"), ("client", "expect_bell_count"), ("client", "expect_snapshot")],
