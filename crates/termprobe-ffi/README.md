@@ -63,3 +63,7 @@ npm run build:ts
 node --input-type=module -e '
   import { Termprobe } from "./dist/index.js";
   const terminal = Termprobe.ephemeral();
+  try {
+    await terminal.run(process.execPath, ["-e", "console.log(\"Ready 界🙂\")"]);
+    await terminal.getByText("Ready 界🙂").expect();
+    await terminal.waitExit();

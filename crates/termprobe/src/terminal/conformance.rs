@@ -493,3 +493,6 @@ macro_rules! emulator_conformance_tests {
             let y = &rows[0][1];
             assert_eq!(y.ch, "Y");
             assert_eq!(y.attrs, Attrs::empty(), "SGR 0 must reset");
+            assert_eq!(
+                y.underline,
+                $crate::terminal::cell::UnderlineStyle::None,

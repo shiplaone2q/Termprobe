@@ -39,3 +39,7 @@ __su_preexec_invoke() {
 trap '__su_preexec_invoke' DEBUG
 
 __su_precmd() {
+    local ec=$?
+    if [ -n "$__su_started" ]; then
+        __su_osc "D;$ec"
+    fi

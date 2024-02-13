@@ -294,3 +294,6 @@ struct TuiResult *tui_scroll_to_bottom(struct TuiString session);
 /**
  * # Safety
  * result must be NULL or a live result returned by this library, freed once.
+ */
+void tui_result_free(struct TuiResult *result);
+
