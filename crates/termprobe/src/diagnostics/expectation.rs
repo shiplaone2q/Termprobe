@@ -76,3 +76,5 @@ impl OperationExpectation {
                 "Terminal title",
                 format!(
                     "{}{}",
+                    if *not { "not " } else { "" },
+                    pattern(text, *regex)

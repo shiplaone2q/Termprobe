@@ -28,3 +28,5 @@
     };
   });
 </script>
+
+<div class="cell-layout">

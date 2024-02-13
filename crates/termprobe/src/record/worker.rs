@@ -66,3 +66,6 @@ pub(super) fn worker_loop(
                     }
                 }
                 if let Some(recording) = active.as_mut().filter(|recording| at >= recording.started)
+                {
+                    let result = recording.writer.write_resize(at, cols, rows);
+                    remember_error(recording, result);
