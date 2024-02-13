@@ -65,3 +65,4 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
             output::error(TermprobeError::internal(format!(
                 "native worker failed: {error}"
             )))
+        }

@@ -67,3 +67,7 @@ export function describeExpectation(value) {
   return `Expect ${describeLocator(value.query)} ${outcome}`;
 }
 
+/** @param {Record<string, unknown>} values */
+function objectCode(values) {
+  return `{ ${Object.entries(values).filter(([, value]) => value != null)
+    .map(([key, value]) => `${key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())}: ${JSON.stringify(value)}`).join(", ")} }`;
