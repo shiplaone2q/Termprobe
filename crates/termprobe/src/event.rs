@@ -44,3 +44,7 @@ impl BellTracker {
                 published_sequence: AtomicU64::new(0),
                 state: Mutex::new(BellState::default()),
             }),
+        }
+    }
+
+    pub fn count(&self) -> u64 {

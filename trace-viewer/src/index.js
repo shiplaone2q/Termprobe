@@ -27,3 +27,5 @@ try {
     resources.dispose();
     throw error;
   }
+} catch (error) {
+  showError(error instanceof Error ? error.message : String(error));

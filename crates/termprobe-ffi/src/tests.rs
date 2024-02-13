@@ -112,3 +112,7 @@ fn pointer_options_reject_null_and_preserve_validation() {
         [
             tui_open_ptr(session, std::ptr::null()),
             tui_run_ptr(session, std::ptr::null(), text(""), std::ptr::null(), 0),
+            tui_open_ptr(session, &options),
+            tui_run_ptr(session, &options, text(""), std::ptr::null(), 0),
+            tui_screenshot_ptr(session, std::ptr::null()),
+            tui_screenshot_ptr(
