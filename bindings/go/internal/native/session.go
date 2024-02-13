@@ -162,3 +162,5 @@ func (runtime *Session) Submit(text *string) error {
 	defer nativeFunctions.ResultFree(result)
 	return nativeError(result)
 }
+
+func (runtime *Session) Key(keys []string, action uint32) error {
