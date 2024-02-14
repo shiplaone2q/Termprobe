@@ -43,3 +43,5 @@ __su_precmd() {
     if [ -n "$__su_started" ]; then
         __su_osc "D;$ec"
     fi
+    __su_cwd
+    PS1='\[\e]133;A\a\]> \[\e]133;B\a\]'

@@ -32,3 +32,5 @@ export function checkSymbols(output) {
     if (fields.length >= 8 && fields[4] === "GLOBAL" && fields[6] === "UND" && !fields[7].includes("@")) {
       throw new Error(`Unversioned required symbol bypasses the glibc baseline: ${fields[7]}`);
     }
+  }
+}
