@@ -40,3 +40,6 @@ export function parseReport(source) {
   const operations = details.recent_operations ?? [];
   /** @type {TraceAction[]} */
   const actions = operations.map((operation) => {
+    if (actionIds.has(operation.sequence)) throw new Error(`Duplicate action sequence: ${operation.sequence}`);
+    actionIds.add(operation.sequence);
+    if (operation.ended_ms < operation.started_ms) throw new Error(`Action ${operation.sequence}: end precedes start`);

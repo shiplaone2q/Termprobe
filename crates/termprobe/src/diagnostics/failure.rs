@@ -90,3 +90,6 @@ impl FailureReport {
             let mut selectors = Vec::new();
             for entry in &locator.stages {
                 if let Some(selector) = &entry.selector {
+                    if selectors.len() == 8 {
+                        *truncated = true;
+                        break;
