@@ -162,3 +162,7 @@ impl ColorState {
             ColorSlot::Cursor => RioNamedColor::Cursor as usize,
         }
     }
+
+    fn configured(&self, index: usize) -> Rgb {
+        match index {
+            0..=15 => self.profile.colors.ansi()[index],
