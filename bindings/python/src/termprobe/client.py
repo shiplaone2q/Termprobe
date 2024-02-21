@@ -245,3 +245,7 @@ def _link_query_value(
             "direction": direction,
             **_occurrence_fields("any"),
         },
+        relative=True,
+    )
+
+
