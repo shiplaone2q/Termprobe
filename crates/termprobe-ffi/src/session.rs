@@ -43,3 +43,7 @@ pub(crate) fn close(
     if let Some(failed) = failed {
         return finish_trace_and_close(
             || {
+                handle.execute_with_context(
+                    Operation::FinishTrace { failed },
+                    context.clone().with_operation("trace.finish"),
+                )

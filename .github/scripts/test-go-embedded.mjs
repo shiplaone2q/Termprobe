@@ -28,3 +28,5 @@ try {
   ]) {
     execFileSync(go, args, { cwd: directory, env: environment, stdio: "inherit" });
   }
+  const runtime = {
+    ...environment, HOME: path.join(directory, "home"),

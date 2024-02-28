@@ -20,3 +20,4 @@
 <nav id="points" bind:this={points} aria-label="Recorded actions">
   {#each actions as action (action.id)}
     <button class="point" class:failed={action.failed} data-operation={action.id} aria-current={selected === action.id}
+      title={`${action.name} ${action.label} / screen ${action.screen}`} aria-label={`${action.name} ${action.label} ${action.result}`}
