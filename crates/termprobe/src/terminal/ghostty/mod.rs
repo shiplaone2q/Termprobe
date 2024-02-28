@@ -229,3 +229,6 @@ impl Emulator for GhosttyEmu {
     fn process(&mut self, bytes: &[u8]) {
         self.clipboard_validator.process(bytes);
         let mut start = 0;
+        for index in 0..bytes.len() {
+            self.sequences.feed(&bytes[index..=index]);
+            let operations = self.sequences.take_clipboard_operations();

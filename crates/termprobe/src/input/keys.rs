@@ -296,3 +296,7 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
             sequence.push_str("\u{1b}[Z");
         }
         ControlKey::Tab => {
+            if mods.alt {
+                sequence.push_str(ESC);
+            }
+            sequence.push('\t');
