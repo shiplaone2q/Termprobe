@@ -71,3 +71,6 @@ export function describeExpectation(value) {
 function objectCode(values) {
   return `{ ${Object.entries(values).filter(([, value]) => value != null)
     .map(([key, value]) => `${key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())}: ${JSON.stringify(value)}`).join(", ")} }`;
+}
+
+/** A readable query description, not captured user source code.

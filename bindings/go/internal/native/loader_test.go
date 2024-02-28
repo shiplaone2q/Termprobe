@@ -20,3 +20,4 @@ func TestInitializeNativeEngineReportsConfiguredLibraryFailure(t *testing.T) {
 	err := initializeNativeEngine()
 	if err == nil || !strings.Contains(err.Error(), "load native engine from") {
 		t.Fatalf("unexpected error: %v", err)
+	}

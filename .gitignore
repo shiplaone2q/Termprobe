@@ -14,3 +14,4 @@ bindings/js/npm/*/*.dll
 .termprobe/
 bindings/js/target
 bindings/js/native/target
+bindings/python/target
