@@ -35,3 +35,7 @@ export interface Attachment {
   readonly data: string;
 }
 export interface ReportData {
+  readonly details: FailureReport;
+  readonly timeline: {
+    readonly schema_version?: number;
+    readonly frames: readonly Frame[];
