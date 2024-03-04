@@ -129,3 +129,7 @@ impl Trace {
             stage.evaluations += 1;
             stage.input_candidate_count = stage.input_candidate_count.saturating_add(stats.input);
             stage.raw_candidate_count = stage.raw_candidate_count.saturating_add(stats.raw);
+            stage.style_candidate_count = stage.style_candidate_count.saturating_add(stats.styled);
+            stage.selected_count = stage.selected_count.saturating_add(stats.selected_count);
+            stage.failure_reason = stats.reason;
+            stage.candidates.extend(stats.candidates);
