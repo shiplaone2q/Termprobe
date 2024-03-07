@@ -23,3 +23,5 @@
   .topbar { min-height: 52px; display: flex; gap: 24px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; line-height: 20px; }
   .brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 15px; color: var(--green); }
   .brand span { color: var(--muted); font-size: 12px; font-weight: 400; }
+  .session-summary { display: flex; flex: 1; flex-wrap: wrap; gap: 8px 24px; min-width: 0; font-size: 12px; }
+  .metadata-item { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }

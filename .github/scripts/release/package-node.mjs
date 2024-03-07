@@ -25,3 +25,4 @@ for (const tag of targets) {
   const extension = { darwin: "dylib", linux: "so", win32: "dll" }[platform];
   if (!extension) throw new Error(`Unsupported native platform: ${platform}`);
   const filename = `termprobe.${tag}.${extension}`;
+  const nativePackage = path.join(nativePackagesDirectory, tag);
