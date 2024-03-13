@@ -72,3 +72,4 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
                     .join("screen.svg")
                     .to_string_lossy()
                     .into_owned(),
+            ),

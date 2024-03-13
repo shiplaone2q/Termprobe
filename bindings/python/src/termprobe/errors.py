@@ -25,3 +25,4 @@ class TuiTestError(Exception):
 class ExpectationError(TuiTestError):
     kind = "assertion"
     exit_code = 1
+
