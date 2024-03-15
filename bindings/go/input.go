@@ -7,3 +7,5 @@ func (keyboard *Keyboard) Press(keys ...string) error  { return keyboard.runtime
 func (keyboard *Keyboard) Down(keys ...string) error   { return keyboard.runtime.key(keys, 1) }
 func (keyboard *Keyboard) Repeat(keys ...string) error { return keyboard.runtime.key(keys, 2) }
 func (keyboard *Keyboard) Up(keys ...string) error     { return keyboard.runtime.key(keys, 3) }
+
+// Mouse sends coordinates in terminal cells.

@@ -66,3 +66,4 @@ export function writeArchive(filename, entries) {
 }
 
 export function nativeFilename(version, target) {
+  return `termprobe-native-${version}-${target}.tar.gz`;

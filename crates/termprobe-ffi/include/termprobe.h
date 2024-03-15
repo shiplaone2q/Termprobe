@@ -297,3 +297,5 @@ struct TuiResult *tui_scroll_to_bottom(struct TuiString session);
  */
 void tui_result_free(struct TuiResult *result);
 
+/**
+ * # Safety
