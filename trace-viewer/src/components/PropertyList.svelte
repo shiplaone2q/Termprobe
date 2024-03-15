@@ -13,3 +13,4 @@
 <style>
   dl { display: grid; grid-template-columns: minmax(95px, 35%) minmax(0, 1fr); gap: 5px 10px; font-size: 12px; margin: 8px 0; }
   dt { color: var(--muted); }
+  dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: Consolas, monospace; }

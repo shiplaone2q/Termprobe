@@ -193,3 +193,5 @@ fn timeline_with_limit(
                 let cursor = &frame.screen.cursor;
                 frame.svg = Some(svg::render_svg(
                     &source.rows,
+                    frame.screen.size.cols,
+                    &source.render_state,

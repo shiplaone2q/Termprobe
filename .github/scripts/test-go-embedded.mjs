@@ -30,3 +30,5 @@ try {
   }
   const runtime = {
     ...environment, HOME: path.join(directory, "home"),
+    XDG_CACHE_HOME: path.join(directory, "cache"), LOCALAPPDATA: path.join(directory, "cache"),
+  };
