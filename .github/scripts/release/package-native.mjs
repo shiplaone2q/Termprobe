@@ -67,3 +67,7 @@ export function writeArchive(filename, entries) {
 
 export function nativeFilename(version, target) {
   return `termprobe-native-${version}-${target}.tar.gz`;
+}
+
+export async function readArchive(data) {
+  // Validate the whole gzip stream, including its trailer, before parsing tar.

@@ -47,3 +47,6 @@ fn demonstrate(backend: Backend) -> Result<()> {
         })?;
         let history = text(&session, false)?;
         ensure!(history.contains("row00"));
+        ensure!(
+            text(&session, true)? == full,
+            "scroll changed the full grid"
