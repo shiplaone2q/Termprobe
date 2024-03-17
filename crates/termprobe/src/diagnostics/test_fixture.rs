@@ -43,3 +43,6 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
         cursor_visible: emu.cursor_visible(),
         cursor_shape: Emulator::cursor_shape(&emu),
         render_state: RenderState::capture(&emu),
+        style: crate::render::style::Style::default(),
+        screen_sequence: sequence,
+        output_revision: 3,
