@@ -46,3 +46,5 @@ impl FontSystem {
     }
 
     fn load(&self, key: GlyphKey) -> Option<GlyphOutline> {
+        for id in self.catalog.candidates(key.bold, key.italic, key.character) {
+            let info = self.catalog.database.face(id)?;

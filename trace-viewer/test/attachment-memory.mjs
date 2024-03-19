@@ -16,3 +16,5 @@ const source = JSON.stringify(data);
 const baseline = await retainedBytes();
 const model = parseReport(source);
 const parsed = await retainedBytes() - baseline;
+const resources = createResources(model);
+const withResources = await retainedBytes() - baseline;

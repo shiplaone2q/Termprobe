@@ -116,3 +116,6 @@ ready: types.TuiOptionalU64,
 });
 types.TuiOpenOptions = koffi.struct({
 backend: types.TuiString,
+shell: types.TuiString,
+cols: types.TuiOptionalU64,
+rows: types.TuiOptionalU64,
