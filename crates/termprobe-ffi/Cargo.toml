@@ -12,3 +12,4 @@ name = "termprobe_ffi"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+serde.workspace = true
