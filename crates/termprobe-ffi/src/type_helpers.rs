@@ -26,3 +26,4 @@ pub struct TuiOptionalI32 {
 pub struct TuiOptionalBool {
     pub present: bool,
     pub value: bool,
+}

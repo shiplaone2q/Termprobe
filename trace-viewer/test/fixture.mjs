@@ -41,3 +41,7 @@ export function attachment(name, content) {
 export function fixture() {
   const frames = [frame(1, 20, 4, "READY"), frame(2, 20, 4, "WORKING"), frame(3, 24, 5, "A\u4f60e\u0301")];
   const ready = { kind: "locator", query: query("READY"), outcome: "visible" };
+  const mismatch = {
+    location: { column: 0, row: 7 }, grapheme: "A", property: "foreground", operator: "equals",
+    expected: "2", actual: "1", resolved: "#112233", reason: "color mismatch",
+  };

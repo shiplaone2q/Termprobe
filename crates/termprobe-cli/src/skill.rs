@@ -83,3 +83,6 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
     ];
     let scope = match Select::with_theme(&theme)
         .with_prompt("Install scope")
+        .items(&scope_items)
+        .default(0)
+        .interact_opt()
