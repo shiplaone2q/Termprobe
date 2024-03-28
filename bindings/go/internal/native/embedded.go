@@ -65,3 +65,7 @@ func bundleTarget(goos, goarch, libc string) (string, error) {
 func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr error) {
 	directory := filepath.Join(cache, "termprobe", "native", library.checksum)
 	if err := os.MkdirAll(directory, 0o700); err != nil {
+		return "", fmt.Errorf("create native engine cache: %w", err)
+	}
+	root, err := os.OpenRoot(directory)
+	if err != nil {

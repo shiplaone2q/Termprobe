@@ -21,3 +21,4 @@
 
 <style>
   #attachment-preview { min-width: 0; }
+  img { max-width: 100%; max-height: 300px; }
