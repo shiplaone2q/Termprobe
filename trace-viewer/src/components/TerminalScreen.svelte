@@ -38,3 +38,6 @@
     {/if}
   </button>
   <pre id="screen-text" hidden={!!url}>{frame?.text ?? "This checkpoint's screen was evicted or could not be captured. Select another action or jump to failure."}</pre>
+</div>
+
+<style>
