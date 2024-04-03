@@ -32,3 +32,7 @@ function select(model, state, frameIndex, actionId, missingScreen) {
 /** @param {TraceModel} model @param {ViewerState} state @param {ViewerEvent} event @returns {ViewerState} */
 export function update(model, state, event) {
   switch (event.type) {
+    case "select-frame":
+      return Number.isInteger(event.index) && model.frames[event.index] ? select(model, state, event.index) : state;
+    case "select-action": {
+      const action = model.actions.find((action) => action.id === event.id);

@@ -166,3 +166,7 @@ fn parameters(models: &Models, method: &str, variant: &str) -> Result<Vec<Field>
         }
         "scrollToTop" => models.fields("ScrollTarget::Top")?,
         "scrollToBottom" => models.fields("ScrollTarget::Bottom")?,
+        "mouseClick" => vec![field("options", "Option<MouseClickOptions>")],
+        "waitTitle" | "expectTitle" => vec![
+            field("text", "String"),
+            field("options", "Option<TitleOptions>"),

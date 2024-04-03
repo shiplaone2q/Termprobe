@@ -26,3 +26,6 @@ class TuiTest < Formula
       url "https://github.com/microsoft/tui-test/releases/download/0.1.1/tui-test-x86_64-unknown-linux-gnu.tar.gz"
       sha256 "ae1f32afb34c713284b0637ea41d855124fe0ac298defb38a4018cd952c158ca"
     end
+  end
+
+  def install
