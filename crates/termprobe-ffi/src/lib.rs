@@ -184,3 +184,6 @@ pub unsafe extern "C" fn tui_run_ptr(
     options: *const TuiOpenOptions,
     program: TuiString,
     args: *const TuiString,
+    args_len: usize,
+) -> *mut TuiResult {
+    if options.is_null() {

@@ -400,3 +400,6 @@ fn write_cursor(
         r#"<rect x="{rx:.2}" y="{ry:.2}" width="{rw:.2}" height="{rh:.2}" fill="{fill}"/>"#
     );
 
+    if colors.cursor_shape() != CursorShape::Block {
+        return;
+    }
