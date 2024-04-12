@@ -47,3 +47,6 @@ function Global:Prompt() {
             # failures with the same value. Compare identity so Ignore errors
             # (which do not enter $Error) cannot borrow a previous command's code.
             # This also leaves the user's LASTEXITCODE intact.
+            $ranNative = -not [object]::ReferenceEquals($lastExit, $Global:__su_state.LastNativeExit)
+            $code = if ($ok) { 0 } elseif ($powerShellError) { 1 } elseif ($ranNative -and $null -ne $lastExit -and $lastExit -ne 0) { $lastExit } else { 1 }
+            $out += __su_seq "133;D;$code"
