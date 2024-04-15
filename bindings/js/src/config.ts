@@ -89,3 +89,7 @@ export function backendPayload(backend?: unknown): Backend | undefined {
     `unknown backend "${backend}"; expected one of ${BACKENDS.join(", ")}`,
   );
 }
+
+export function timeoutsPayload(
+  timeouts?: Timeouts,
+): Record<TimeoutClass, number> | undefined {

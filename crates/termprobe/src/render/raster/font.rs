@@ -48,3 +48,6 @@ impl FontSystem {
     fn load(&self, key: GlyphKey) -> Option<GlyphOutline> {
         for id in self.catalog.candidates(key.bold, key.italic, key.character) {
             let info = self.catalog.database.face(id)?;
+            let synthetic_bold = key.bold && !is_bold_face(info);
+            let synthetic_italic = key.italic && info.style == fontdb::Style::Normal;
+            let glyph = self
