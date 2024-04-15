@@ -29,3 +29,6 @@ function fixture(t) {
     fs.writeFileSync(path.join(bindings, "artifacts", library(platform)), "shared library fixture");
   }
   return directory;
+}
+
+test("platform packages include the shared library at the release version", (t) => {

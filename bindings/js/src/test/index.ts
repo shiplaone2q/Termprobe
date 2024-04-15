@@ -48,3 +48,4 @@ export function resetTerminalDefaults(): void {
 }
 
 const tracked = new Set<Termprobe>();
+let safetyNetInstalled = false;
