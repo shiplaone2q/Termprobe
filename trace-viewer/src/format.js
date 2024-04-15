@@ -74,3 +74,6 @@ function objectCode(values) {
 }
 
 /** A readable query description, not captured user source code.
+ * @param {FailureLocatorQuery} query @returns {string}
+ */
+export function locatorCode(query) {

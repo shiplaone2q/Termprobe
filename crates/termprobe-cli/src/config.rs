@@ -64,3 +64,5 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
         .to_lowercase();
         pipe_name_in(home, &user, session)
     }
+    #[cfg(not(windows))]
+    {

@@ -37,3 +37,5 @@ func TestNativeCellsPreserveLinks(t *testing.T) {
 	memory.pinner.Pin(&values[0])
 	cells := nativeCells(&abiResult{cells: &values[0], cellsLen: 1})
 	if len(cells) != 1 || cells[0].Link != "https://example.test" || cells[0].LinkID != "docs" {
+		t.Fatalf("cells=%+v", cells)
+	}
