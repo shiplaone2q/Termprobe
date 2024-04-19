@@ -41,3 +41,4 @@ const options = {
         if (result.errors.length) return;
         for (const input of Object.keys(result.metafile.inputs)) {
           const dependency = /node_modules\/([^/]+)/.exec(input.replaceAll("\\", "/"))?.[1];
+          if (dependency && !runtimePackages.includes(dependency)) throw new Error(`Unexpected viewer runtime dependency: ${dependency}`);
