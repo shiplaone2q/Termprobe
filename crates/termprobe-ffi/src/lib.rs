@@ -187,3 +187,5 @@ pub unsafe extern "C" fn tui_run_ptr(
     args_len: usize,
 ) -> *mut TuiResult {
     if options.is_null() {
+        return boundary(|| Err(TermprobeError::usage("run options pointer is null")));
+    }

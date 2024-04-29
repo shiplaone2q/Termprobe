@@ -138,3 +138,5 @@ impl Recorder {
         let (reply, response) = mpsc::sync_channel(0);
         self.sender
             .send(Message::Start {
+                at: Instant::now(),
+                request: Box::new(request),

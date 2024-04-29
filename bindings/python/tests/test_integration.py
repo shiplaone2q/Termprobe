@@ -259,3 +259,5 @@ class IntegrationTests(unittest.TestCase):
         run(scenario())
 
     def test_bell_state_waits_and_expectations(self):
+        async def scenario():
+            async with self._client() as su:

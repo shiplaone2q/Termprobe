@@ -21,3 +21,5 @@
       onclick={() => onselect(tab.id)} onkeydown={(event) => navigate(event, index)}>
       {tab.label}
     </button>
+  {/each}
+</div>
