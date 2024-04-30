@@ -77,3 +77,7 @@ class OwnershipTests(unittest.TestCase):
 
     def test_abi_version_mismatch_is_structured(self):
         library = Mock()
+        library.tui_abi_version.return_value = abi.ABI_VERSION + 1
+        with patch.object(native, "_library", None), patch.object(C, "CDLL", return_value=library):
+            with self.assertRaisesRegex(native.NativeInternalError, "ABI version mismatch"):
+                native._load()

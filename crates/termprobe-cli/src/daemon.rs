@@ -150,3 +150,7 @@ pub fn run(session_name: String, verbose: bool) -> anyhow::Result<()> {
 
 fn handle_connection(
     conn: Stream,
+    host: &Arc<Host>,
+    operations: &mpsc::SyncSender<(Request, Stream)>,
+    shutdown: &mpsc::Sender<Option<Stream>>,
+) {
