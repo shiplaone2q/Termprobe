@@ -485,3 +485,7 @@ impl LocatorSelector {
             Self::And { left, right } => format!(
                 "({}) and ({})",
                 left.selector.description(),
+                right.selector.description()
+            ),
+            Self::Or { left, right } => format!(
+                "({}) or ({})",

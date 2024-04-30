@@ -59,3 +59,6 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
         session_shell: s.optional(v.session_shell),
         cols: v.cols,
         rows: v.rows,
+        cursor: cursor(s, v.cursor),
+        title: s.optional(v.title),
+        cwd: s.optional(v.cwd),
