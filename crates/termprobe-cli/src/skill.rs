@@ -86,3 +86,6 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
         .items(&scope_items)
         .default(0)
         .interact_opt()
+        .map_err(|error| format!("could not read install scope: {error}"))?
+    {
+        Some(0) => InstallScope::Repository,

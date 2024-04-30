@@ -34,3 +34,7 @@ childProcess.execFileSync = (command, args, options) => {
   const output = path.join(options.cwd, "target", target, profile);
   fs.mkdirSync(output, { recursive: true });
   const library = target.includes("windows") ? "termprobe_ffi.dll"
+    : target.includes("apple") ? "libtermprobe_ffi.dylib" : "libtermprobe_ffi.so";
+  fs.writeFileSync(path.join(output, library), "native build fixture");
+};
+syncBuiltinESMExports();

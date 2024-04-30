@@ -16,3 +16,5 @@ try {
   console.log("Two rows toward live:", await terminal.getViewport());
   await terminal.scrollToBottom();
   console.log("Live viewport:", await terminal.getViewport());
+} finally {
+  await terminal.closeQuiet();
