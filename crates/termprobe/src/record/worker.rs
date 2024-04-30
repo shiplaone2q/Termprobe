@@ -69,3 +69,4 @@ pub(super) fn worker_loop(
                 {
                     let result = recording.writer.write_resize(at, cols, rows);
                     remember_error(recording, result);
+                }
