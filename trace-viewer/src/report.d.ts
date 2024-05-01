@@ -126,3 +126,6 @@ export interface FailureCellMismatch {
   readonly operator: string;
   readonly expected: string;
   readonly actual: string;
+  readonly resolved?: string;
+  readonly reason: string;
+}

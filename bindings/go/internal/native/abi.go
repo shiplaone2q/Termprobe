@@ -75,3 +75,4 @@ type abiResult struct {
 	matchesLen    uintptr
 	bells         *abiBellEvent
 	bellsLen      uintptr
+	strings       *abiString

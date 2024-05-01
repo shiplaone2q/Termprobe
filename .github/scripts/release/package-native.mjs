@@ -72,3 +72,6 @@ export function nativeFilename(version, target) {
 export async function readArchive(data) {
   // Validate the whole gzip stream, including its trailer, before parsing tar.
   const decoded = gunzipSync(data, { maxOutputLength: MAX_MODULE_SIZE + 1024 * 1024 });
+  return new Promise((resolve, reject) => {
+    const entries = [];
+    const parser = new Parser({

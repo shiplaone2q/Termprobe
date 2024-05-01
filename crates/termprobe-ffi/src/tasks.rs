@@ -66,3 +66,6 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
                 "native worker failed: {error}"
             )))
         }
+    }
+}
+
