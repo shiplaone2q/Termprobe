@@ -53,3 +53,6 @@ const terminal = Termprobe.ephemeral();
 try {
   await terminal.run("my-app");
   await terminal.getByText("Ready").expect();
+  await terminal.getByText("Continue").click();
+} finally {
+  await terminal.closeQuiet();

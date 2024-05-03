@@ -109,3 +109,4 @@ impl TrackerState {
                 self.command_buf.clear();
             }
             "C" => {
+                self.prompt_active = false;
