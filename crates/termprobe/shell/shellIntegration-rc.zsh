@@ -12,3 +12,7 @@ __su_cwd() {
 	emulate -L zsh
 	local LC_ALL=C p=$PWD encoded='' byte c hex i
 	for ((i = 1; i <= ${#p}; i++)); do
+		c=$p[i]
+		case "$c" in
+			[a-zA-Z0-9/._~:-]) encoded+=$c ;;
+			*)

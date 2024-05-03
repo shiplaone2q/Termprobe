@@ -36,3 +36,6 @@
       <label class="zoom-label">Zoom <select id="zoom" aria-label="Terminal zoom" value={zoom} onchange={changeZoom}>
         <option value="fit">Fit</option><option value="1">100%</option><option value="1.5">150%</option>
       </select></label>
+    </div>
+  </div>
+  <ExpectationBanner {action} {isFailure} {result} />
