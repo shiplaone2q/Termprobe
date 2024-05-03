@@ -45,3 +45,5 @@ fn identity(file: &File) -> io::Result<Option<(u64, u64)>> {
     let metadata = file.metadata()?;
     Ok(Some((metadata.dev(), metadata.ino())))
 }
+
+#[cfg(unix)]
