@@ -98,3 +98,4 @@ impl NerdFont {
 
         Self {
             glyphs,
+            scale: font_size / face.units_per_em() as f32,

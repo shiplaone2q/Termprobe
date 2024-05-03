@@ -58,3 +58,5 @@ func (memory *nativeMemory) openOptions(options OpenOptions, recording *Automati
 		result.colors, result.colorsLen = memory.colors(options.Profile.Colors)
 	}
 	if recording != nil {
+		result.recordingMode = memory.nonemptyText(string(recording.Mode))
+		result.recordingDirectory = memory.nonemptyText(recording.Directory)
