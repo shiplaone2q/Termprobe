@@ -324,3 +324,6 @@ impl Default for Profile {
     fn default() -> Self {
         Profile {
             scrollback: DEFAULT_SCROLLBACK,
+            colors: Colors::default(),
+        }
+    }

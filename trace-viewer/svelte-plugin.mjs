@@ -19,3 +19,5 @@ export function sveltePlugin(generate = "client") {
         const cssPath = `${filename}.css`;
         styles.set(cssPath, compiled.css?.code ?? "");
         return {
+          contents: compiled.js.code + (generate === "client" ? `\nimport ${JSON.stringify(cssPath)};` : ""),
+          loader: "js", resolveDir: path.dirname(filename), watchFiles: [filename],

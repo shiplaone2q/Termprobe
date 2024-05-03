@@ -157,3 +157,7 @@ def _copy(value):
         result["modes"] = {entry["name"]: entry["enabled"] for entry in result["modes"]}
     if isinstance(value, abi.TuiTerminalColors):
         result["palette"] = {int(entry["key"]): entry["value"] for entry in result["palette"]}
+    return result
+
+
+def _result(result, kind):
