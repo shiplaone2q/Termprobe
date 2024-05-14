@@ -45,3 +45,5 @@ if (process.platform === "win32") {
   platformLibrary = koffi.load(null);
   const open = platformLibrary.func("void *dlopen(const char *path, int flags)");
   const close = platformLibrary.func("int dlclose(void *handle)");
+  const lastError = platformLibrary.func("const char *dlerror()");
+  const RTLD_NOW = 2;

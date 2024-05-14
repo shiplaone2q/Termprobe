@@ -196,3 +196,6 @@ export function mapNativeError(error: unknown): TermprobeError {
 }
 
 async function invoke<T>(action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {

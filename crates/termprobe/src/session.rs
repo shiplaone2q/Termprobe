@@ -315,3 +315,4 @@ impl Session {
             cols,
             rows
         ));
+
