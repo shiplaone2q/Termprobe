@@ -89,3 +89,6 @@ func TestNativeLibraryPathSelectsProcessTarget(t *testing.T) {
 }
 
 func TestCacheLibraryReusesFileAndSeparatesVersions(t *testing.T) {
+	cache := t.TempDir()
+	library := libraryFixture(t, "first release")
+	path, err := cacheLibrary(cache, library)

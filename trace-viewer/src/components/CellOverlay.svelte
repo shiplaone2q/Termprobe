@@ -17,3 +17,4 @@
     <rect class="selected-cell" x={geometry.grid_x + cell.x * geometry.cell_width} y={geometry.grid_y + cell.y * geometry.cell_height}
       width={geometry.cell_width} height={geometry.cell_height} />
   {/if}
+</svg>

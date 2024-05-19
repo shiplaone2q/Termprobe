@@ -44,3 +44,4 @@ impl Backend {
         match self {
             Self::Alacritty => "alacritty",
             #[cfg(feature = "ghostty")]
+            Self::Ghostty => "ghostty",
