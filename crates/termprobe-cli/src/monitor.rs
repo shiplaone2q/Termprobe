@@ -247,3 +247,6 @@ impl Style {
             // SGR 58 takes its arguments as colon-joined subparameters. Mixing
             // in a `;` would end the parameter early and the terminal would
             // read whatever follows as the underline's color instead.
+            match self.underline_color {
+                Some(Color::Rgb(r, g, b)) => s.push_str(&format!(";58:2::{r}:{g}:{b}")),
+                Some(c) => s.push_str(&format!(";58:5:{}", c.to_index())),

@@ -51,3 +51,6 @@ impl FontSystem {
             let synthetic_bold = key.bold && !is_bold_face(info);
             let synthetic_italic = key.italic && info.style == fontdb::Style::Normal;
             let glyph = self
+                .catalog
+                .database
+                .with_face_data(id, |data, index| {
