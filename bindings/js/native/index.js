@@ -47,3 +47,6 @@ if (process.platform === "win32") {
   const close = platformLibrary.func("int dlclose(void *handle)");
   const lastError = platformLibrary.func("const char *dlerror()");
   const RTLD_NOW = 2;
+  const RTLD_NODELETE = process.platform === "darwin" ? 0x80 : 0x1000;
+  // Keep code mapped after the last environment exits, including detached tasks.
+  const retained = open(path, RTLD_NOW | RTLD_NODELETE);

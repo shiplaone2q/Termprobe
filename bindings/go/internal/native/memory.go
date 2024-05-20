@@ -30,3 +30,7 @@ func (memory *nativeMemory) optionalText(value *string) abiString {
 func (memory *nativeMemory) nonemptyText(value string) abiString {
 	if value == "" {
 		return abiString{}
+	}
+	return memory.text(value)
+}
+
