@@ -31,3 +31,6 @@ locator = (
 ```
 
 | Method | Use |
+| --- | --- |
+| `get_by_text(text, **options)` | Match text or regex. |
+| `get_by_style(style, **options)` | Match appearance; when chained, require it on the whole match. |

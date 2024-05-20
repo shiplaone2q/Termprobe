@@ -11,3 +11,4 @@ func (keyboard *Keyboard) Up(keys ...string) error     { return keyboard.runtime
 // Mouse sends coordinates in terminal cells.
 type Mouse struct{ runtime *nativeRuntime }
 
+func (mouse *Mouse) Click(options MouseClickOptions) error { return mouse.runtime.mouseClick(options) }

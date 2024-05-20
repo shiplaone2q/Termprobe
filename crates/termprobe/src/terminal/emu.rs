@@ -165,3 +165,6 @@ impl TerminalMode {
             TerminalMode::Origin => b"\x1b[?6l",
             TerminalMode::Wraparound => b"\x1b[?7l",
             TerminalMode::Insert => b"\x1b[4l",
+            TerminalMode::FocusEvents => b"\x1b[?1004l",
+            TerminalMode::BracketedPaste => b"\x1b[?2004l",
+            TerminalMode::AlternateScreen => b"\x1b[?1049l",
