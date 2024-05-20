@@ -25,3 +25,6 @@ Core types:
 
 | Type | Use |
 | --- | --- |
+| `Session` | Own one terminal. |
+| `SessionRegistry` | Manage named sessions. |
+| `Locator` | Find, wait, assert, click, and highlight. |

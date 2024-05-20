@@ -46,3 +46,6 @@ export type {
   Color,
   Colors,
   Cursor,
+  Viewport,
+  EffectiveTimeouts,
+  FailureArtifactRef,
