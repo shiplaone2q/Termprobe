@@ -116,3 +116,7 @@ fn pointer_options_reject_null_and_preserve_validation() {
             tui_run_ptr(session, &options, text(""), std::ptr::null(), 0),
             tui_screenshot_ptr(session, std::ptr::null()),
             tui_screenshot_ptr(
+                session,
+                &TuiScreenshotOptions {
+                    background: text("#000000"),
+                    transparent: true,

@@ -77,3 +77,4 @@ pub struct TuiResult {
     pub open: TuiOpenResult,
     pub state: TuiState,
     pub cursor: TuiCursor,
+    pub size: TuiSize,

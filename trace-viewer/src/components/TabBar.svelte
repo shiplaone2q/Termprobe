@@ -23,3 +23,6 @@
     </button>
   {/each}
 </div>
+
+<style>
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
