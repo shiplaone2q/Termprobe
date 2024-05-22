@@ -63,3 +63,4 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
         title: s.optional(v.title),
         cwd: s.optional(v.cwd),
         last_command: s.optional(v.last_command),
+        last_exit: integer(v.last_exit),
