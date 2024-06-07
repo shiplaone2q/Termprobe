@@ -47,3 +47,7 @@ _COLOR_FIELDS = frozenset(
     )
 )
 
+
+def resolve_timeout(
+    class_name: str,
+    *,
