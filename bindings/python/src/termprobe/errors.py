@@ -26,3 +26,7 @@ class ExpectationError(TuiTestError):
     kind = "assertion"
     exit_code = 1
 
+
+class UsageError(TuiTestError):
+    kind = "usage"
+    exit_code = 2

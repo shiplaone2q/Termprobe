@@ -250,3 +250,6 @@ impl Style {
             match self.underline_color {
                 Some(Color::Rgb(r, g, b)) => s.push_str(&format!(";58:2::{r}:{g}:{b}")),
                 Some(c) => s.push_str(&format!(";58:5:{}", c.to_index())),
+                None => {}
+            }
+        }
