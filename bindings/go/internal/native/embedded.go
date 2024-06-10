@@ -69,3 +69,4 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 	}
 	root, err := os.OpenRoot(directory)
 	if err != nil {
+		return "", fmt.Errorf("open native engine cache: %w", err)

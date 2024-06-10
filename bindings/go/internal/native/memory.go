@@ -34,3 +34,4 @@ func (memory *nativeMemory) nonemptyText(value string) abiString {
 	return memory.text(value)
 }
 
+func (memory *nativeMemory) pairs(values map[string]string) (*abiPair, uintptr) {

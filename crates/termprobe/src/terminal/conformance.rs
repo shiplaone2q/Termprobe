@@ -496,3 +496,6 @@ macro_rules! emulator_conformance_tests {
             assert_eq!(
                 y.underline,
                 $crate::terminal::cell::UnderlineStyle::None,
+                "SGR 0 must clear underline"
+            );
+        }

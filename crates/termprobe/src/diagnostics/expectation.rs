@@ -78,3 +78,7 @@ impl OperationExpectation {
                     "{}{}",
                     if *not { "not " } else { "" },
                     pattern(text, *regex)
+                ),
+            ),
+            Operation::ExpectOutput { text, regex } => {
+                value("Command output", pattern(text, *regex))
