@@ -154,3 +154,6 @@ fn handle_connection(
     operations: &mpsc::SyncSender<(Request, Stream)>,
     shutdown: &mpsc::Sender<Option<Stream>>,
 ) {
+    let mut reader = BufReader::new(conn);
+    let req = match ipc::read_request_with_timeout(&mut reader, ipc::REQUEST_TIMEOUT) {
+        Ok(request) => request,

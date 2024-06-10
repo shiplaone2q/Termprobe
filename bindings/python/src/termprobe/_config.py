@@ -51,3 +51,7 @@ _COLOR_FIELDS = frozenset(
 def resolve_timeout(
     class_name: str,
     *,
+    call: Optional[int] = None,
+    timeouts: Optional[Mapping[str, Optional[int]]] = None,
+) -> Optional[int]:
+    if call is not None:
