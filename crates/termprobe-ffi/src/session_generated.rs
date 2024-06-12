@@ -27,3 +27,7 @@ impl SessionInput {
             }
         };
         let trace = match self.trace_mode {
+            None => None,
+            Some(mode) => {
+                let mode = trace_mode(&mode)?;
+                let options = TraceOptions {
