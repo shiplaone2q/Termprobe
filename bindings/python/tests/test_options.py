@@ -264,3 +264,4 @@ class FailureDiagnosticsTests(unittest.TestCase):
                     "unknown_additive_field": True,
                 },
                 "artifact": {
+                    "status": "partial",

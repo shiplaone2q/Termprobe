@@ -32,3 +32,7 @@ try {
     ...environment, HOME: path.join(directory, "home"),
     XDG_CACHE_HOME: path.join(directory, "cache"), LOCALAPPDATA: path.join(directory, "cache"),
   };
+  for (const attempt of ["first extraction", "cache reuse"]) {
+    const output = execFileSync(path.join(directory, "smoke.exe"), [], {
+      cwd: directory, env: runtime, encoding: "utf8", timeout: 60000,
+    });

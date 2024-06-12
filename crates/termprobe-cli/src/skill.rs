@@ -89,3 +89,4 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
         .map_err(|error| format!("could not read install scope: {error}"))?
     {
         Some(0) => InstallScope::Repository,
+        Some(1) => InstallScope::Global,

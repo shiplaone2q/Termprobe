@@ -39,3 +39,5 @@ export interface ReportData {
   readonly timeline: {
     readonly schema_version?: number;
     readonly frames: readonly Frame[];
+    readonly geometry: Geometry;
+    readonly failure_screen_sequence: number;
