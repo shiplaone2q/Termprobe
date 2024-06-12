@@ -237,3 +237,4 @@ impl CaptureProxy {
     }
 }
 
+pub struct AlacrittyEmu {

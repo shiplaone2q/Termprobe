@@ -17,3 +17,4 @@ def __su_cwd [] {
 }
 
 $env.PROMPT_COMMAND = {|| $"(__su_cwd)> " }
+$env.PROMPT_COMMAND_RIGHT = {|| "" }

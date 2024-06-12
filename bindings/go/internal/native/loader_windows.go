@@ -20,3 +20,5 @@ func (handle *nativeLibraryHandle) symbol(name string) (uintptr, error) {
 		return 0, fmt.Errorf("find native symbol %q: %w", name, err)
 	}
 	return procedure.Addr(), nil
+}
+func (handle *nativeLibraryHandle) close() error {

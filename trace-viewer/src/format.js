@@ -77,3 +77,4 @@ function objectCode(values) {
  * @param {FailureLocatorQuery} query @returns {string}
  */
 export function locatorCode(query) {
+  const { selector } = query;
