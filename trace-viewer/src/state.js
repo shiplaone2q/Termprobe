@@ -36,3 +36,6 @@ export function update(model, state, event) {
       return Number.isInteger(event.index) && model.frames[event.index] ? select(model, state, event.index) : state;
     case "select-action": {
       const action = model.actions.find((action) => action.id === event.id);
+      if (!action) return state;
+      const next = select(model, state, action.frameIndex, action.id, action.screen);
+      return state.detailsTab === "errors" || state.detailsTab === "call"
