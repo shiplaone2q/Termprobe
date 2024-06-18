@@ -110,3 +110,7 @@ impl TrackerState {
             }
             "C" => {
                 self.prompt_active = false;
+                self.last_exit = None;
+                let cmd = clean(&self.command_buf);
+                let cmd = cmd.strip_prefix("> ").unwrap_or(&cmd).to_string();
+                self.last_command = Some(cmd);
