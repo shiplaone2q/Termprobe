@@ -249,3 +249,5 @@ pub enum Request {
 impl Request {
     pub fn execute(self, engine: &Engine) -> Response {
         self.execute_cancellable(engine, &|| false)
+    }
+

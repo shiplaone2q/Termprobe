@@ -161,3 +161,5 @@ def _copy(value):
 
 
 def _result(result, kind):
+    if kind is None:
+        return None

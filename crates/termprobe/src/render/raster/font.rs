@@ -54,3 +54,7 @@ impl FontSystem {
                 .catalog
                 .database
                 .with_face_data(id, |data, index| {
+                    let face = Face::parse(data, index).ok()?;
+                    let glyph_id = face.glyph_index(key.character)?;
+                    let mut builder = TinyPathBuilder::default();
+                    let bounds = face.outline_glyph(glyph_id, &mut builder)?;
