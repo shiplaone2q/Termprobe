@@ -98,3 +98,5 @@ pub fn serialize(
     rows: &[Vec<EmuCell>],
     cols: u16,
     include_style: bool,
+    title: Option<&str>,
+) -> String {

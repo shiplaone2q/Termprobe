@@ -90,3 +90,6 @@ export interface Profile {
   scrollback?: number;
   colors?: Colors;
 }
+
+export interface AutomaticRecording {
+  directory?: string;
