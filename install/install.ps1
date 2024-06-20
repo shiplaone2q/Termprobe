@@ -58,3 +58,6 @@ elseif ($version -eq "beta") {
 
     $version = $latestBeta.tag_name
     $releaseUrl = "https://github.com/$repository/releases/download/$version"
+}
+else {
+    $releaseUrl = "https://github.com/$repository/releases/download/$version"
