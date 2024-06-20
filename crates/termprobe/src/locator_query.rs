@@ -84,3 +84,5 @@ impl LocatorExpression {
                 && (node.text.is_some() || node.regex.is_some() || node.whitespace.is_some()))
                 || (node.kind != LocatorNodeKind::Style && node.style.is_some())
                 || (node.kind != LocatorNodeKind::Link && node.link.is_some())
+                || (!leaf
+                    && (node.full.is_some() || node.within.is_some() || node.direction.is_some()))

@@ -22,3 +22,5 @@ func (handle *nativeLibraryHandle) symbol(name string) (uintptr, error) {
 	return procedure.Addr(), nil
 }
 func (handle *nativeLibraryHandle) close() error {
+	if err := handle.library.Release(); err != nil {
+		return fmt.Errorf("release native library: %w", err)

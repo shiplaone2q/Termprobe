@@ -133,3 +133,7 @@ impl Trace {
             stage.selected_count = stage.selected_count.saturating_add(stats.selected_count);
             stage.failure_reason = stats.reason;
             stage.candidates.extend(stats.candidates);
+            stage.mismatches.extend(stats.mismatches);
+            stage.mismatches_truncated |= stats.mismatches_truncated;
+            stage.candidates_truncated |= stats.candidate_count > MAX_SAMPLE;
+            stage.truncate();
