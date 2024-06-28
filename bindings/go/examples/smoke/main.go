@@ -28,3 +28,7 @@ func main() {
 	}
 	source := "bundled"
 	if os.Getenv("TERMPROBE__NATIVE_LIBRARY") != "" {
+		source = "override"
+	}
+	fmt.Printf("Go binding smoke passed (%s engine)\n", source)
+}
