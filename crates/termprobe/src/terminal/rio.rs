@@ -166,3 +166,5 @@ impl ColorState {
     fn configured(&self, index: usize) -> Rgb {
         match index {
             0..=15 => self.profile.colors.ansi()[index],
+            16..=255 => xterm_color(index as u8),
+            index if index == RioNamedColor::Foreground as usize => self.profile.colors.foreground,
