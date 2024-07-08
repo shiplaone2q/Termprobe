@@ -499,3 +499,4 @@ macro_rules! emulator_conformance_tests {
                 "SGR 0 must clear underline"
             );
         }
+

@@ -35,3 +35,5 @@ export function checkSymbols(output) {
   }
 }
 
+function main() {
+  const { values: args } = parseArgs({ options: { library: { type: "string" }, target: { type: "string" } } });
