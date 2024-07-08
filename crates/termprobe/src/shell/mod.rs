@@ -76,3 +76,7 @@ fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
         ),
         (
             "shellIntegration.ps1",
+            include_str!("../../shell/shellIntegration.ps1"),
+        ),
+        (
+            "shellIntegration.xsh",

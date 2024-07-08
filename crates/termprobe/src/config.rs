@@ -38,3 +38,7 @@ impl TimeoutClass {
             TimeoutClass::Command => "TERMPROBE__TIMEOUT_COMMAND_MS",
             TimeoutClass::Exit => "TERMPROBE__TIMEOUT_EXIT_MS",
             TimeoutClass::Ready => "TERMPROBE__TIMEOUT_READY_MS",
+        }
+    }
+
+    /// The environment override, read at call time so tests can vary it.

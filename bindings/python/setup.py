@@ -53,3 +53,6 @@ class SourceDistribution(sdist):
                 r"(?m)^" + key + r"\s*=\s*\[[^\]]*\]",
                 key + ' = ["crates/tui-test", "crates/tui-test-ffi"]',
                 manifest,
+            )
+        (destination / "Cargo.toml").write_text(manifest, encoding="utf-8")
+        for crate in ("tui-test", "tui-test-ffi"):
