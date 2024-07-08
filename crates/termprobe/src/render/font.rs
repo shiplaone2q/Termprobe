@@ -226,3 +226,7 @@ fn load_bundled_fonts(database: &mut fontdb::Database) {
     #[cfg(feature = "recording-font-jetbrains-mono-full")]
     load_font_data(database, FULL_FAMILY_FONTS);
     #[cfg(not(feature = "recording-font-jetbrains-mono"))]
+    let _ = database;
+}
+
+#[cfg(feature = "recording-font-jetbrains-mono")]

@@ -140,3 +140,5 @@ impl Recorder {
             .send(Message::Start {
                 at: Instant::now(),
                 request: Box::new(request),
+                reply,
+            })

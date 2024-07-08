@@ -89,3 +89,7 @@ class NativeSurfaceTests(unittest.TestCase):
             "cells",
             "get_command",
             "get_output",
+            "get_exit_code",
+            "get_cwd",
+            "get_cursor",
+            "get_size",
