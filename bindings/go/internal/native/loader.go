@@ -36,3 +36,6 @@ func loadNativeFunctions(path string) (nativeFunctionTable, error) {
 	if err != nil {
 		return table, err
 	}
+	for _, registration := range nativeRegistrations(&table) {
+		if registerErr := registerNativeFunction(library, registration); registerErr != nil {
+			return nativeFunctionTable{}, errors.Join(registerErr, library.close())

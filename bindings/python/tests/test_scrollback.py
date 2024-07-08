@@ -28,3 +28,6 @@ class ScrollbackTests(unittest.TestCase):
     def test_signed_integer_validation(self):
         async def scenario():
             terminal = TuiTest.ephemeral()
+            native = _native.NativeSession(unique_session("scroll-validation"))
+            for amount in (1.5, float("nan"), float("inf"), 2147483648, -2147483649, "1", True):
+                with self.subTest(amount=amount):
