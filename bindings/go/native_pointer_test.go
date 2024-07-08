@@ -26,3 +26,6 @@ func TestNativeOptionPointersPreserveValidation(t *testing.T) {
 	})
 }
 
+func requireNativeUsageError(t *testing.T, err error) {
+	t.Helper()
+	var failure *Error
