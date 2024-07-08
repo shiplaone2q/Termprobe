@@ -60,3 +60,6 @@ fn command_json(cmd: &Command) -> Value {
     let args: Vec<Value> = cmd
         .get_arguments()
         .filter(|a| !a.is_global_set() && !a.is_hide_set())
+        .map(arg_json)
+        .collect();
+

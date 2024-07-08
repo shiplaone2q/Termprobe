@@ -39,3 +39,4 @@ export function update(model, state, event) {
       if (!action) return state;
       const next = select(model, state, action.frameIndex, action.id, action.screen);
       return state.detailsTab === "errors" || state.detailsTab === "call"
+        ? { ...next, detailsTab: selection(model, next).isFailure ? "errors" : "call" } : next;

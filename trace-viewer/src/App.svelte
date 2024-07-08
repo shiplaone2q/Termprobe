@@ -44,3 +44,6 @@
 <svelte:window onpagehide={pagehide} />
 <svelte:document onvisibilitychange={() => { if (document.hidden) send({ type: "pause" }); }} />
 
+<Header summary={model.summary} hasFailure={model.hasFailure} canJump={model.failureFrameIndex !== undefined}
+  onjump={() => send({ type: "jump-to-result" })} />
+
