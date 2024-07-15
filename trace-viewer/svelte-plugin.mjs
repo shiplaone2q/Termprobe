@@ -21,3 +21,6 @@ export function sveltePlugin(generate = "client") {
         return {
           contents: compiled.js.code + (generate === "client" ? `\nimport ${JSON.stringify(cssPath)};` : ""),
           loader: "js", resolveDir: path.dirname(filename), watchFiles: [filename],
+        };
+      });
+      build.onResolve({ filter: /\.svelte\.css$/ }, ({ path }) => ({ path, namespace: "svelte-css" }));

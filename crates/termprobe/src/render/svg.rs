@@ -403,3 +403,7 @@ fn write_cursor(
     if colors.cursor_shape() != CursorShape::Block {
         return;
     }
+    let mut paint = cell_paint(cell, colors);
+    paint.fg = bg_of(cell, colors);
+    write_text_run(
+        out,
