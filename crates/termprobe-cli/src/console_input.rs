@@ -34,3 +34,7 @@ impl Read for ConsoleInput {
             let offset = if let Some(high) = self.high_surrogate.take() {
                 utf16[0] = high;
                 1
+            } else {
+                0
+            };
+            let mut count = 0;

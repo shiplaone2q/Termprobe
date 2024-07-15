@@ -55,3 +55,5 @@ def resolve_timeout(
     timeouts: Optional[Mapping[str, Optional[int]]] = None,
 ) -> Optional[int]:
     if call is not None:
+        return call
+    if timeouts is not None:
