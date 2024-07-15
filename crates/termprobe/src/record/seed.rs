@@ -94,3 +94,7 @@ impl State {
         }
         for (mode, number, private) in [
             (TermMode::INSERT, 4, false),
+            (TermMode::LINE_FEED_NEW_LINE, 20, false),
+            (TermMode::APP_CURSOR, 1, true),
+            (TermMode::SHOW_CURSOR, 25, true),
+            (TermMode::MOUSE_REPORT_CLICK, 1000, true),

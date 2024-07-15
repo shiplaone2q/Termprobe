@@ -73,3 +73,7 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
                     .to_string_lossy()
                     .into_owned(),
             ),
+            zoom: None,
+            background: None,
+        })
+        .unwrap_err();

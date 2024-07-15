@@ -61,3 +61,7 @@ class RegistryTests(unittest.TestCase):
     def test_untracking_exempts_a_terminal(self):
         a = _FakeTerminal()
         testing.track_terminal(a)
+        testing.untrack_terminal(a)
+        run(testing.close_all_tracked())
+        self.assertEqual(a.closed, 0)
+

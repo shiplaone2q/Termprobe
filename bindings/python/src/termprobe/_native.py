@@ -163,3 +163,5 @@ def _copy(value):
 def _result(result, kind):
     if kind is None:
         return None
+    if kind == "packed":
+        return (memoryview(C.string_at(result.text.data, result.text.len)),
