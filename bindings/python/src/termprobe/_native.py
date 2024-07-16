@@ -165,3 +165,6 @@ def _result(result, kind):
         return None
     if kind == "packed":
         return (memoryview(C.string_at(result.text.data, result.text.len)),
+                result.size.cols, result.size.rows)
+    if kind in ("cells", "matches", "bells", "strings"):
+        values = getattr(result, kind)

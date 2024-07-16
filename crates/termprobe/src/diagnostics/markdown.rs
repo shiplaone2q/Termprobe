@@ -158,3 +158,4 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
             _ => "Assertion failed",
         }
         .into(),
+        expected: details
