@@ -76,3 +76,5 @@ type abiResult struct {
 	bells         *abiBellEvent
 	bellsLen      uintptr
 	strings       *abiString
+	stringsLen    uintptr
+	snapshot      uint32

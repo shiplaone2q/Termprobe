@@ -31,3 +31,7 @@ impl SessionInput {
             Some(mode) => {
                 let mode = trace_mode(&mode)?;
                 let options = TraceOptions {
+                    mode,
+                    directory: self
+                        .trace_directory
+                        .map(Into::into)
