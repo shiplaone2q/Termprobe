@@ -248,3 +248,4 @@ fn named_wait_allows_concurrent_input_resize_and_submit() {
 #[test]
 fn pending_wait_cannot_observe_a_replacement_session() {
     let session = Session::new("wait-generation");
+    session.run(options("quiet")).unwrap();

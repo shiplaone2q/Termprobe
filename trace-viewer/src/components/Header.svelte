@@ -25,3 +25,6 @@
   .brand span { color: var(--muted); font-size: 12px; font-weight: 400; }
   .session-summary { display: flex; flex: 1; flex-wrap: wrap; gap: 8px 24px; min-width: 0; font-size: 12px; }
   .metadata-item { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+  .metadata-label { flex-shrink: 0; color: var(--muted); }
+  .metadata-value { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .failure-button { color: var(--red); border-color: var(--red); white-space: nowrap; }
