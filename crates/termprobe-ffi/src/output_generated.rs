@@ -65,3 +65,5 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
         last_command: s.optional(v.last_command),
         last_exit: integer(v.last_exit),
         exit_signal: s.optional(v.exit_signal),
+        exited: integer(v.exited),
+        ready: v.ready,
