@@ -62,3 +62,6 @@ function locator(value, path) {
 const selector = tagged({
   text: shape({ selector: shape({ text, regex: bool, full: bool, whitespace: choice(["exact", "normalize"]),
     scope: shape({ after: nullable(anchor), before: nullable(anchor) }) }) }),
+  style: shape({ selector: shape({ style, full: bool }) }),
+  link: shape({ selector: shape({ uri: text, full: bool }) }),
+  and: shape({ selector: shape({ left: locator, right: locator }) }),

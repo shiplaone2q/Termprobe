@@ -5,3 +5,4 @@ export default defineConfig({
   testMatch: "**/*.spec.mjs",
   fullyParallel: true,
   workers: 2,
+  forbidOnly: !!process.env.CI,

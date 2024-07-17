@@ -68,3 +68,5 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
     {
         socket_path_in(home, session).to_string_lossy().into_owned()
     }
+}
+
