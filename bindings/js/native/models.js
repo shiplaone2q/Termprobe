@@ -113,3 +113,7 @@ TraceOptions: {
 FailureArtifactOptions: {
 "directory": ["directory", "PathBuf"],
 "mode": ["mode", "Option<FailureArtifactMode>"],
+"includeRecording": ["include_recording", "Option<bool>"],
+},
+OpenOptions: {
+"backend": ["backend", "Option<Backend>"],

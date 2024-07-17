@@ -34,3 +34,6 @@ locator = (
 | --- | --- |
 | `get_by_text(text, **options)` | Match text or regex. |
 | `get_by_style(style, **options)` | Match appearance; when chained, require it on the whole match. |
+| `get_by_link(uri, **options)` | Match an OSC 8 target; when chained, require it on every cell. `""` means unlinked. |
+| `and_(other)`, `or_(other)` | Intersect/union cells, then form contiguous per-row runs. |
+| `filter(has=..., has_not=...)` | Keep whole matches containing an inner match or containing none. |
