@@ -146,3 +146,7 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
   // Only the codes answered here are recorded. The scan sees every sequence,
   // and one whose terminator is never claimed would sit in this list for the
   // life of the session: a shell that retitles the window on every prompt
+  // would leak an entry per prompt.
+  var ANSWERED = { 4: 1, 10: 1, 11: 1, 12: 1, 104: 1, 110: 1, 111: 1, 112: 1 };
+  var terminators = [];
+  var inOsc = false, sawEsc = false, code = -1, readingCode = false;

@@ -50,3 +50,6 @@ if (process.platform === "win32") {
   const RTLD_NODELETE = process.platform === "darwin" ? 0x80 : 0x1000;
   // Keep code mapped after the last environment exits, including detached tasks.
   const retained = open(path, RTLD_NOW | RTLD_NODELETE);
+  if (retained === null) {
+    throw new Error(`Failed to retain the termprobe native library: ${lastError()}`);
+  }
