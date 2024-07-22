@@ -173,3 +173,6 @@ fn c_output(ty: &str, value: &str) -> Result<String> {
         "Option<u32>" => format!("TuiOptionalU64 {{ present: {value}.is_some(), value: u64::from({value}.unwrap_or_default()) }}"),
         "CellColor" => format!("color({value})"),
         t if OUTPUTS.contains(&t) => format!("{}(s, {value})", snake(t)),
+        _ => { c_type(ty)?; value.into() }
+    })
+}

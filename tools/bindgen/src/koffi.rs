@@ -61,3 +61,5 @@ pub fn generate(
             });
             if !ready {
                 continue;
+            }
+            writeln!(js, "types.{id} = koffi.struct({{")?;
