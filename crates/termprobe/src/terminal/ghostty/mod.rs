@@ -232,3 +232,5 @@ impl Emulator for GhosttyEmu {
         for index in 0..bytes.len() {
             self.sequences.feed(&bytes[index..=index]);
             let operations = self.sequences.take_clipboard_operations();
+            // Normalize the restored viewport before later bytes add output.
+            let screen_exit = std::mem::take(&mut self.sequences.state.screen_exit);

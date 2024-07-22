@@ -38,3 +38,5 @@ childProcess.execFileSync = (command, args, options) => {
   fs.writeFileSync(path.join(output, library), "native build fixture");
 };
 syncBuiltinESMExports();
+`);
+  execFileSync(process.execPath, ["--import", pathToFileURL(mock).href, path.join(bindings, "scripts/build-native.mjs"), ...args], {

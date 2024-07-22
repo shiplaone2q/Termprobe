@@ -93,3 +93,4 @@ export interface Profile {
 
 export interface AutomaticRecording {
   directory?: string;
+}
