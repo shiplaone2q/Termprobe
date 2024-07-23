@@ -500,3 +500,7 @@ macro_rules! emulator_conformance_tests {
             );
         }
 
+        /// Each extended underline reports its own style, not a flat boolean.
+        #[test]
+        fn conformance_underline_styles() {
+            // Aliased, not glob-imported: `UnderlineStyle::None` would shadow

@@ -31,3 +31,7 @@ class ScrollbackTests(unittest.TestCase):
             native = _native.NativeSession(unique_session("scroll-validation"))
             for amount in (1.5, float("nan"), float("inf"), 2147483648, -2147483649, "1", True):
                 with self.subTest(amount=amount):
+                    with self.assertRaises(UsageError):
+                        await terminal.scroll(amount)
+                    with self.assertRaises(_native.NativeUsageError):
+                        await native.scroll(amount)

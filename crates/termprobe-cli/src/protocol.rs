@@ -251,3 +251,7 @@ impl Request {
         self.execute_cancellable(engine, &|| false)
     }
 
+    pub fn execute_cancellable(self, engine: &Engine, cancelled: &dyn Fn() -> bool) -> Response {
+        if let Request::WithContext {
+            request,
+            mut context,
