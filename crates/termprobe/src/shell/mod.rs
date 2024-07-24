@@ -80,3 +80,4 @@ fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
         ),
         (
             "shellIntegration.xsh",
+            include_str!("../../shell/shellIntegration.xsh"),

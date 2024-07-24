@@ -261,3 +261,7 @@ class IntegrationTests(unittest.TestCase):
     def test_bell_state_waits_and_expectations(self):
         async def scenario():
             async with self._client() as su:
+                await su.open(shell=SHELL)
+
+                await su.submit(TWO_BELLS_COMMAND)
+                await su.expect_bell_count(2, timeout=5000)

@@ -310,3 +310,7 @@ test("recording API writes an asciicast file", async () => {
       await su.submit("echo sdk-recording");
       await su.waitCommand();
       assert.equal(await su.stopRecording(), path);
+    });
+    const cast = await readFile(path, "utf8");
+    assert.match(cast, /"version":2/);
+    assert.match(cast, /sdk-recording/);
