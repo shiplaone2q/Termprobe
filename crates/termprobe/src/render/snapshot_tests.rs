@@ -114,3 +114,6 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
             bg: Some(Color::Rgb(96, 48, 128)),
             ..CellStyle::default()
         },
+    );
+    write_text(&mut grid, 3, 0, "0123456789 -> [] {}", CellStyle::default());
+    write_text(
