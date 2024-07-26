@@ -118,3 +118,7 @@ Set `trace.mode` to `"on"` for every session or `"on-failure"` for failures. Use
 
 The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, and 30 seconds for command, exit, and ready.
 
+#### Input
+
+| Method | Description |
+| --- | --- |

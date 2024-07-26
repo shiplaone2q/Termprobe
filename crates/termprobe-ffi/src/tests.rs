@@ -120,3 +120,6 @@ fn pointer_options_reject_null_and_preserve_validation() {
                 &TuiScreenshotOptions {
                     background: text("#000000"),
                     transparent: true,
+                    ..Default::default()
+                },
+            ),
