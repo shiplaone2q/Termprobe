@@ -47,3 +47,4 @@ pub(crate) fn close(
                     Operation::FinishTrace { failed },
                     context.clone().with_operation("trace.finish"),
                 )
+            },

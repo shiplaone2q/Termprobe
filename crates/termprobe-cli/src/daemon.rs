@@ -157,3 +157,7 @@ fn handle_connection(
     let mut reader = BufReader::new(conn);
     let req = match ipc::read_request_with_timeout(&mut reader, ipc::REQUEST_TIMEOUT) {
         Ok(request) => request,
+        Err(_) => return,
+    };
+    *host.last_activity.lock().unwrap() = Instant::now();
+    if req.is_close() || req.is_shutdown() {

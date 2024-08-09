@@ -265,3 +265,4 @@ class FailureDiagnosticsTests(unittest.TestCase):
                 },
                 "artifact": {
                     "status": "partial",
+                    "directory": "artifacts/failure",
