@@ -27,3 +27,5 @@ termprobe = { workspace = true, features = [
     "ghostty",
     "rio",
     "xtermjs",
+    "recording-font-jetbrains-mono-styles",
+] }

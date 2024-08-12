@@ -101,3 +101,7 @@ export interface TextMatch {
   text: string
   start: TextPosition
   end: TextPosition
+  spans: Array<TextSpan>
+}
+
+export interface PackedScreen {
