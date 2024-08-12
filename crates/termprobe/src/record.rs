@@ -142,3 +142,6 @@ impl Recorder {
                 request: Box::new(request),
                 reply,
             })
+            .map_err(|_| CaptureError::WorkerStopped)
+            .and_then(|()| response.recv().unwrap_or(Err(CaptureError::WorkerStopped)))
+    }

@@ -41,3 +41,6 @@ export interface ReportData {
     readonly frames: readonly Frame[];
     readonly geometry: Geometry;
     readonly failure_screen_sequence: number;
+  };
+  readonly explanation: { readonly title: string; readonly expected: string; readonly actual: string; readonly note: string };
+  readonly files: readonly { readonly path: string; readonly status: string; readonly reason?: string }[];

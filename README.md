@@ -142,3 +142,4 @@ func main() {
     terminal, err := termprobe.Ephemeral("example", termprobe.ClientOptions{})
     if err != nil {
         log.Fatal(err)
+    }
