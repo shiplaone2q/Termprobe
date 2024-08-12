@@ -51,3 +51,4 @@ sessions=()
 close_session() {
     local session=$1
     local exit_code
+

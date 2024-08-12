@@ -70,3 +70,7 @@ impl Perform for InputState {
                 (key, params.next(), params.next(), params.next())
             {
                 self.event = Some(InputEvent::Mouse {
+                    button: *button,
+                    x: *x,
+                    y: *y,
+                    release: action == 'm',
