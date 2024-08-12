@@ -251,3 +251,6 @@ def _link_query_value(
 
 class _LocatorQuery:
     def __init__(self, nodes: List[Dict[str, object]], root: int) -> None:
+        self.nodes = nodes
+        self.root = root
+

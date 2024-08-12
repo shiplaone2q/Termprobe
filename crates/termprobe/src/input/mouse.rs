@@ -39,3 +39,5 @@ pub fn drag_motion(x: u16, y: u16, options: MouseOptions) -> String {
     )
 }
 
+/// Scroll wheel: SGR codes 64 (up) and 65 (down).
+pub fn scroll(x: u16, y: u16, up: bool) -> String {

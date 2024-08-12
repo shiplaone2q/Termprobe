@@ -78,3 +78,7 @@ function objectCode(values) {
  */
 export function locatorCode(query) {
   const { selector } = query;
+  let code;
+  /** @type {Record<string, unknown>} */
+  const options = {};
+  if (query.within && query.direction !== "within") options.direction = query.direction;
