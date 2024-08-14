@@ -56,3 +56,6 @@ try {
   await terminal.getByText("Continue").click();
 } finally {
   await terminal.closeQuiet();
+}
+```
+

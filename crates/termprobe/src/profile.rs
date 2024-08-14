@@ -327,3 +327,6 @@ impl Default for Profile {
             colors: Colors::default(),
         }
     }
+}
+
+/// Recording settings. Profiles inherit omitted keys from the file.
