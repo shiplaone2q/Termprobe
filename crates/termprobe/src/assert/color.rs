@@ -122,3 +122,6 @@ pub fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
         if v < 48 {
             0
         } else if v < 115 {
+            1
+        } else {
+            (v as i32 - 35) / 40

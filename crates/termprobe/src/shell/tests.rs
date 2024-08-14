@@ -97,3 +97,5 @@ impl Drop for TestDirectory {
 
 struct TestShell {
     child: Box<dyn Child + Send + Sync>,
+    _master: Box<dyn MasterPty + Send>,
+    writer: Box<dyn Write + Send>,

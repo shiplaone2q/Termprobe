@@ -63,3 +63,5 @@ fn command_json(cmd: &Command) -> Value {
         .map(arg_json)
         .collect();
 
+    let mut obj = Map::new();
+    if let Some(about) = cmd.get_about() {
