@@ -85,3 +85,6 @@ fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
         (
             "shellIntegration.elv",
             include_str!("../../shell/shellIntegration.elv"),
+        ),
+        (
+            "shellIntegration.nu",

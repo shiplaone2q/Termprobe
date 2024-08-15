@@ -67,3 +67,5 @@ node --input-type=module -e '
     await terminal.run(process.execPath, ["-e", "console.log(\"Ready 界🙂\")"]);
     await terminal.getByText("Ready 界🙂").expect();
     await terminal.waitExit();
+    const state = await terminal.state();
+    console.log(`Terminal size: ${state.cols}x${state.rows}`);

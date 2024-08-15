@@ -47,3 +47,6 @@
 <Header summary={model.summary} hasFailure={model.hasFailure} canJump={model.failureFrameIndex !== undefined}
   onjump={() => send({ type: "jump-to-result" })} />
 
+<Timeline duration={model.duration} actions={model.actions} frames={model.frames} images={resources.images}
+  selectedAction={view.actionId} selectedFrame={view.frameIndex} failedImages={view.failedImages}
+  onaction={(id) => send({ type: "select-action", id })}
