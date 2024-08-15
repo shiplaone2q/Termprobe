@@ -13,3 +13,5 @@
     };
     return { outcome: "unknown", summary: expectation || "Expectation not captured for this operation.", observed: "" };
   });
+</script>
+
