@@ -150,3 +150,5 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
   var ANSWERED = { 4: 1, 10: 1, 11: 1, 12: 1, 104: 1, 110: 1, 111: 1, 112: 1 };
   var terminators = [];
   var inOsc = false, sawEsc = false, code = -1, readingCode = false;
+  function scanTerminators(bytes) {
+    for (var i = 0; i < bytes.length; i++) {

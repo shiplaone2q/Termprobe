@@ -503,3 +503,5 @@ pub enum RecordCmd {
 #[clap(rename_all = "upper")]
 pub enum SignalArg {
     /// Interrupt the foreground program (Ctrl-C).
+    Int,
+    /// Terminate the child process.
