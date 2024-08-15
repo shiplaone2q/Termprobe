@@ -75,3 +75,7 @@ for (const [name, change, error] of [
   ["invalid operation time", (data) => { data.details.recent_operations[0].ended_ms = 0; }, /end precedes start/],
   ["invalid expectation", (data) => { data.details.recent_operations[0].expectation.kind = "unknown"; }, /expectation.kind/],
   ["invalid input variant", (data) => { data.details.recent_operations[3].input.arguments.kind = "unknown"; }, /arguments.kind/],
+  ["invalid input bytes", (data) => { data.details.recent_operations[3].input.sent_bytes = [256]; }, /sent_bytes\[0\]/],
+  ["invalid locator kind", (data) => { data.details.recent_operations[1].expectation.query.selector.kind = "unknown"; }, /selector.kind/],
+  ["invalid cell color", (data) => { data.timeline.frames[0].cells[0].fg = {}; }, /cells\[0\].fg/],
+  ["invalid base64", (data) => { data.attachments[0].data = "????"; }, /invalid base64/],
