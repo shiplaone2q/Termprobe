@@ -93,3 +93,4 @@ class NativeSurfaceTests(unittest.TestCase):
             "get_cwd",
             "get_cursor",
             "get_size",
+            "get_clipboard",
