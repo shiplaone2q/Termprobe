@@ -93,3 +93,7 @@ export function backendPayload(backend?: unknown): Backend | undefined {
 export function timeoutsPayload(
   timeouts?: Timeouts,
 ): Record<TimeoutClass, number> | undefined {
+  if (!timeouts) {
+    return undefined;
+  }
+  assertTimeoutClasses(timeouts);

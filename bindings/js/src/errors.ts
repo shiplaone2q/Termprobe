@@ -34,3 +34,4 @@ export class UsageError extends TermprobeError {
 export class NoSessionError extends TermprobeError {
   constructor(message: string) {
     super(message, "no_session", 3);
+  }
