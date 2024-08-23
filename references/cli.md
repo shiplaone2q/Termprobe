@@ -114,3 +114,7 @@ Most waits accept `--timeout MS`. `expect`, `click`, and `highlight` retry. `fin
 
 ## Inspect
 
+| Command | Use |
+| --- | --- |
+| `state` | Read session state, modes, colors, and text. |
+| `text [--full]` | Read terminal text. |

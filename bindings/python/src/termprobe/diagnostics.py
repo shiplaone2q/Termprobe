@@ -49,3 +49,5 @@ class FailureCellMismatch:
     actual: str
     reason: str
     resolved: Optional[str] = None
+
+    @classmethod
