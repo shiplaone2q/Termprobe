@@ -255,3 +255,5 @@ impl Request {
         if let Request::WithContext {
             request,
             mut context,
+        } = self
+        {
