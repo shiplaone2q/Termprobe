@@ -39,3 +39,6 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 	})
 	if options.Program == "" {
 		_, err = terminal.Open(termprobe.OpenOptions{SpawnOptions: options.Spawn, Shell: options.Shell})
+	} else {
+		_, err = terminal.Run(options.Program, options.Args, options.Spawn)
+	}

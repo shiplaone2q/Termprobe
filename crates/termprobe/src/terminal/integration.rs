@@ -114,3 +114,6 @@ impl TrackerState {
                 let cmd = clean(&self.command_buf);
                 let cmd = cmd.strip_prefix("> ").unwrap_or(&cmd).to_string();
                 self.last_command = Some(cmd);
+                self.region = Region::Output;
+                self.output_buf.clear();
+                self.started_count += 1;

@@ -105,3 +105,5 @@ func Ephemeral(prefix string, options ClientOptions) (*Client, error) {
 	prefix = strings.Map(func(character rune) rune {
 		if character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character >= '0' && character <= '9' || character == '-' || character == '_' {
 			return character
+		}
+		return '-'
