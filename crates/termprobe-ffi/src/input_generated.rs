@@ -34,3 +34,7 @@ unsafe fn open_input(
     })
 }
 fn mouse_input(value: TuiMouseOptions, button: MouseButton) -> MouseOptions {
+    MouseOptions {
+        button,
+        alt: value.alt,
+        ctrl: value.ctrl,
