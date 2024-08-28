@@ -81,3 +81,6 @@ class OwnershipTests(unittest.TestCase):
         with patch.object(native, "_library", None), patch.object(C, "CDLL", return_value=library):
             with self.assertRaisesRegex(native.NativeInternalError, "ABI version mismatch"):
                 native._load()
+
+    def test_locator_translation_does_not_mutate_input(self):
+        expression = {

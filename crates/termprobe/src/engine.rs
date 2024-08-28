@@ -1128,3 +1128,6 @@ impl Engine {
                         if primary.status == FailureArtifactStatus::Written {
                             primary.status = FailureArtifactStatus::Partial;
                         }
+                        primary.errors.push(format!(
+                            "trace export was not fully written at {}",
+                            artifact.directory
