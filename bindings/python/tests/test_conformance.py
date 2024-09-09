@@ -48,3 +48,6 @@ MAPPING = {
     "click": [("client", "get_by_text")],
     "highlight": [("client", "get_by_text")],
     "get-recording": [("module", "get_recording")],
+}
+
+EXCLUDED = {"monitor", "usage", "agent-context", "skill", "daemon"}

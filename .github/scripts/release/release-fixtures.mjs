@@ -45,3 +45,5 @@ export function createFixture(t) {
   fs.writeFileSync(path.join(source, "internal/native/registry.go"),
     "package native\n"
     + "type bundledLibrary struct { name string; checksum string; archive []byte }\n"
+    + "var bundledLibraries = map[string]bundledLibrary{}\n");
+  const fixture = {
