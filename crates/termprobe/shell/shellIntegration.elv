@@ -30,3 +30,5 @@ fn __su_before_readline {
 fn __su_after_readline {|_|
   __su_osc "133;C"
 }
+
+fn __su_after_command {|cmd-info|

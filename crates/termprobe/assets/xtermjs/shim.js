@@ -152,3 +152,6 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
   var inOsc = false, sawEsc = false, code = -1, readingCode = false;
   function scanTerminators(bytes) {
     for (var i = 0; i < bytes.length; i++) {
+      var b = bytes[i];
+      if (inOsc) {
+        // `BEL` ends the sequence, and so does a bare `ESC`: the parser these
