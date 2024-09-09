@@ -52,3 +52,7 @@ if [[ "$2" == release ]]; then profile=(--release); fi
 CARGO_TARGET_DIR=/io/target/manylinux cargo zigbuild --locked -p termprobe-ffi --target "$1.2.28" "\${profile[@]}"
 mkdir -p "target/$1/$2"
 cp "target/manylinux/$1/$2/libtermprobe_ffi.so" "target/$1/$2/"
+`, "--", target, debug ? "debug" : "release",
+  ], { cwd: root, env, stdio: "inherit" });
+} else {
+  execFileSync("cargo", [

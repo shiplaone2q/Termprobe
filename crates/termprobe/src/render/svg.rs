@@ -407,3 +407,7 @@ fn write_cursor(
     paint.fg = bg_of(cell, colors);
     write_text_run(
         out,
+        row,
+        cx as usize..cx as usize + span as usize,
+        cy,
+        paint,

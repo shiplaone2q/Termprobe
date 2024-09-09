@@ -316,3 +316,4 @@ impl Session {
             rows
         ));
 
+        Ok(Session {
