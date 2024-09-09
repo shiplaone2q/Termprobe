@@ -230,3 +230,7 @@ fn load_bundled_fonts(database: &mut fontdb::Database) {
 }
 
 #[cfg(feature = "recording-font-jetbrains-mono")]
+fn load_font_data(database: &mut fontdb::Database, fonts: &[&[u8]]) {
+    for font in fonts {
+        database.load_font_data(font.to_vec());
+    }

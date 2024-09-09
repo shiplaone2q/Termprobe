@@ -117,3 +117,7 @@ FailureArtifactOptions: {
 },
 OpenOptions: {
 "backend": ["backend", "Option<Backend>"],
+"shell": ["shell", "Option<Shell>"],
+"cols": ["cols", "Option<u16>"],
+"rows": ["rows", "Option<u16>"],
+"cwd": ["cwd", "Option<String>"],

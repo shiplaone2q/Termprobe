@@ -79,3 +79,7 @@ const (
 type ScrollDirection string
 
 const (
+	Up   ScrollDirection = "up"
+	Down ScrollDirection = "down"
+)
+
