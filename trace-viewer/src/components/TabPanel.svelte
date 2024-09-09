@@ -9,3 +9,4 @@
   class:metadata={padding === "metadata"} class:details={padding === "details"}>
   {@render children()}
 </div>
+
