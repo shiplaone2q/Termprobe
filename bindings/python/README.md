@@ -122,3 +122,6 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 
 | Method | Description |
 | --- | --- |
+| `await submit(text=None)` | Type text and press Enter. |
+| `await type(text)` | Type text. |
+| `await write(data)` | Write raw bytes. |
