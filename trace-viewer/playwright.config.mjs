@@ -6,3 +6,4 @@ export default defineConfig({
   fullyParallel: true,
   workers: 2,
   forbidOnly: !!process.env.CI,
+  retries: 0,

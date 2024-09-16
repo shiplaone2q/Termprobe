@@ -37,3 +37,7 @@ locator = (
 | `get_by_link(uri, **options)` | Match an OSC 8 target; when chained, require it on every cell. `""` means unlinked. |
 | `and_(other)`, `or_(other)` | Intersect/union cells, then form contiguous per-row runs. |
 | `filter(has=..., has_not=...)` | Keep whole matches containing an inner match or containing none. |
+| `any()` | Keep all matches. |
+| `unique()` | Require one match. |
+| `first()`, `last()`, `nth(index)` | Select a match. |
+| `locations()`, `location()`, `count()`, `all()` | Read matches. |

@@ -26,3 +26,7 @@ for (const tag of targets) {
   if (!extension) throw new Error(`Unsupported native platform: ${platform}`);
   const filename = `termprobe.${tag}.${extension}`;
   const nativePackage = path.join(nativePackagesDirectory, tag);
+  const manifestPath = path.join(nativePackage, "package.json");
+  const manifest = {
+    name: `${rootPackage.name}-${tag}`,
+    version: rootPackage.version,

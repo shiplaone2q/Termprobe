@@ -9,3 +9,4 @@
     "checkJs": true,
     "strict": true,
     "skipLibCheck": true,
+    "noEmit": true
