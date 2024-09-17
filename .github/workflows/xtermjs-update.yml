@@ -33,3 +33,6 @@ jobs:
 
           ./.github/scripts/vendor-xtermjs.sh --latest
 
+          headless="$(jq -r '."@xterm/headless"' crates/termprobe/assets/xtermjs/pinned.json)"
+          unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/termprobe/assets/xtermjs/pinned.json)"
+

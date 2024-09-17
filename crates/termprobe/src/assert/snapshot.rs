@@ -100,3 +100,6 @@ pub fn serialize(
     include_style: bool,
     title: Option<&str>,
 ) -> String {
+    let mut lines = Vec::with_capacity(rows.len());
+    let mut shifts = Map::new();
+    let mut prev = baseline();
