@@ -140,3 +140,5 @@ pub unsafe extern "C" fn tui_get_cursor_start(session: TuiString) -> *mut TuiTas
 /// Inputs follow the synchronous function contract through this call only.
 pub unsafe extern "C" fn tui_get_size_start(session: TuiString) -> *mut TuiTask {
     tasks::start(|| unsafe { tui_get_size(session) })
+}
+#[no_mangle]
