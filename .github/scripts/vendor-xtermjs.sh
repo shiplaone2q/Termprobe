@@ -29,3 +29,6 @@ trap 'rm -rf "$work"' EXIT
   tar xzOf "xterm-headless-$headless.tgz" package/lib-headless/xterm-headless.js \
     > "$assets/xterm-headless.js"
   tar xzOf "xterm-addon-unicode11-$unicode11.tgz" package/lib/addon-unicode11.js \
+    > "$assets/addon-unicode11.js"
+)
+

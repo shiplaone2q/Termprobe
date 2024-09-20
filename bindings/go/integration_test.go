@@ -132,3 +132,5 @@ func requireKind(t *testing.T, err error, kind termprobe.ErrorKind) {
 	if !errors.As(err, &failure) || failure.Kind != kind {
 		t.Fatalf("expected %s error, got %v", kind, err)
 	}
+}
+

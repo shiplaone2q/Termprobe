@@ -28,3 +28,6 @@ Core types:
 | `Session` | Own one terminal. |
 | `SessionRegistry` | Manage named sessions. |
 | `Locator` | Find, wait, assert, click, and highlight. |
+| `MouseButton`, `MouseOptions`, `LocatorClickOptions` | Configure buttons and modifiers. |
+| `Operation` | Run a terminal operation. |
+| `OpenOptions`, `RunOptions` | Start a shell or app. |
