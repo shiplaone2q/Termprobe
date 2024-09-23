@@ -36,3 +36,5 @@ try {
     const output = execFileSync(path.join(directory, "smoke.exe"), [], {
       cwd: directory, env: runtime, encoding: "utf8", timeout: 60000,
     });
+    if (!output.includes("Go binding smoke passed (bundled engine)")) throw new Error(`Unexpected consumer output: ${output}`);
+    console.log(`${attempt}: ${output.trim()}`);

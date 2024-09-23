@@ -53,3 +53,4 @@ if (process.platform === "win32") {
   if (retained === null) {
     throw new Error(`Failed to retain the termprobe native library: ${lastError()}`);
   }
+  if (close(retained) !== 0) {

@@ -149,3 +149,5 @@ impl Recorder {
     pub fn stop(&self) -> Result<StoppedRecording, CaptureError> {
         let (reply, response) = mpsc::sync_channel(0);
         self.sender
+            .send(Message::Stop { reply })
+            .map_err(|_| CaptureError::WorkerStopped)?;
