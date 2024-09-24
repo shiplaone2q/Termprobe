@@ -82,3 +82,5 @@ export function locatorCode(query) {
   /** @type {Record<string, unknown>} */
   const options = {};
   if (query.within && query.direction !== "within") options.direction = query.direction;
+  if ("full" in selector.selector && selector.selector.full) options.full = true;
+  /** @param {string} method @param {string} argument */
