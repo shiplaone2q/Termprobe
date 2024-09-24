@@ -158,3 +158,4 @@ TuiMode._fields_ = [
     ("enabled", ctypes.c_bool),
 ]
 
+

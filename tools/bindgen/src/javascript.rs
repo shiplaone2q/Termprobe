@@ -172,3 +172,4 @@ fn parameters(models: &Models, method: &str, variant: &str) -> Result<Vec<Field>
             field("options", "Option<TitleOptions>"),
         ],
         "waitClipboard" => vec![
+            field("text", "Option<String>"),
