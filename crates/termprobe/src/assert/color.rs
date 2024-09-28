@@ -125,3 +125,6 @@ pub fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
             1
         } else {
             (v as i32 - 35) / 40
+        }
+    };
+    (16 + 36 * cube(r) + 6 * cube(g) + cube(b)) as u8

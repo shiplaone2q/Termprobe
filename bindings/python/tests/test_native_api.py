@@ -94,3 +94,4 @@ class NativeSurfaceTests(unittest.TestCase):
             "get_cursor",
             "get_size",
             "get_clipboard",
+            "get_bell_count",

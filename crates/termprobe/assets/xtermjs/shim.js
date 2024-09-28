@@ -155,3 +155,7 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
       var b = bytes[i];
       if (inOsc) {
         // `BEL` ends the sequence, and so does a bare `ESC`: the parser these
+        // bytes are about to reach ends an OSC the moment it sees one, without
+        // waiting to learn whether the `\` of an `ST` follows. Recording the
+        // terminator on that `ESC` rather than on the `\` is what keeps this
+        // scan in step with the handler when a read splits between the two.
