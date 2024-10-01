@@ -142,3 +142,5 @@ pub unsafe extern "C" fn tui_get_size_start(session: TuiString) -> *mut TuiTask 
     tasks::start(|| unsafe { tui_get_size(session) })
 }
 #[no_mangle]
+/// Start a typed call after copying all borrowed inputs.
+/// # Safety
