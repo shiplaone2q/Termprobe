@@ -89,3 +89,5 @@ fn color(value: CellColor) -> TuiColor {
             blue,
             ..Default::default()
         },
+    }
+}

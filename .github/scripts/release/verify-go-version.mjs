@@ -10,3 +10,4 @@ export function verifyGoVersion(root, version) {
       throw new Error(`${name} must use go get github.com/microsoft/termprobe/bindings/go@v${version}`);
     }
   }
+}

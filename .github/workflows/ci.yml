@@ -79,3 +79,5 @@ jobs:
       - run: cargo build -p termprobe-cli -p termprobe-ffi
       - run: cargo test --workspace -- --test-threads=1
       # The recording renderer and its font catalog are behind a feature that
+      # is off by default, so the line above never compiles them in.
+      - run: cargo test -p termprobe-rs --features recording-font-jetbrains-mono-styles -- --test-threads=1

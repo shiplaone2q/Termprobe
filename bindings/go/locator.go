@@ -66,3 +66,5 @@ func appendLocatorNode(parent *locatorQuery, node locatorNode) locatorQuery {
 	}
 	query.root = uint32(len(query.nodes))
 	query.nodes = append(query.nodes, node)
+	return query
+}
