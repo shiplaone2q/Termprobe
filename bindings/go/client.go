@@ -107,3 +107,5 @@ func Ephemeral(prefix string, options ClientOptions) (*Client, error) {
 			return character
 		}
 		return '-'
+	}, prefix)
+	return New(prefix+"-"+rand.Text(), options)

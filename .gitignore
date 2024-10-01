@@ -17,3 +17,4 @@ bindings/js/native/target
 bindings/python/target
 trace-viewer/node_modules/
 trace-viewer/.preview/
+trace-viewer/test-results/
