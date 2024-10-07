@@ -217,3 +217,6 @@ impl Padding {
         match self {
             Self::Uniform(value) => value,
             Self::Sides(sides) => pick(sides).unwrap_or(fallback),
+        }
+    }
+

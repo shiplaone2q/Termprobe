@@ -17,3 +17,5 @@ pub mod trace;
 mod event;
 mod session;
 
+pub use api::*;
+pub use diagnostics::*;
