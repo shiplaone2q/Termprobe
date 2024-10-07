@@ -411,3 +411,4 @@ fn write_cursor(
         cx as usize..cx as usize + span as usize,
         cy,
         paint,
+        nerd_font,

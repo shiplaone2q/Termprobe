@@ -234,3 +234,6 @@ fn load_font_data(database: &mut fontdb::Database, fonts: &[&[u8]]) {
     for font in fonts {
         database.load_font_data(font.to_vec());
     }
+}
+
+fn style_index(bold: bool, italic: bool) -> usize {

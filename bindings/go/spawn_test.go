@@ -58,3 +58,7 @@ func launchTimeoutCases() []launchTimeoutCase {
 
 func TestClientTimeoutDefaultsReachLaunch(t *testing.T) {
 	for _, launch := range []string{"open", "run"} {
+		for _, testCase := range launchTimeoutCases() {
+			t.Run(launch+"/"+testCase.name, func(t *testing.T) { verifyLaunchTimeouts(t, launch, testCase) })
+		}
+	}
