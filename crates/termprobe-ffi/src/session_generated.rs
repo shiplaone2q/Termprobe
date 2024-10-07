@@ -38,3 +38,4 @@ impl SessionInput {
                         .unwrap_or_else(|| TraceOptions::default().directory),
                 };
                 options.validate().map_err(TermprobeError::usage)?;
+                Some(options)

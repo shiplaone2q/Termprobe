@@ -215,3 +215,5 @@ pub struct PaddingSides {
 impl Padding {
     fn side(self, pick: fn(PaddingSides) -> Option<u32>, fallback: u32) -> u32 {
         match self {
+            Self::Uniform(value) => value,
+            Self::Sides(sides) => pick(sides).unwrap_or(fallback),
