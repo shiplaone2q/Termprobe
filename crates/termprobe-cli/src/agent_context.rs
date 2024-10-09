@@ -65,3 +65,7 @@ fn command_json(cmd: &Command) -> Value {
 
     let mut obj = Map::new();
     if let Some(about) = cmd.get_about() {
+        obj.insert("about".into(), json!(about.to_string()));
+    }
+    if !args.is_empty() {
+        obj.insert("args".into(), Value::Array(args));

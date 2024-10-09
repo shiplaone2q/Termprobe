@@ -38,3 +38,7 @@ class ScrollbackTests(unittest.TestCase):
             for amount in (0, 1, -1, -2147483648, 2147483647):
                 with self.assertRaises(NoSessionError):
                     await terminal.scroll(amount)
+        asyncio.run(scenario())
+
+    def test_history_view_preserves_full_text(self):
+        async def scenario():
