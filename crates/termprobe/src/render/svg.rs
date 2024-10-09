@@ -412,3 +412,5 @@ fn write_cursor(
         cy,
         paint,
         nerd_font,
+        style,
+    );

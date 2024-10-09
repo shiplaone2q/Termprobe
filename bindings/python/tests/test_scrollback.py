@@ -35,3 +35,6 @@ class ScrollbackTests(unittest.TestCase):
                         await terminal.scroll(amount)
                     with self.assertRaises(_native.NativeUsageError):
                         await native.scroll(amount)
+            for amount in (0, 1, -1, -2147483648, 2147483647):
+                with self.assertRaises(NoSessionError):
+                    await terminal.scroll(amount)

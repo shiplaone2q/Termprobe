@@ -68,3 +68,7 @@ func appendLocatorNode(parent *locatorQuery, node locatorNode) locatorQuery {
 	query.nodes = append(query.nodes, node)
 	return query
 }
+
+func newTextLocator(client *Client, parent *locatorQuery, text string, options TextSelectorOptions) *Locator {
+	whitespace := options.Whitespace
+	if whitespace == "" {
