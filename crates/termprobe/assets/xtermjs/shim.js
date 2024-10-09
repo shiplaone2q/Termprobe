@@ -159,3 +159,5 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
         // waiting to learn whether the `\` of an `ST` follows. Recording the
         // terminator on that `ESC` rather than on the `\` is what keeps this
         // scan in step with the handler when a read splits between the two.
+        if (b === 0x07 || b === 0x1b) {
+          if (ANSWERED[code]) { terminators.push({ code: code, bel: b === 0x07 }); }

@@ -63,3 +63,5 @@ pub fn generate(
                 continue;
             }
             writeln!(js, "types.{id} = koffi.struct({{")?;
+            writeln!(layouts, "{id}: {{")?;
+            for field in &item.fields {
