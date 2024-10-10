@@ -129,3 +129,6 @@ export interface FailureCellMismatch {
   readonly resolved?: string;
   readonly reason: string;
 }
+
+export interface FailureLocatorStageDetails {
+  readonly stage_index: number;

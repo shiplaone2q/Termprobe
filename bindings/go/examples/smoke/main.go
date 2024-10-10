@@ -32,3 +32,6 @@ func main() {
 	}
 	fmt.Printf("Go binding smoke passed (%s engine)\n", source)
 }
+
+func smoke() error {
+	terminal, err := termprobe.Ephemeral("smoke", termprobe.ClientOptions{Recording: &termprobe.AutomaticRecording{Mode: termprobe.RecordingDisabled}})
