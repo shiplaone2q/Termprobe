@@ -39,3 +39,5 @@ impl SessionInput {
                 };
                 options.validate().map_err(TermprobeError::usage)?;
                 Some(options)
+            }
+        };
