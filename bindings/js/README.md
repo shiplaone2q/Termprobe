@@ -122,3 +122,4 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 #### Native history
 
 `scroll(lines)` accepts integers from -2147483648 through 2147483647.
+Positive values show older output. Negative values move toward the live screen.

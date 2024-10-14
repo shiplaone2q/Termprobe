@@ -234,3 +234,7 @@ impl Emulator for GhosttyEmu {
             let operations = self.sequences.take_clipboard_operations();
             // Normalize the restored viewport before later bytes add output.
             let screen_exit = std::mem::take(&mut self.sequences.state.screen_exit);
+            if operations.is_empty() && !screen_exit {
+                continue;
+            }
+
