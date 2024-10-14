@@ -209,3 +209,4 @@ impl GhosttyCore {
             .set_default_fg_color(Some(to_ghostty_rgb(profile.colors.foreground)))
             .context("setting foreground")?
             .set_default_bg_color(Some(to_ghostty_rgb(profile.colors.background)))
+            .context("setting background")?

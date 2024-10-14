@@ -75,3 +75,5 @@ export async function readArchive(data) {
   return new Promise((resolve, reject) => {
     const entries = [];
     const parser = new Parser({
+      strict: true,
+      onReadEntry(entry) {

@@ -253,3 +253,6 @@ fn pending_wait_cannot_observe_a_replacement_session() {
     let (finished_tx, finished_rx) = mpsc::channel();
     let waiter = std::thread::spawn(move || {
         finished_tx
+            .send(waiting.execute(expect_marker(30_000)))
+            .unwrap();
+    });
