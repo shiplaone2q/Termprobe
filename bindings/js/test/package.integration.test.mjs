@@ -12,3 +12,6 @@ if (packageRoot) {
     const requireFromPackage = createRequire(join(packageRoot, "package.json"));
     const packageEntry = requireFromPackage.resolve("@microsoft/termprobe");
     assert.equal(
+      spawnSync("termprobe", ["--version"], { stdio: "ignore" }).error?.code,
+      "ENOENT",
+    );

@@ -60,3 +60,6 @@ func (memory *nativeMemory) openOptions(options OpenOptions, recording *Automati
 	if recording != nil {
 		result.recordingMode = memory.nonemptyText(string(recording.Mode))
 		result.recordingDirectory = memory.nonemptyText(recording.Directory)
+	}
+	return result, nil
+}
