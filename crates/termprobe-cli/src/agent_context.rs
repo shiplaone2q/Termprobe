@@ -69,3 +69,5 @@ fn command_json(cmd: &Command) -> Value {
     }
     if !args.is_empty() {
         obj.insert("args".into(), Value::Array(args));
+    }
+    let subs = commands_json(cmd);

@@ -41,3 +41,4 @@ impl SessionInput {
                 Some(options)
             }
         };
+        let defaults = DiagnosticRetentionOptions::default();
