@@ -124,3 +124,7 @@ function decode(type, value) {
   for (const [field, fieldType] of Object.entries(layouts[type])) {
     if (field.endsWith("_len")) continue;
     let decoded;
+    if (fieldType.startsWith("*")) {
+      decoded = array(fieldType.slice(1), value[field], value[`${field}_len`]);
+      if (field === "modes") decoded = Object.fromEntries(decoded.map((m) => [m.name, m.enabled]));
+      if (field === "palette") decoded = Object.fromEntries(decoded.map((p) => [p.key, p.value]));
