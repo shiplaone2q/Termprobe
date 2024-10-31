@@ -103,3 +103,7 @@ pub fn serialize(
     let mut lines = Vec::with_capacity(rows.len());
     let mut shifts = Map::new();
     let mut prev = baseline();
+    for (y, row) in rows.iter().enumerate() {
+        let mut line = String::with_capacity(cols as usize);
+        for (x, cell) in row.iter().enumerate() {
+            // A continuation contributes nothing, exactly as in
