@@ -238,3 +238,4 @@ impl CaptureProxy {
 }
 
 pub struct AlacrittyEmu {
+    term: Term<CaptureProxy>,

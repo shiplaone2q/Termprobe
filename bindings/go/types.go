@@ -79,3 +79,6 @@ const (
 	Exact     Whitespace = "exact"
 	Normalize Whitespace = "normalize"
 )
+
+type Visibility string
+
