@@ -6,3 +6,4 @@ pub mod svg;
 pub mod encode;
 #[cfg(feature = "recording-raster")]
 mod font;
+#[cfg(feature = "recording-raster")]
