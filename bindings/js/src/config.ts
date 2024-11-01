@@ -97,3 +97,7 @@ export function timeoutsPayload(
     return undefined;
   }
   assertTimeoutClasses(timeouts);
+  const out: Partial<Record<TimeoutClass, number>> = {};
+  let any = false;
+  for (const cls of TIMEOUT_CLASSES) {
+    const value = timeouts[cls];

@@ -18,3 +18,5 @@ const model = parseReport(source);
 const parsed = await retainedBytes() - baseline;
 const resources = createResources(model);
 const withResources = await retainedBytes() - baseline;
+const exact = model.attachments[0].blob.size === 64 * 1024 * 1024
+  && await model.attachments[0].blob.slice(-1).text() === "x";
