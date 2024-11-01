@@ -294,3 +294,5 @@ impl Locator {
                     query: self.query.clone(),
                     not,
                     timeout_ms,
+                },
+            )

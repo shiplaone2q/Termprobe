@@ -57,3 +57,5 @@ cp "target/manylinux/$1/$2/libtermprobe_ffi.so" "target/$1/$2/"
 } else {
   execFileSync("cargo", [
     zigbuild ? "zigbuild" : "build", "--locked", "-p", "termprobe-ffi",
+    ...(debug ? [] : ["--release"]),
+    ...(explicitTarget || zigbuild ? ["--target", target] : []),
