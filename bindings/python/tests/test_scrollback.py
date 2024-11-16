@@ -42,3 +42,4 @@ class ScrollbackTests(unittest.TestCase):
 
     def test_history_view_preserves_full_text(self):
         async def scenario():
+            async with TuiTest.ephemeral(backend="alacritty") as terminal:
