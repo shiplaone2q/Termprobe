@@ -176,3 +176,6 @@ fn c_output(ty: &str, value: &str) -> Result<String> {
         _ => { c_type(ty)?; value.into() }
     })
 }
+
+fn output_models(models: &Models, c: &mut String, cc: &mut String) -> Result<()> {
+    for &model in OUTPUTS {

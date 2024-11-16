@@ -505,3 +505,6 @@ pub enum SignalArg {
     /// Interrupt the foreground program (Ctrl-C).
     Int,
     /// Terminate the child process.
+    Term,
+    /// Forcibly kill the child process.
+    Kill,
