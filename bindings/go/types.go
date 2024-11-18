@@ -82,3 +82,5 @@ const (
 
 type Visibility string
 
+const (
+	Visible Visibility = "visible"

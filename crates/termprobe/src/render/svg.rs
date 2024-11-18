@@ -414,3 +414,5 @@ fn write_cursor(
         nerd_font,
         style,
     );
+}
+
