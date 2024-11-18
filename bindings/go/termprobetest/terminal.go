@@ -42,3 +42,4 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 	} else {
 		_, err = terminal.Run(options.Program, options.Args, options.Spawn)
 	}
+	if err != nil {
