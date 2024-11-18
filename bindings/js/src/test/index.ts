@@ -52,3 +52,5 @@ let safetyNetInstalled = false;
 
 function installSafetyNet(): void {
   if (safetyNetInstalled) {
+    return;
+  }
