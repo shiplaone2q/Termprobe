@@ -118,3 +118,5 @@ Most waits accept `--timeout MS`. `expect`, `click`, and `highlight` retry. `fin
 | --- | --- |
 | `state` | Read session state, modes, colors, and text. |
 | `text [--full]` | Read terminal text. |
+| `cells X Y [W H]` | Read cells and styles. |
+| `get FIELD` | Read one field. |
