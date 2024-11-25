@@ -230,3 +230,6 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
         }
     }
 }
+
+#[test]
+fn invalid_zoom_is_rejected() {

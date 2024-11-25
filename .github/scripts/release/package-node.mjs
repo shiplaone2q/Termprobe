@@ -30,3 +30,6 @@ for (const tag of targets) {
   const manifest = {
     name: `${rootPackage.name}-${tag}`,
     version: rootPackage.version,
+    description: rootPackage.description,
+    main: filename,
+    files: [filename],

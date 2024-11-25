@@ -78,3 +78,4 @@ type abiResult struct {
 	strings       *abiString
 	stringsLen    uintptr
 	snapshot      uint32
+	privateData   unsafe.Pointer
