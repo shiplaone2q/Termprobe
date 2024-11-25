@@ -317,3 +317,6 @@ impl Session {
         ));
 
         Ok(Session {
+            shell,
+            backend,
+            child_pid,

@@ -39,3 +39,6 @@
     </div>
   </div>
   <ExpectationBanner {action} {isFailure} {result} />
+  <p id="frame-meta" class="frame-meta" aria-live="polite">{meta}</p>
+  <div id="frame-notice" class="notice" hidden={!notice}>{notice}</div>
+  <TerminalScreen {frame} url={imageError ? undefined : image?.url} {zoom} {geometry} {mismatches} {cell} {oninspect} {onmove} {onimageerror} />
