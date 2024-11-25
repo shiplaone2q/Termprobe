@@ -35,3 +35,4 @@ func main() {
 
 func smoke() error {
 	terminal, err := termprobe.Ephemeral("smoke", termprobe.ClientOptions{Recording: &termprobe.AutomaticRecording{Mode: termprobe.RecordingDisabled}})
+	if err != nil {

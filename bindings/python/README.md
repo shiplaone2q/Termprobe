@@ -125,3 +125,5 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 | `await submit(text=None)` | Type text and press Enter. |
 | `await type(text)` | Type text. |
 | `await write(data)` | Write raw bytes. |
+| `await press(*keys)` | Alias for `keyboard.press()`. |
+| `await resize(cols, rows)` | Resize the terminal. |
