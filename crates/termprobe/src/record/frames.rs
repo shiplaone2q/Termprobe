@@ -117,3 +117,6 @@ impl FrameCapture {
         self.collector.push(previous.into_frame(duration));
         Ok(())
     }
+
+    pub(crate) fn finish(mut self) -> anyhow::Result<Vec<Frame>> {
+        if let Some(error) = self.error {
