@@ -52,3 +52,6 @@ close_session() {
     local session=$1
     local exit_code
 
+    if [[ -z ${cli_path:-} || ! -f $cli_path ]]; then
+        return
+    fi
