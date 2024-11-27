@@ -90,3 +90,7 @@ fn write_scripts_to(dir: &Path) -> std::io::Result<()> {
             "shellIntegration.nu",
             include_str!("../../shell/shellIntegration.nu"),
         ),
+        (
+            "shellIntegration-rc.zsh",
+            include_str!("../../shell/shellIntegration-rc.zsh"),
+        ),
