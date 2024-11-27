@@ -71,3 +71,4 @@ pub(super) fn execute(work: impl FnOnce() -> Completion + Send + 'static) -> *mu
 
 pub(super) fn start(call: impl FnOnce() -> *mut TuiResult) -> *mut TuiTask {
     START.with(|slot| *slot.borrow_mut() = Some(None));
+    let immediate = call();

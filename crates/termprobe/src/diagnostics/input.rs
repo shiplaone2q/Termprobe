@@ -85,3 +85,4 @@ impl InputDetails {
             Operation::Mouse {
                 action: MouseAction::Scroll { direction, .. },
             } => direction.len(),
+            _ => 0,
