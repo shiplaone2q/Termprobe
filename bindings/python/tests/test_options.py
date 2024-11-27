@@ -267,3 +267,4 @@ class FailureDiagnosticsTests(unittest.TestCase):
                     "status": "partial",
                     "directory": "artifacts/failure",
                     "report": "artifacts/failure/failure.md",
+                    "report_html": "artifacts/failure/failure.html",
