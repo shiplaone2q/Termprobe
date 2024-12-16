@@ -32,3 +32,6 @@ fn __su_after_readline {|_|
 }
 
 fn __su_after_command {|cmd-info|
+  var status = 0
+  if (not-eq $nil $cmd-info[error]) {
+    set status = 1

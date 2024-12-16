@@ -30,3 +30,6 @@ termprobe = { workspace = true, features = [
     "recording-font-jetbrains-mono-styles",
 ] }
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_System_Console", "Win32_System_Pipes"] }
+
