@@ -55,3 +55,7 @@ close_session() {
     if [[ -z ${cli_path:-} || ! -f $cli_path ]]; then
         return
     fi
+
+    set +e
+    "$cli_path" --session "$session" close >/dev/null 2>&1
+    exit_code=$?

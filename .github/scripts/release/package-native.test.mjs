@@ -62,3 +62,5 @@ test("module assembly includes all targets without changing source", async t => 
 test("generated embeds select and build for every Go platform", t => {
   const fixture = createFixture(t);
   fixture.assemble();
+  const scratch = path.join(fixture.root, "go-tmp");
+  fs.mkdirSync(scratch);
