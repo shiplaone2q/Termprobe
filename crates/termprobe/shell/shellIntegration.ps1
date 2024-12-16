@@ -50,3 +50,6 @@ function Global:Prompt() {
             $ranNative = -not [object]::ReferenceEquals($lastExit, $Global:__su_state.LastNativeExit)
             $code = if ($ok) { 0 } elseif ($powerShellError) { 1 } elseif ($ranNative -and $null -ne $lastExit -and $lastExit -ne 0) { $lastExit } else { 1 }
             $out += __su_seq "133;D;$code"
+        }
+        else {
+            $out += __su_seq "133;D"

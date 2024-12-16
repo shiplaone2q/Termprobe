@@ -49,3 +49,7 @@ export type {
   Viewport,
   EffectiveTimeouts,
   FailureArtifactRef,
+  FailureArtifactStatus,
+  FailureDetails,
+  FailureLocatorDetails,
+  FailureCellMismatch,

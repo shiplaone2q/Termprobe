@@ -32,3 +32,7 @@ trap 'rm -rf "$work"' EXIT
     > "$assets/addon-unicode11.js"
 )
 
+echo "Vendored @xterm/headless@$headless and @xterm/addon-unicode11@$unicode11."
+echo
+echo "Next:"
+echo "  cargo test -p termprobe-rs --features xtermjs"

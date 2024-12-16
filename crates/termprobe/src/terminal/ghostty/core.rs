@@ -210,3 +210,6 @@ impl GhosttyCore {
             .context("setting foreground")?
             .set_default_bg_color(Some(to_ghostty_rgb(profile.colors.background)))
             .context("setting background")?
+            .set_default_cursor_color(Some(to_ghostty_rgb(profile.colors.cursor)))
+            .context("setting cursor color")?;
+
