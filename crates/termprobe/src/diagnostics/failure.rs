@@ -93,3 +93,6 @@ impl FailureReport {
                     if selectors.len() == 8 {
                         *truncated = true;
                         break;
+                    }
+                    selectors.push(bounded(&selector.description(), 256, truncated));
+                }
