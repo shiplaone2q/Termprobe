@@ -123,3 +123,7 @@ fn pointer_options_reject_null_and_preserve_validation() {
                     ..Default::default()
                 },
             ),
+        ]
+    };
+    for result in results {
+        assert_eq!(unsafe { error_kind(result) }, 2);

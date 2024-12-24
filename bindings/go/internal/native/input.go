@@ -63,3 +63,7 @@ func (memory *nativeMemory) openOptions(options OpenOptions, recording *Automati
 	}
 	return result, nil
 }
+
+func nativeBool(value *bool) abiOptionalBool {
+	if value == nil {
+		return abiOptionalBool{}
