@@ -131,3 +131,5 @@ pub fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
 }
 
 #[cfg(test)]
+mod tests {
+    use super::*;

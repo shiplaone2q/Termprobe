@@ -37,3 +37,5 @@ export function checkSymbols(output) {
 
 function main() {
   const { values: args } = parseArgs({ options: { library: { type: "string" }, target: { type: "string" } } });
+  if (!args.library || !/^(x86_64|aarch64)-unknown-linux-(gnu|musl)$/.test(args.target ?? "")) {
+    throw new Error("Usage: check-native-elf.mjs --library PATH --target <Linux target>");

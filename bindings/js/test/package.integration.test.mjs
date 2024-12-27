@@ -15,3 +15,6 @@ if (packageRoot) {
       spawnSync("termprobe", ["--version"], { stdio: "ignore" }).error?.code,
       "ENOENT",
     );
+
+    const { Termprobe } = await import(pathToFileURL(packageEntry).href);
+    const session = Termprobe.ephemeral("release-integration");

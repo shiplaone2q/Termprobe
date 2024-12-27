@@ -508,3 +508,5 @@ pub enum SignalArg {
     Term,
     /// Forcibly kill the child process.
     Kill,
+    /// Quit the child process.
+    Quit,
