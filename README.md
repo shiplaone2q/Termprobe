@@ -143,3 +143,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
+    defer terminal.CloseQuiet()
+
+    if _, err := terminal.Run("my-app", nil, termprobe.SpawnOptions{}); err != nil {
+        log.Fatal(err)
