@@ -134,3 +134,4 @@ func requireKind(t *testing.T, err error, kind termprobe.ErrorKind) {
 	}
 }
 
+func TestLocatorsPreserveSelection(t *testing.T) {

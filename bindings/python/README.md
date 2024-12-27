@@ -127,3 +127,6 @@ The default size is 80 by 30. Timeout defaults are 5 seconds for text and idle, 
 | `await write(data)` | Write raw bytes. |
 | `await press(*keys)` | Alias for `keyboard.press()`. |
 | `await resize(cols, rows)` | Resize the terminal. |
+| `await scroll(lines)` | Move through native history; positive values show older output. |
+| `await scroll_to_top()` / `await scroll_to_bottom()` | Show the oldest output or the live screen. |
+| `await get_viewport()` | Return a `Viewport` dictionary with `offset` and `history`, in rows. |
