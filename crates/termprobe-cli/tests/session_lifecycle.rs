@@ -554,3 +554,5 @@ fn monitor_frames_and_input_outlive_the_target() {
 
     // Typing at an exited child is a normal race, not a daemon failure.
     sandbox.ok(&["submit", "exit"]);
+    sandbox.ok(&["wait", "exit", "--timeout", "20000"]);
+    write_monitor_input(&mut input, b"x");

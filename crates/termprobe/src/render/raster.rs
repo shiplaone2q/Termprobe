@@ -191,3 +191,5 @@ impl FrameRenderer for GridRenderer {
         let pad_bottom = style.canvas_bottom() as f32 * scale;
         let content_width = (self.width as f32 - pad_left - pad_right).max(0.0);
         let content_height = (self.height as f32 - pad_top - pad_bottom).max(0.0);
+        let origin_x = pad_left + (content_width - panel_width as f32).max(0.0) / 2.0;
+        let origin_y = pad_top + (content_height - panel_height as f32).max(0.0) / 2.0;
