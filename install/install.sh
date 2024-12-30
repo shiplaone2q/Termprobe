@@ -69,3 +69,5 @@ if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
 elif [ "$VERSION" = "beta" ]; then
   command -v awk >/dev/null 2>&1 || fail "awk is required to resolve beta releases."
   RELEASES_PATH="${TMP_DIR}/releases.json"
+  download \
+    "https://api.github.com/repos/${REPOSITORY}/releases?per_page=100" \

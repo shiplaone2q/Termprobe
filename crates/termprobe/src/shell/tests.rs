@@ -99,3 +99,7 @@ struct TestShell {
     child: Box<dyn Child + Send + Sync>,
     _master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
+    output: Receiver<Vec<u8>>,
+    tracker: CommandTracker,
+    bytes: Vec<u8>,
+    shell: Shell,

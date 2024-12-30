@@ -72,3 +72,7 @@ func appendLocatorNode(parent *locatorQuery, node locatorNode) locatorQuery {
 func newTextLocator(client *Client, parent *locatorQuery, text string, options TextSelectorOptions) *Locator {
 	whitespace := options.Whitespace
 	if whitespace == "" {
+		whitespace = Exact
+	}
+	direction := options.Direction
+	if direction == "" {
