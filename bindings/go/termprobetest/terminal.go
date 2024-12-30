@@ -43,3 +43,7 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 		_, err = terminal.Run(options.Program, options.Args, options.Spawn)
 	}
 	if err != nil {
+		tb.Fatalf("spawn terminal: %v", err)
+	}
+	return terminal
+}

@@ -58,3 +58,6 @@ Appearance refinement skips blanks when the match has visible characters;
 link refinement checks blanks too.
 
 Composition requires operands from the same terminal instance. It is lazy,
+uses one snapshot, and merges adjacent selected cells even from different
+matches. Separate rows remain separate runs; composed text uses exact-grid
+whitespace. Apply `first()`/`nth()` after composition to select final runs.
