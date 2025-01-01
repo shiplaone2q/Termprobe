@@ -18,3 +18,4 @@
       width={geometry.cell_width} height={geometry.cell_height} />
   {/if}
 </svg>
+

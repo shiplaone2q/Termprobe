@@ -147,3 +147,6 @@ func main() {
 
     if _, err := terminal.Run("my-app", nil, termprobe.SpawnOptions{}); err != nil {
         log.Fatal(err)
+    }
+    if err := terminal.GetByText("Ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}); err != nil {
+        log.Fatal(err)

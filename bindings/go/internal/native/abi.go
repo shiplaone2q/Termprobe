@@ -79,3 +79,6 @@ type abiResult struct {
 	stringsLen    uintptr
 	snapshot      uint32
 	privateData   unsafe.Pointer
+}
+type abiOpenResult struct {
+	_         structs.HostLayout
