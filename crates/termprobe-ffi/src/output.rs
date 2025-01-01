@@ -91,3 +91,4 @@ fn color(value: CellColor) -> TuiColor {
         },
     }
 }
+fn complete(mut result: TuiResult, storage: Storage) -> *mut TuiResult {

@@ -16,3 +16,5 @@
 <section class="details-panel" aria-label="Action details">
   <TabBar {tabs} {active} {onselect} group="details" label="Action details" />
   <TabPanel id="errors" {active} padding="details">{@render resultPanel()}</TabPanel>
+  <TabPanel id="cell" {active} padding="details">{@render cellPanel()}</TabPanel>
+  <TabPanel id="call" {active} padding="details">{@render callPanel()}</TabPanel>
