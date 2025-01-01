@@ -46,3 +46,5 @@ export function parseReport(source) {
     const display = describeOperation(operation);
     const pointer = operation.input?.mouse_position;
     return {
+      id: operation.sequence, screen: operation.screen_at_return, frameIndex: frameIndex.get(operation.screen_at_return),
+      ...display, expectation: describeExpectation(operation.expectation),
