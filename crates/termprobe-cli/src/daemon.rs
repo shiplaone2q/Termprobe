@@ -161,3 +161,5 @@ fn handle_connection(
     };
     *host.last_activity.lock().unwrap() = Instant::now();
     if req.is_close() || req.is_shutdown() {
+        if !host.stopping.swap(true, Ordering::AcqRel) {
+            let _ = shutdown.send(Some(reader.into_inner()));

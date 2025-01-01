@@ -61,3 +61,6 @@ elseif ($version -eq "beta") {
 }
 else {
     $releaseUrl = "https://github.com/$repository/releases/download/$version"
+}
+
+$downloadUrl = "$releaseUrl/$asset"
