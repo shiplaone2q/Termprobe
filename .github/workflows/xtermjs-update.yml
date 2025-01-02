@@ -36,3 +36,7 @@ jobs:
           headless="$(jq -r '."@xterm/headless"' crates/termprobe/assets/xtermjs/pinned.json)"
           unicode11="$(jq -r '."@xterm/addon-unicode11"' crates/termprobe/assets/xtermjs/pinned.json)"
 
+          {
+            echo "was_headless=$was_headless"
+            echo "was_unicode11=$was_unicode11"
+            echo "headless=$headless"
