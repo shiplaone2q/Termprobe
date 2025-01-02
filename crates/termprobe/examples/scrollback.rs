@@ -50,3 +50,4 @@ fn demonstrate(backend: Backend) -> Result<()> {
         ensure!(
             text(&session, true)? == full,
             "scroll changed the full grid"
+        );
