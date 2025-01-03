@@ -78,3 +78,6 @@ pub struct TuiResult {
     pub state: TuiState,
     pub cursor: TuiCursor,
     pub size: TuiSize,
+    pub viewport: TuiViewport,
+    pub cells: *const TuiCell,
+    pub cells_len: usize,

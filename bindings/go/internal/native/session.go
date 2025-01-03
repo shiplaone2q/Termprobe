@@ -164,3 +164,6 @@ func (runtime *Session) Submit(text *string) error {
 }
 
 func (runtime *Session) Key(keys []string, action uint32) error {
+	memory := nativeMemory{}
+	defer memory.release()
+	values, length := memory.strings(keys)
