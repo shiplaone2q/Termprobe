@@ -168,3 +168,7 @@ impl TerminalMode {
             TerminalMode::FocusEvents => b"\x1b[?1004l",
             TerminalMode::BracketedPaste => b"\x1b[?2004l",
             TerminalMode::AlternateScreen => b"\x1b[?1049l",
+            TerminalMode::CursorVisible => b"\x1b[?25l",
+        }
+    }
+

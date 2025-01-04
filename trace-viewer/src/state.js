@@ -43,3 +43,7 @@ export function update(model, state, event) {
     }
     case "jump-to-result":
       return { ...select(model, state, model.failureFrameIndex, model.failureActionId, model.failureScreen), detailsTab: "errors" };
+    case "navigate-action": {
+      const actions = visibleActions(model, state);
+      const position = actions.findIndex((action) => action.id === state.actionId);
+      const target = position < 0 ? (event.delta < 0 ? actions.length - 1 : 0) : position + event.delta;
