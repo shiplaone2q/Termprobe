@@ -268,3 +268,6 @@ class FailureDiagnosticsTests(unittest.TestCase):
                     "directory": "artifacts/failure",
                     "report": "artifacts/failure/failure.md",
                     "report_html": "artifacts/failure/failure.html",
+                    "timeline": "artifacts/failure/timeline.json",
+                    "screen_svg": "artifacts/failure/current.svg",
+                    "errors": ["recording omitted"],

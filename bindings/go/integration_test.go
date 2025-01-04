@@ -135,3 +135,6 @@ func requireKind(t *testing.T, err error, kind termprobe.ErrorKind) {
 }
 
 func TestLocatorsPreserveSelection(t *testing.T) {
+	terminal := newTerminal(t, termprobe.ClientOptions{})
+	items := terminal.GetByText("item", termprobe.TextSelectorOptions{})
+	count, err := items.Count()

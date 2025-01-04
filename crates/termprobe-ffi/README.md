@@ -69,3 +69,6 @@ node --input-type=module -e '
     await terminal.waitExit();
     const state = await terminal.state();
     console.log(`Terminal size: ${state.cols}x${state.rows}`);
+    console.log(await terminal.text());
+  } finally {
+    await terminal.closeQuiet();
