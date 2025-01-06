@@ -8,3 +8,4 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 0,
   use: {
+    browserName: "chromium",
