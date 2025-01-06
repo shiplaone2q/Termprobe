@@ -493,3 +493,4 @@ impl LocatorSelector {
                 right.selector.description()
             ),
             Self::Filter {
+                input,

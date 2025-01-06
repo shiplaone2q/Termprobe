@@ -77,3 +77,4 @@ export async function readArchive(data) {
     const parser = new Parser({
       strict: true,
       onReadEntry(entry) {
+        const chunks = [];

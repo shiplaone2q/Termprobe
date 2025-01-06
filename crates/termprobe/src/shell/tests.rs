@@ -103,3 +103,7 @@ struct TestShell {
     tracker: CommandTracker,
     bytes: Vec<u8>,
     shell: Shell,
+}
+
+impl TestShell {
+    fn start(shell: Shell, directory: &Path, changed: &Path) -> Self {

@@ -127,3 +127,7 @@ fn pointer_options_reject_null_and_preserve_validation() {
     };
     for result in results {
         assert_eq!(unsafe { error_kind(result) }, 2);
+        unsafe { tui_result_free(result) };
+    }
+}
+#[test]
