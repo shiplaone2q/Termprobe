@@ -35,3 +35,5 @@ fn __su_after_command {|cmd-info|
   var status = 0
   if (not-eq $nil $cmd-info[error]) {
     set status = 1
+    if (has-key $cmd-info[error] reason) {
+      if (has-key $cmd-info[error][reason] exit-status) {
