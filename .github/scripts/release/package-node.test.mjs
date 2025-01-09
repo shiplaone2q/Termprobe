@@ -36,3 +36,4 @@ test("platform packages include the shared library at the release version", (t) 
   const packagePath = path.join(directory, "bindings/js/package.json");
   const original = fs.readFileSync(packagePath, "utf8");
   execFileSync(process.execPath, [script], { cwd: directory, stdio: "pipe" });
+  assert.equal(fs.readFileSync(packagePath, "utf8"), original);

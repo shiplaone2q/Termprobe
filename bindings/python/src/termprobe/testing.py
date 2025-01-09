@@ -68,3 +68,5 @@ _defaults_lock = threading.Lock()
 def set_terminal_defaults(**values: Any) -> None:
     unknown = sorted(set(values) - _DEFAULTABLE)
     if unknown:
+        raise TypeError(
+            "unknown terminal option {}".format(", ".join(repr(k) for k in unknown))
