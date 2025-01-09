@@ -172,3 +172,5 @@ impl TerminalMode {
         }
     }
 
+    /// Whether the mode is on when a terminal has been told nothing.
+    ///
