@@ -137,3 +137,6 @@ impl Trace {
             stage.mismatches_truncated |= stats.mismatches_truncated;
             stage.candidates_truncated |= stats.candidate_count > MAX_SAMPLE;
             stage.truncate();
+            self.truncated |= bound_stage(stage);
+            return Some(stage.stage_index);
+        }

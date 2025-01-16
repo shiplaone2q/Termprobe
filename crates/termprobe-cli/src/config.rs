@@ -70,3 +70,4 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
     }
 }
 
+#[cfg(windows)]

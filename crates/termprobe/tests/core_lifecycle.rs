@@ -256,3 +256,4 @@ fn pending_wait_cannot_observe_a_replacement_session() {
             .send(waiting.execute(expect_marker(30_000)))
             .unwrap();
     });
+    assert!(finished_rx
