@@ -79,3 +79,6 @@ for (const [name, change, error] of [
   ["invalid locator kind", (data) => { data.details.recent_operations[1].expectation.query.selector.kind = "unknown"; }, /selector.kind/],
   ["invalid cell color", (data) => { data.timeline.frames[0].cells[0].fg = {}; }, /cells\[0\].fg/],
   ["invalid base64", (data) => { data.attachments[0].data = "????"; }, /invalid base64/],
+  ["wrong attachment size", (data) => { data.attachments[0].bytes = 0; }, /byte count does not match/],
+  ["duplicate attachments", (data) => { data.attachments.push(data.attachments[0]); }, /Duplicate attachment/],
+  ["null optional object", (data) => { data.details.runtime = null; }, /report.details.runtime/],

@@ -61,3 +61,6 @@ Composition requires operands from the same terminal instance. It is lazy,
 uses one snapshot, and merges adjacent selected cells even from different
 matches. Separate rows remain separate runs; composed text uses exact-grid
 whitespace. Apply `first()`/`nth()` after composition to select final runs.
+Any `full` branch makes the entire query use the full grid.
+
+Click options: `button`, `alt`, `ctrl`, `shift`, `clicks`, and `timeout`.

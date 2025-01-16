@@ -52,3 +52,5 @@ MAPPING = {
 
 EXCLUDED = {"monitor", "usage", "agent-context", "skill", "daemon"}
 
+
+def _have_binary():
