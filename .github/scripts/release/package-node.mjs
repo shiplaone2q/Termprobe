@@ -33,3 +33,4 @@ for (const tag of targets) {
     description: rootPackage.description,
     main: filename,
     files: [filename],
+    os: [platform],
