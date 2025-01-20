@@ -47,3 +47,6 @@ export function createFixture(t) {
     + "type bundledLibrary struct { name string; checksum string; archive []byte }\n"
     + "var bundledLibraries = map[string]bundledLibrary{}\n");
   const fixture = {
+    root: directory, source, artifacts: path.join(directory, "artifacts"),
+    output: path.join(directory, "assembled"),
+    revision: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),
