@@ -11,3 +11,4 @@
 </div>
 
 <style>
+  .tab-panel { flex: 1; overflow: auto; min-height: 0; }

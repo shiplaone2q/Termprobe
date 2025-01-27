@@ -65,3 +65,4 @@ pub fn generate(
             writeln!(js, "types.{id} = koffi.struct({{")?;
             writeln!(layouts, "{id}: {{")?;
             for field in &item.fields {
+                let field_name = field.ident.as_ref().context("named C field")?.to_string();
