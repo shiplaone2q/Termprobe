@@ -132,3 +132,4 @@ export interface FailureCellMismatch {
 
 export interface FailureLocatorStageDetails {
   readonly stage_index: number;
+  readonly expression_path: string;

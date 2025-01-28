@@ -98,3 +98,5 @@ impl Color {
 
     /// The 256-color index for this color, approximating RGB.
     pub fn to_index(self) -> u8 {
+        match self {
+            Color::Named(n) => n.index(),

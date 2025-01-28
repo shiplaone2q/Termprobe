@@ -33,3 +33,7 @@
     "x86_64-unknown-linux-musl": "linux-x64-musl",
     "aarch64-unknown-linux-musl": "linux-arm64-musl"
   },
+  "scripts": {
+    "build:native": "node scripts/build-native.mjs",
+    "build:native:debug": "node scripts/build-native.mjs --debug",
+    "build:ts": "npm run clean && tsc -p tsconfig.json",
