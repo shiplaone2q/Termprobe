@@ -40,3 +40,4 @@ jobs:
             echo "was_headless=$was_headless"
             echo "was_unicode11=$was_unicode11"
             echo "headless=$headless"
+            echo "unicode11=$unicode11"

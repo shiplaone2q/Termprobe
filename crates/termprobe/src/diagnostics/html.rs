@@ -195,3 +195,5 @@ fn timeline_with_limit(
                     &source.rows,
                     frame.screen.size.cols,
                     &source.render_state,
+                    cursor
+                        .visible
