@@ -70,3 +70,4 @@ def set_terminal_defaults(**values: Any) -> None:
     if unknown:
         raise TypeError(
             "unknown terminal option {}".format(", ".join(repr(k) for k in unknown))
+        )

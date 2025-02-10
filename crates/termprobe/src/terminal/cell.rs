@@ -100,3 +100,7 @@ impl Color {
     pub fn to_index(self) -> u8 {
         match self {
             Color::Named(n) => n.index(),
+            Color::Idx(i) => i,
+            Color::Rgb(r, g, b) => crate::assert::color::rgb_to_ansi256(r, g, b),
+        }
+    }

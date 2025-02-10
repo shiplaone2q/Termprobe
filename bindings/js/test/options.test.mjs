@@ -204,3 +204,6 @@ test("mouse helpers encode named buttons and modifiers", async () => {
 
     await su.getByText("Open").unique().click({
       button: "middle",
+      alt: true,
+      ctrl: true,
+      shift: true,
