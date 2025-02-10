@@ -213,3 +213,5 @@ impl GhosttyCore {
             .set_default_cursor_color(Some(to_ghostty_rgb(profile.colors.cursor)))
             .context("setting cursor color")?;
 
+        let ansi = profile.colors.ansi();
+        let mut palette = Palette::default();

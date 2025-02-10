@@ -36,3 +36,4 @@ test("native scroll validates signed integer amounts", async () => {
     await assert.rejects(terminal.scroll(amount), NoSessionError);
   }
 });
+
