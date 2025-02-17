@@ -107,3 +107,7 @@ struct TestShell {
 
 impl TestShell {
     fn start(shell: Shell, directory: &Path, changed: &Path) -> Self {
+        let scripts = directory.join("shell");
+        write_scripts_to(&scripts).unwrap();
+        if matches!(shell, Shell::Powershell | Shell::Pwsh) {
+            std::fs::OpenOptions::new()

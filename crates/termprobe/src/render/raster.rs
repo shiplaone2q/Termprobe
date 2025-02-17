@@ -193,3 +193,6 @@ impl FrameRenderer for GridRenderer {
         let content_height = (self.height as f32 - pad_top - pad_bottom).max(0.0);
         let origin_x = pad_left + (content_width - panel_width as f32).max(0.0) / 2.0;
         let origin_y = pad_top + (content_height - panel_height as f32).max(0.0) / 2.0;
+        match self.background {
+            Some(CaptureBackground::Transparent) => {
+                self.pixmap.fill(tiny_skia::Color::TRANSPARENT);
