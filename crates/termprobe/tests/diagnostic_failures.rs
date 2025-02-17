@@ -77,3 +77,7 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
             background: None,
         })
         .unwrap_err();
+    let stopped = session
+        .get_by_text("missing marker")
+        .wait_with_timeout(Some(0))
+        .unwrap_err();
