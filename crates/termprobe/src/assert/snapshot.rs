@@ -107,3 +107,6 @@ pub fn serialize(
         let mut line = String::with_capacity(cols as usize);
         for (x, cell) in row.iter().enumerate() {
             // A continuation contributes nothing, exactly as in
+            // `rows_to_strings`: the wide char to its left already spans this
+            // column, so giving it a filler widens the row past the box.
+            line.push_str(&cell.ch);

@@ -163,3 +163,6 @@ fn handle_connection(
     if req.is_close() || req.is_shutdown() {
         if !host.stopping.swap(true, Ordering::AcqRel) {
             let _ = shutdown.send(Some(reader.into_inner()));
+        } else {
+            let _ = ipc::write_response(reader.get_mut(), &Response::ok());
+        }
