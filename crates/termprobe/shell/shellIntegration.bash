@@ -45,3 +45,6 @@ __su_precmd() {
     fi
     __su_cwd
     PS1='\[\e]133;A\a\]> \[\e]133;B\a\]'
+    __su_started=1
+    __su_preexec_armed=1
+}

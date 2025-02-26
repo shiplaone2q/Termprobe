@@ -71,3 +71,6 @@ def set_terminal_defaults(**values: Any) -> None:
         raise TypeError(
             "unknown terminal option {}".format(", ".join(repr(k) for k in unknown))
         )
+    global _defaults
+    with _defaults_lock:
+        _defaults = replace(_defaults, **values)
