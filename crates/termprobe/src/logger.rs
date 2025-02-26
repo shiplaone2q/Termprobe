@@ -54,3 +54,4 @@ impl Logger {
         if self.sink.is_some() {
             self.write_line("WRITE", &escape(bytes));
         }
+    }
