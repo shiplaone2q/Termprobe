@@ -83,3 +83,5 @@ test("untrackTerminal removes a terminal from the registry", async () => {
   const stub = {
     async closeQuiet() {
       throw new Error("should not be called");
+    },
+  };

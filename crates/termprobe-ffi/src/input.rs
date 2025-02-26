@@ -54,3 +54,7 @@ impl TuiString {
         std::str::from_utf8(bytes)
             .map(|s| Some(s.to_owned()))
             .map_err(|_| TermprobeError::usage("native string must be UTF-8"))
+    }
+    pub(crate) unsafe fn required(self) -> Result<String> {
+        unsafe { self.optional()? }
+            .ok_or_else(|| TermprobeError::usage("required native string is absent"))
