@@ -190,3 +190,5 @@ pub unsafe extern "C" fn tui_run_ptr(
         return boundary(|| Err(TermprobeError::usage("run options pointer is null")));
     }
     unsafe { tui_run(session, *options, program, args, args_len) }
+}
+#[no_mangle]
