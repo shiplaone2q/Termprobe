@@ -95,3 +95,5 @@ class NativeSurfaceTests(unittest.TestCase):
             "get_size",
             "get_clipboard",
             "get_bell_count",
+            "get_bell_events",
+            "write",
