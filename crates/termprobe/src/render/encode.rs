@@ -247,3 +247,6 @@ fn encode_gif(
     let (width, height) = renderer.pixel_size();
     let width: u16 = width.try_into()?;
     let height: u16 = height.try_into()?;
+    let output = BufWriter::new(File::create(path)?);
+    let mut encoder = gif::Encoder::new(output, width, height, &[])?;
+    encoder.set_repeat(gif::Repeat::Infinite)?;

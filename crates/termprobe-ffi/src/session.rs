@@ -48,3 +48,5 @@ pub(crate) fn close(
                     context.clone().with_operation("trace.finish"),
                 )
             },
+            || {
+                handle
