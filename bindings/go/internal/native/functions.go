@@ -38,3 +38,4 @@ type nativeFunctionTable struct {
 	Resize           func(abiString, uint16, uint16) *abiResult
 	MouseClick       func(abiString, abiOptionalU64, abiOptionalU64, abiString, abiMouseOptions, uint8) *abiResult
 	MouseMove        func(abiString, uint16, uint16) *abiResult
+	MouseDown        func(abiString, uint16, uint16, abiMouseOptions) *abiResult

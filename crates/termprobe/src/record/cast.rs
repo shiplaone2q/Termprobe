@@ -131,3 +131,6 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
     let (cols, _) = emulator.size();
     let rows = emulator.active_rows();
     let cursor = emulator.cursor();
+    let blank = EmuCell::blank();
+    // ED 2 can push even an empty viewport into history, which changes later
+    // resize reflow. Erasing from home clears it without inventing history.

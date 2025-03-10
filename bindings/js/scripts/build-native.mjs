@@ -59,3 +59,6 @@ cp "target/manylinux/$1/$2/libtermprobe_ffi.so" "target/$1/$2/"
     zigbuild ? "zigbuild" : "build", "--locked", "-p", "termprobe-ffi",
     ...(debug ? [] : ["--release"]),
     ...(explicitTarget || zigbuild ? ["--target", target] : []),
+  ], { cwd: root, env, stdio: "inherit" });
+}
+
