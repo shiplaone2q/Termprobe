@@ -23,3 +23,5 @@ __su_cwd() {
 		esac
 	done
 	builtin printf '\033]7;file://%s%s\007' "${HOST:-}" "$encoded"
+}
+

@@ -127,3 +127,5 @@ test("nested input buffers remain live during native start and marshaling", () =
         const arg = koffi.decode(argv, types.TuiString, argc)[0];
         const pair = koffi.decode(options.env, types.TuiPair, options.env_len)[0];
         assert.ok(read(arg) === expected, "argument buffer changed during native start");
+        assert.ok(read(pair.value) === expected, "environment buffer changed during native start");
+        calls++;
