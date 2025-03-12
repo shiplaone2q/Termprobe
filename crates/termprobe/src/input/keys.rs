@@ -300,3 +300,6 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
                 sequence.push_str(ESC);
             }
             sequence.push('\t');
+        }
+        ControlKey::Backspace => {
+            if mods.alt {

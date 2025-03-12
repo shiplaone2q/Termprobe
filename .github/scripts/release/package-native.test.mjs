@@ -64,3 +64,7 @@ test("generated embeds select and build for every Go platform", t => {
   fixture.assemble();
   const scratch = path.join(fixture.root, "go-tmp");
   fs.mkdirSync(scratch);
+  for (const [platform, arch] of [
+    ["linux", "amd64"], ["linux", "arm64"], ["darwin", "amd64"],
+    ["darwin", "arm64"], ["windows", "amd64"],
+  ]) {
