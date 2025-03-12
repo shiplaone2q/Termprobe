@@ -64,3 +64,7 @@ whitespace. Apply `first()`/`nth()` after composition to select final runs.
 Any `full` branch makes the entire query use the full grid.
 
 Click options: `button`, `alt`, `ctrl`, `shift`, `clicks`, and `timeout`.
+
+## Session
+
+| Method | Use |

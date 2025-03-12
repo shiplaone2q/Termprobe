@@ -53,3 +53,6 @@ func nativeError(result *abiResult) error {
 	}
 	kind := InternalError
 	switch result.errorKind {
+	case 1:
+		kind = AssertionError
+	case 2:

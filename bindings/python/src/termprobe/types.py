@@ -49,3 +49,6 @@ class Colors:
     bright_black: Optional[str] = None
     bright_red: Optional[str] = None
     bright_green: Optional[str] = None
+    bright_yellow: Optional[str] = None
+    bright_blue: Optional[str] = None
+    bright_magenta: Optional[str] = None
