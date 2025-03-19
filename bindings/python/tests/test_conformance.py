@@ -54,3 +54,6 @@ EXCLUDED = {"monitor", "usage", "agent-context", "skill", "daemon"}
 
 
 def _have_binary():
+    try:
+        subprocess.run([BIN, "agent-context"], capture_output=True, check=True)
+        return True
