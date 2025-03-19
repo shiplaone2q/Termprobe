@@ -303,3 +303,6 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
         }
         ControlKey::Backspace => {
             if mods.alt {
+                sequence.push_str(ESC);
+            }
+            sequence.push(if mods.ctrl { '\u{8}' } else { '\u{7f}' });

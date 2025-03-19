@@ -55,3 +55,6 @@ impl Logger {
             self.write_line("WRITE", &escape(bytes));
         }
     }
+
+    pub fn reply(&self, bytes: &[u8]) {
+        if self.sink.is_some() {
