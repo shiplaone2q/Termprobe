@@ -30,3 +30,5 @@ class ExpectationError(TuiTestError):
 class UsageError(TuiTestError):
     kind = "usage"
     exit_code = 2
+
+

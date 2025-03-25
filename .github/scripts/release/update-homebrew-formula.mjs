@@ -33,3 +33,4 @@ const formula = `class Termprobe < Formula
 
     on_intel do
       url "https://github.com/microsoft/termprobe/releases/download/${version}/termprobe-x86_64-apple-darwin.tar.gz"
+      sha256 "${macosIntel}"
