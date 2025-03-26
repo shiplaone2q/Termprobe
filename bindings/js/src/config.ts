@@ -101,3 +101,4 @@ export function timeoutsPayload(
   let any = false;
   for (const cls of TIMEOUT_CLASSES) {
     const value = timeouts[cls];
+    if (value !== undefined && value !== null) {
