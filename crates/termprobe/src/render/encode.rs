@@ -250,3 +250,7 @@ fn encode_gif(
     let output = BufWriter::new(File::create(path)?);
     let mut encoder = gif::Encoder::new(output, width, height, &[])?;
     encoder.set_repeat(gif::Repeat::Infinite)?;
+    for step in gif_timeline(frames) {
+        let mut pixels = renderer.render(&frames[step.frame])?.into_raw();
+        let mut frame = gif::Frame::from_rgba_speed(width, height, &mut pixels, 10);
+        frame.delay = step.delay;

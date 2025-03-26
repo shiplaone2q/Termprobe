@@ -119,3 +119,7 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
     write_text(
         &mut grid,
         4,
+        0,
+        "full glyphs: \u{03bb} \u{0416} \u{2260}",
+        CellStyle::default(),
+    );

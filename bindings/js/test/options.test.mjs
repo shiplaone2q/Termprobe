@@ -207,3 +207,5 @@ test("mouse helpers encode named buttons and modifiers", async () => {
       alt: true,
       ctrl: true,
       shift: true,
+      clicks: 2,
+      timeout: 50,
