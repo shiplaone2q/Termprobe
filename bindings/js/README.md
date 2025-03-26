@@ -127,3 +127,4 @@ Zero leaves the viewport unchanged. Movement stops at the available history boun
 `getViewport()` returns a typed `Viewport` with numeric `offset` and `history` fields.
 Both fields count rows. An offset of zero means the live screen.
 Counts outside JavaScript's safe integer range produce an error instead of lost precision.
+

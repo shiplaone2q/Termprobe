@@ -42,3 +42,5 @@ syncBuiltinESMExports();
   execFileSync(process.execPath, ["--import", pathToFileURL(mock).href, path.join(bindings, "scripts/build-native.mjs"), ...args], {
     cwd: directory,
     env: { ...process.env, RUSTFLAGS: "-C debuginfo=1", CARGO_TARGET_DIR: "caller-target" },
+    stdio: "pipe",
+  });

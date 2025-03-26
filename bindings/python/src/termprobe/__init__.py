@@ -32,3 +32,7 @@ from .types import (
     Profile,
     RecordingFormat,
     State,
+    TextMatch,
+    TextPosition,
+    TextSpan,
+    TextStyle,
