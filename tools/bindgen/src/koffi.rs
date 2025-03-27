@@ -67,3 +67,5 @@ pub fn generate(
             for field in &item.fields {
                 let field_name = field.ident.as_ref().context("named C field")?.to_string();
                 writeln!(js, "{field_name}: {},", type_reference(&field.ty)?)?;
+                writeln!(layouts, "{field_name}: {:?},", descriptor(&field.ty)?)?;
+            }

@@ -34,3 +34,5 @@
     <div class="coordinates toolbar">
       <label>Column <input id="column" type="number" min="0" max={frame ? frame.columns - 1 : 0} value={column}
         oninput={(event) => oncoordinate("column", event.currentTarget.value)} /></label>
+      <label>Row <input id="row" type="number" min="0" max={frame ? frame.rows - 1 : 0} value={row}
+        oninput={(event) => oncoordinate("row", event.currentTarget.value)} /></label>

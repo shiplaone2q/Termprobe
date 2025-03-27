@@ -75,3 +75,4 @@ def set_terminal_defaults(**values: Any) -> None:
     with _defaults_lock:
         _defaults = replace(_defaults, **values)
 
+

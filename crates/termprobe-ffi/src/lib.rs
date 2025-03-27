@@ -192,3 +192,7 @@ pub unsafe extern "C" fn tui_run_ptr(
     unsafe { tui_run(session, *options, program, args, args_len) }
 }
 #[no_mangle]
+pub extern "C" fn tui_sessions() -> *mut TuiResult {
+    match catch_unwind(AssertUnwindSafe(|| {
+        output::sessions(global_registry().sessions())
+    })) {
