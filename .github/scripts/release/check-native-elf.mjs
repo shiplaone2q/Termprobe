@@ -42,3 +42,6 @@ function main() {
   }
   const readelf = (...options) => execFileSync("readelf", [...options, args.library], { encoding: "utf8" });
   checkDependencies(readelf("--dynamic"), args.target);
+  if (args.target.endsWith("-gnu")) {
+    checkVersions(readelf("--version-info"));
+    checkSymbols(readelf("--dyn-syms", "--wide"));
