@@ -58,3 +58,7 @@ impl FontSystem {
                     let glyph_id = face.glyph_index(key.character)?;
                     let mut builder = TinyPathBuilder::default();
                     let bounds = face.outline_glyph(glyph_id, &mut builder)?;
+                    let path = builder.finish()?;
+                    Some(GlyphOutline {
+                        path,
+                        bounds,

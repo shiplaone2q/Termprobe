@@ -42,3 +42,5 @@ impl SessionInput {
             }
         };
         let defaults = DiagnosticRetentionOptions::default();
+        let retention = DiagnosticRetentionOptions {
+            screen_history_limit: self

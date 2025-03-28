@@ -628,3 +628,6 @@ fn map_anchor(
         regex,
         occurrence: map_occurrence(mode, nth, MatchOccurrence::Unique),
     })
+}
+
+fn map_selector(text: String, args: TextSelectorArgs) -> TextSelector {

@@ -36,3 +36,6 @@
         oninput={(event) => oncoordinate("column", event.currentTarget.value)} /></label>
       <label>Row <input id="row" type="number" min="0" max={frame ? frame.rows - 1 : 0} value={row}
         oninput={(event) => oncoordinate("row", event.currentTarget.value)} /></label>
+      <button id="inspect" disabled={!frame?.grid.length} onclick={oninspect}>Inspect</button>
+      <span id="cell-heading" aria-live="polite">{display.heading}</span>
+    </div>
