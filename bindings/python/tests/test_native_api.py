@@ -97,3 +97,7 @@ class NativeSurfaceTests(unittest.TestCase):
             "get_bell_count",
             "get_bell_events",
             "write",
+            "type",
+            "submit",
+            "press",
+            "key_down",

@@ -209,3 +209,6 @@ test("mouse helpers encode named buttons and modifiers", async () => {
       shift: true,
       clicks: 2,
       timeout: 50,
+    });
+    const locatorCall = calls.at(-1);
+    assert.equal(locatorCall[0], "locator");
