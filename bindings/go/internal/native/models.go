@@ -83,3 +83,6 @@ const (
 	Down ScrollDirection = "down"
 )
 
+type Timeouts struct{ Text, Idle, Command, Exit, Ready *time.Duration }
+
+type EffectiveTimeouts struct{ Text, Idle, Command, Exit, Ready time.Duration }

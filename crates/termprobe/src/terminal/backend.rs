@@ -45,3 +45,4 @@ impl Backend {
             Self::Alacritty => "alacritty",
             #[cfg(feature = "ghostty")]
             Self::Ghostty => "ghostty",
+            #[cfg(feature = "rio")]

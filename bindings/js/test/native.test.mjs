@@ -129,3 +129,6 @@ test("nested input buffers remain live during native start and marshaling", () =
         assert.ok(read(arg) === expected, "argument buffer changed during native start");
         assert.ok(read(pair.value) === expected, "environment buffer changed during native start");
         calls++;
+        return null;
+      },
+    });

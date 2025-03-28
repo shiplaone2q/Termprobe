@@ -41,3 +41,7 @@ jobs:
             echo "was_unicode11=$was_unicode11"
             echo "headless=$headless"
             echo "unicode11=$unicode11"
+          } >> "$GITHUB_OUTPUT"
+
+          # Scoped to what the script writes, not the whole directory: a
+          # README or LICENSE edit sitting in the tree is not a new release.
