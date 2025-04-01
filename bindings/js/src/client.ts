@@ -252,3 +252,6 @@ class Keyboard {
 }
 
 function occurrenceOptions(occurrence?: TextOccurrence): {
+  occurrence?: string;
+  nth?: number;
+} {
