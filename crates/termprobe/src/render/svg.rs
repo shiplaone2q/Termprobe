@@ -416,3 +416,4 @@ fn write_cursor(
     );
 }
 
+/// Render the grid. `cursor` is where to draw the cursor *within `rows`*, so a
