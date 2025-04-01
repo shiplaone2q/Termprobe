@@ -104,3 +104,7 @@ impl Color {
             Color::Rgb(r, g, b) => crate::assert::color::rgb_to_ansi256(r, g, b),
         }
     }
+}
+
+/// The shape of a cell's underline.
+///

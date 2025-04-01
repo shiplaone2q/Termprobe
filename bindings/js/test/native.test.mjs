@@ -132,3 +132,4 @@ test("nested input buffers remain live during native start and marshaling", () =
         return null;
       },
     });
+    const session = new TestSession("marshal-gc-regression");

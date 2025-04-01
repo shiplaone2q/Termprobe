@@ -253,3 +253,5 @@ impl Style {
                 None => {}
             }
         }
+        push_color(&mut s, self.fg, true);
+        push_color(&mut s, self.bg, false);

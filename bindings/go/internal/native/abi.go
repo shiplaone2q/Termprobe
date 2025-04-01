@@ -83,3 +83,5 @@ type abiResult struct {
 type abiOpenResult struct {
 	_         structs.HostLayout
 	shellPID  abiOptionalU64
+	session   abiString
+	ready     bool
