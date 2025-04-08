@@ -30,3 +30,5 @@ class TuiTest < Formula
 
   def install
     bin.install "tui-test"
+  end
+

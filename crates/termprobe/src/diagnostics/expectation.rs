@@ -82,3 +82,6 @@ impl OperationExpectation {
             ),
             Operation::ExpectOutput { text, regex } => {
                 value("Command output", pattern(text, *regex))
+            }
+            Operation::ExpectExitCode { code, .. } => value("Command exit code", code.to_string()),
+            Operation::ExpectBellCount { count, .. } => {
