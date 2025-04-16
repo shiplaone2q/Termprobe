@@ -81,3 +81,6 @@ pub struct TuiResult {
     pub viewport: TuiViewport,
     pub cells: *const TuiCell,
     pub cells_len: usize,
+    pub matches: *const TuiMatch,
+    pub matches_len: usize,
+    pub bells: *const TuiBellEvent,

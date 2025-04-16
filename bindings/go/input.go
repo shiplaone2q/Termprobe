@@ -14,3 +14,4 @@ type Mouse struct{ runtime *nativeRuntime }
 func (mouse *Mouse) Click(options MouseClickOptions) error { return mouse.runtime.mouseClick(options) }
 func (mouse *Mouse) Move(x, y uint16) error                { return mouse.runtime.mouseMove(x, y) }
 func (mouse *Mouse) Down(x, y uint16, options MouseButtonOptions) error {
+	return mouse.runtime.mouseDown(x, y, options)

@@ -52,3 +52,7 @@ impl BellTracker {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .count
+    }
+
+    pub fn sequence(&self) -> u64 {

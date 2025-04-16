@@ -133,3 +133,6 @@ export interface FailureCellMismatch {
 export interface FailureLocatorStageDetails {
   readonly stage_index: number;
   readonly expression_path: string;
+  readonly evaluations: number;
+  readonly failure_reason?: LocatorFailureReason;
+  readonly mode: "text" | "contiguous_style_runs" | "parent_style_filter" | "contiguous_link_runs" | "parent_link_filter" | "intersection" | "union" | "containment_filter";
