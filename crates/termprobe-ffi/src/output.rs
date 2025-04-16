@@ -92,3 +92,7 @@ fn color(value: CellColor) -> TuiColor {
     }
 }
 fn complete(mut result: TuiResult, storage: Storage) -> *mut TuiResult {
+    result.private_data = Box::into_raw(Box::new(storage)).cast();
+    Box::into_raw(Box::new(result))
+}
+pub(crate) fn error(error: TermprobeError) -> *mut TuiResult {
