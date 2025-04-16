@@ -20,3 +20,4 @@
     {#each unavailableFiles as message}<p class="muted">{message}</p>{/each}
   </div>
   <AttachmentPreview {file} url={file && urls[file.id]} failed={!!file && failedImages.includes(file.id)} {onimageerror} />
+</div>

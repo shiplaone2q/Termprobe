@@ -27,3 +27,6 @@ pub struct TuiOptionalBool {
     pub present: bool,
     pub value: bool,
 }
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiOptionalF64 {

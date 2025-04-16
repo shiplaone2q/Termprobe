@@ -257,3 +257,4 @@ fn pending_wait_cannot_observe_a_replacement_session() {
             .unwrap();
     });
     assert!(finished_rx
+        .recv_timeout(Duration::from_millis(150))
