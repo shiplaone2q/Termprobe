@@ -150,3 +150,6 @@ func main() {
     }
     if err := terminal.GetByText("Ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{}); err != nil {
         log.Fatal(err)
+    }
+}
+```
