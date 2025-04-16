@@ -72,3 +72,6 @@ node --input-type=module -e '
     console.log(await terminal.text());
   } finally {
     await terminal.closeQuiet();
+  }
+'
+```

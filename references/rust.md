@@ -31,3 +31,6 @@ Core types:
 | `MouseButton`, `MouseOptions`, `LocatorClickOptions` | Configure buttons and modifiers. |
 | `Operation` | Run a terminal operation. |
 | `OpenOptions`, `RunOptions` | Start a shell or app. |
+| `Profile`, `Timeouts` | Set colors, scrollback, and timeouts. |
+| `ExecutionContext`, `FailureArtifactOptions` | Attach diagnostic context and write failure artifacts. |
+| `FailureDetails`, `FailureArtifactRef` | Inspect structured failures without parsing messages. |
