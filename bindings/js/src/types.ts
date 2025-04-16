@@ -98,3 +98,4 @@ export interface AutomaticRecording {
 export interface TraceOptions {
   mode?: "on" | "off" | "on-failure";
   directory?: string;
+}

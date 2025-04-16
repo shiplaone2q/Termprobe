@@ -80,3 +80,4 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::GetOutput => "get.output",
         Operation::GetExitCode => "get.exit_code",
         Operation::GetCwd => "get.cwd",
+        Operation::GetCursor => "get.cursor",
