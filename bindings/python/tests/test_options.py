@@ -271,3 +271,6 @@ class FailureDiagnosticsTests(unittest.TestCase):
                     "timeline": "artifacts/failure/timeline.json",
                     "screen_svg": "artifacts/failure/current.svg",
                     "errors": ["recording omitted"],
+                    "unknown_additive_field": True,
+                },
+            }

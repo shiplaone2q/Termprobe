@@ -36,3 +36,4 @@ echo "Vendored @xterm/headless@$headless and @xterm/addon-unicode11@$unicode11."
 echo
 echo "Next:"
 echo "  cargo test -p termprobe-rs --features xtermjs"
+echo "  re-measure the emoji width table in $assets/README.md"
