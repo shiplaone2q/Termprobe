@@ -39,3 +39,7 @@
       <button id="inspect" disabled={!frame?.grid.length} onclick={oninspect}>Inspect</button>
       <span id="cell-heading" aria-live="polite">{display.heading}</span>
     </div>
+    <p class="muted">Zero-based viewport coordinates. Empty graphemes mark wide-character continuation cells.</p>
+    <PropertyList id="cell-properties" values={display.properties}
+      colors={{ Foreground: inspection?.cell.resolved_fg ?? "", Background: inspection?.cell.resolved_bg ?? "" }} />
+  </div>

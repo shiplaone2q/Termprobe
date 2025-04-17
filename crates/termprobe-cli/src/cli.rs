@@ -510,3 +510,7 @@ pub enum SignalArg {
     Kill,
     /// Quit the child process.
     Quit,
+}
+
+impl SignalArg {
+    pub fn as_str(self) -> &'static str {

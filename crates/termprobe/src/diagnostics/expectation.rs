@@ -85,3 +85,5 @@ impl OperationExpectation {
             }
             Operation::ExpectExitCode { code, .. } => value("Command exit code", code.to_string()),
             Operation::ExpectBellCount { count, .. } => {
+                value("Bell count", format!("at least {count}"))
+            }

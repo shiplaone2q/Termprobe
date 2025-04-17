@@ -86,3 +86,5 @@ impl InputDetails {
                 action: MouseAction::Scroll { direction, .. },
             } => direction.len(),
             _ => 0,
+        };
+        if size > MAX_INPUT_BYTES {
