@@ -45,3 +45,4 @@ jobs:
 
           # Scoped to what the script writes, not the whole directory: a
           # README or LICENSE edit sitting in the tree is not a new release.
+          # A package can also be republished at the same version, so the

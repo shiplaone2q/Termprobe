@@ -314,3 +314,7 @@ test("recording API writes an asciicast file", async () => {
     const cast = await readFile(path, "utf8");
     assert.match(cast, /"version":2/);
     assert.match(cast, /sdk-recording/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
