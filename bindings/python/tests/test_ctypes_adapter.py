@@ -84,3 +84,7 @@ class OwnershipTests(unittest.TestCase):
 
     def test_locator_translation_does_not_mutate_input(self):
         expression = {
+            "nodes": [{"kind": "text", "text": "x", "occurrence": "nth", "nth": 2}],
+            "root": 0,
+        }
+        query = native._query(expression)
