@@ -62,3 +62,5 @@ func TestClientTimeoutDefaultsReachLaunch(t *testing.T) {
 			t.Run(launch+"/"+testCase.name, func(t *testing.T) { verifyLaunchTimeouts(t, launch, testCase) })
 		}
 	}
+}
+

@@ -166,3 +166,4 @@ fn handle_connection(
         } else {
             let _ = ipc::write_response(reader.get_mut(), &Response::ok());
         }
+        return;
