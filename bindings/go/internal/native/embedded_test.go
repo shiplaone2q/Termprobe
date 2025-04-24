@@ -98,3 +98,5 @@ func TestCacheLibraryReusesFileAndSeparatesVersions(t *testing.T) {
 	before, err := os.Stat(path)
 	if err != nil {
 		t.Fatal(err)
+	}
+	library.archive = nil

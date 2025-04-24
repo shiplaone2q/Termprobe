@@ -18,3 +18,5 @@
   <TabPanel id="errors" {active} padding="details">{@render resultPanel()}</TabPanel>
   <TabPanel id="cell" {active} padding="details">{@render cellPanel()}</TabPanel>
   <TabPanel id="call" {active} padding="details">{@render callPanel()}</TabPanel>
+  <TabPanel id="attachments" {active} padding="details">{@render attachmentsPanel()}</TabPanel>
+</section>
