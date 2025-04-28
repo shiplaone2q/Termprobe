@@ -26,3 +26,4 @@ pub const MOUSE_DRAG_ENABLE: &str = "\x1b[?1006h\x1b[?1002h";
 pub const MOUSE_MOTION_ENABLE: &str = "\x1b[?1006h\x1b[?1003h";
 
 pub fn kitty_keyboard_mode(flags: u8) -> String {
+    format!("\x1b[={flags}u")

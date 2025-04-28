@@ -76,3 +76,6 @@ def set_terminal_defaults(**values: Any) -> None:
         _defaults = replace(_defaults, **values)
 
 
+def get_terminal_defaults() -> TerminalOptions:
+    return _defaults
+
