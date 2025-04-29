@@ -42,3 +42,6 @@ export class InternalError extends TermprobeError {
     super(message, "internal", 5);
   }
 }
+
+export function makeError(kind: ErrorKind, message: string): TermprobeError {
+  switch (kind) {

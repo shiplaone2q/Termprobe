@@ -174,3 +174,6 @@ impl TerminalMode {
 
     /// Whether the mode is on when a terminal has been told nothing.
     ///
+    /// `DECAWM` and `DECTCEM` are the two that start on: a terminal that did
+    /// not wrap would lose every character past the right margin, and one
+    /// that hid its cursor would need telling before it showed one.
