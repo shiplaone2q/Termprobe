@@ -265,3 +265,6 @@ class IntegrationTests(unittest.TestCase):
 
                 await su.submit(TWO_BELLS_COMMAND)
                 await su.expect_bell_count(2, timeout=5000)
+                await su.wait_command()
+
+                initial_state = await su.state()

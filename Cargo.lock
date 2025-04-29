@@ -558,3 +558,4 @@ dependencies = [
  "log",
  "slotmap",
  "tinyvec",
+ "ttf-parser",
