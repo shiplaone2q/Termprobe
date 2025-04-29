@@ -57,3 +57,7 @@ def resolve_timeout(
     if call is not None:
         return call
     if timeouts is not None:
+        return timeouts.get(class_name)
+    return None
+
+

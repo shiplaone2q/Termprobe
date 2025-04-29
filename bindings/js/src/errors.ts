@@ -39,3 +39,6 @@ export class NoSessionError extends TermprobeError {
 
 export class InternalError extends TermprobeError {
   constructor(message: string) {
+    super(message, "internal", 5);
+  }
+}
