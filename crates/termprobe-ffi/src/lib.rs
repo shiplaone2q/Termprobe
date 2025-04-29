@@ -196,3 +196,7 @@ pub extern "C" fn tui_sessions() -> *mut TuiResult {
     match catch_unwind(AssertUnwindSafe(|| {
         output::sessions(global_registry().sessions())
     })) {
+        Ok(value) => value,
+        Err(_) => output::error(TermprobeError::internal("native engine adapter panicked")),
+    }
+}

@@ -57,3 +57,4 @@ def _have_binary():
     try:
         subprocess.run([BIN, "agent-context"], capture_output=True, check=True)
         return True
+    except Exception:

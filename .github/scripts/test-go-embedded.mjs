@@ -38,3 +38,7 @@ try {
     });
     if (!output.includes("Go binding smoke passed (bundled engine)")) throw new Error(`Unexpected consumer output: ${output}`);
     console.log(`${attempt}: ${output.trim()}`);
+  }
+  const readme = fs.readFileSync(path.join(packagePath, "README.md"), "utf8");
+  const example = readme.split("```go\n")[1]?.split("\n```")[0];
+  if (!example) throw new Error("README Go example is missing");

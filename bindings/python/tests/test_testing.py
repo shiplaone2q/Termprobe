@@ -69,3 +69,4 @@ class RegistryTests(unittest.TestCase):
         testing.untrack_terminal(_FakeTerminal())
 
 
+class SafetyNetTests(unittest.TestCase):
