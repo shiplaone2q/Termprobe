@@ -237,3 +237,5 @@ fn load_font_data(database: &mut fontdb::Database, fonts: &[&[u8]]) {
 }
 
 fn style_index(bold: bool, italic: bool) -> usize {
+    usize::from(bold) | (usize::from(italic) << 1)
+}

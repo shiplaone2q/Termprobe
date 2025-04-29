@@ -215,3 +215,6 @@ impl GhosttyCore {
 
         let ansi = profile.colors.ansi();
         let mut palette = Palette::default();
+        for index in 0u8..=255 {
+            let color = if index < 16 {
+                ansi[index as usize]
