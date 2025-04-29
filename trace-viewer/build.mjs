@@ -42,3 +42,5 @@ const options = {
         for (const input of Object.keys(result.metafile.inputs)) {
           const dependency = /node_modules\/([^/]+)/.exec(input.replaceAll("\\", "/"))?.[1];
           if (dependency && !runtimePackages.includes(dependency)) throw new Error(`Unexpected viewer runtime dependency: ${dependency}`);
+        }
+        const assets = new Map(result.outputFiles.map((file) => [path.basename(file.path), file.text.replace(/\r\n/g, "\n")]));
