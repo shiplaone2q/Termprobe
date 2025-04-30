@@ -296,3 +296,7 @@ impl Locator {
                     timeout_ms,
                 },
             )
+            .map(|_| ())
+    }
+
+    pub fn click(&self) -> Result<(), TermprobeError> {

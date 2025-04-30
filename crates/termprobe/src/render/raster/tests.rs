@@ -234,3 +234,6 @@ fn block_cursor_is_aligned_with_background_cells_at_fractional_zoom() {
 #[test]
 fn invalid_zoom_is_rejected() {
     for zoom in [0.0, -1.0, f64::INFINITY, f64::NAN] {
+        assert!(GridRenderer::with_zoom(1, 1, zoom, Style::default()).is_err());
+    }
+}

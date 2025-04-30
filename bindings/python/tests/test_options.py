@@ -274,3 +274,7 @@ class FailureDiagnosticsTests(unittest.TestCase):
                     "unknown_additive_field": True,
                 },
             }
+        )
+
+        async def fail():
+            raise native_error
