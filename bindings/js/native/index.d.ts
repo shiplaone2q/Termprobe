@@ -105,3 +105,4 @@ export interface TextMatch {
 }
 
 export interface PackedScreen {
+  readonly cols: number

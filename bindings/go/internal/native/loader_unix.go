@@ -26,3 +26,4 @@ func (handle *nativeLibraryHandle) symbol(name string) (uintptr, error) {
 }
 func (handle *nativeLibraryHandle) close() error {
 	if err := purego.Dlclose(handle.library); err != nil {
+		return fmt.Errorf("release native library: %w", err)

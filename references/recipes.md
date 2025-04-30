@@ -70,3 +70,7 @@ await terminal.getByText("Open").click({ button: "right", ctrl: true });
 ## Wait for clipboard
 
 ```python
+await terminal.wait_clipboard("copied")
+```
+
+```js
