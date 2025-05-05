@@ -101,3 +101,4 @@ class NativeSurfaceTests(unittest.TestCase):
             "submit",
             "press",
             "key_down",
+            "repeat",

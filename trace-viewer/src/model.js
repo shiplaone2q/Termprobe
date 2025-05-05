@@ -48,3 +48,4 @@ export function parseReport(source) {
     return {
       id: operation.sequence, screen: operation.screen_at_return, frameIndex: frameIndex.get(operation.screen_at_return),
       ...display, expectation: describeExpectation(operation.expectation),
+      unavailableExpectation: operation.expectation?.kind === "unavailable",
