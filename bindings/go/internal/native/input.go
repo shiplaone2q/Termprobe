@@ -70,3 +70,6 @@ func nativeBool(value *bool) abiOptionalBool {
 	}
 	return abiOptionalBool{present: true, value: *value}
 }
+
+func nativeUint[Number ~uint16 | ~uint32 | ~uint64](value *Number) abiOptionalU64 {
+	if value == nil {
