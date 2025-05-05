@@ -58,3 +58,6 @@ impl TuiString {
     pub(crate) unsafe fn required(self) -> Result<String> {
         unsafe { self.optional()? }
             .ok_or_else(|| TermprobeError::usage("required native string is absent"))
+    }
+}
+pub(crate) unsafe fn strings(data: *const TuiString, len: usize) -> Result<Vec<String>> {

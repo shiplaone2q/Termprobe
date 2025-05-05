@@ -331,3 +331,5 @@ impl Default for Profile {
 
 /// Recording settings. Profiles inherit omitted keys from the file.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct RecordingConfig {
