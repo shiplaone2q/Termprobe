@@ -62,3 +62,4 @@ impl FontSystem {
                     Some(GlyphOutline {
                         path,
                         bounds,
+                        advance: face

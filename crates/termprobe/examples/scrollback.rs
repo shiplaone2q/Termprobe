@@ -51,3 +51,5 @@ fn demonstrate(backend: Backend) -> Result<()> {
             text(&session, true)? == full,
             "scroll changed the full grid"
         );
+        println!("{} history:\n{history}", backend.as_str());
+        println!("viewport: {:?}", session.execute(Operation::GetViewport)?);
