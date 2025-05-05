@@ -47,3 +47,4 @@ and the shim supplies them rather than the Rust side working around them:
 | `SGR 59` | xterm.js stores the reset as an explicit white, indistinguishable from a real `58;2;255;255;255` once written; the shim clears it where the parser sets it, while the two are still apart |
 
 A query has to echo the terminator it was asked with, and an OSC handler is
+given its payload but not that terminator, so the shim scans the incoming bytes

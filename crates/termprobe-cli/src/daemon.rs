@@ -167,3 +167,4 @@ fn handle_connection(
             let _ = ipc::write_response(reader.get_mut(), &Response::ok());
         }
         return;
+    }
