@@ -51,3 +51,7 @@ class FailureCellMismatch:
     resolved: Optional[str] = None
 
     @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "FailureCellMismatch":
+        return cls(
+            location=FailureLocation(**value["location"]),
+            grapheme=value["grapheme"],

@@ -74,3 +74,5 @@ await terminal.wait_clipboard("copied")
 ```
 
 ```js
+await terminal.waitClipboard(/copied/i);
+```

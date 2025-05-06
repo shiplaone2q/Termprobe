@@ -58,3 +58,7 @@ def _have_binary():
         subprocess.run([BIN, "agent-context"], capture_output=True, check=True)
         return True
     except Exception:
+        return False
+
+
+@unittest.skipUnless(_have_binary(), "tui-test binary not available for agent-context")
