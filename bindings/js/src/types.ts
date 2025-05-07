@@ -99,3 +99,5 @@ export interface TraceOptions {
   mode?: "on" | "off" | "on-failure";
   directory?: string;
 }
+export interface SpawnOptions {
+  backend?: Backend;

@@ -494,3 +494,5 @@ impl LocatorSelector {
             ),
             Self::Filter {
                 input,
+                has,
+                has_not,
