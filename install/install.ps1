@@ -64,3 +64,5 @@ else {
 }
 
 $downloadUrl = "$releaseUrl/$asset"
+
+$tempDir = Join-Path ([IO.Path]::GetTempPath()) ("termprobe-" + [Guid]::NewGuid())

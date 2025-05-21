@@ -170,3 +170,7 @@ func (runtime *Session) Key(keys []string, action uint32) error {
 	result := nativeFunctions.Key(memory.text(runtime.name), values, length, action)
 	defer nativeFunctions.ResultFree(result)
 	return nativeError(result)
+}
+
+func (runtime *Session) GetCursor() (Cursor, error) {
+	memory := nativeMemory{}
