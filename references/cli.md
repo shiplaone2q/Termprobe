@@ -123,3 +123,4 @@ Most waits accept `--timeout MS`. `expect`, `click`, and `highlight` retry. `fin
 | `screenshot [PATH] [--background COLOR \| --transparent]` | Read text or save SVG or PNG. |
 
 Fields: `command`, `output`, `exit-code`, `cwd`, `cursor`, `modes`, `colors`,
+`size`, `title`, `clipboard`, `bells`, and `bell-events`.

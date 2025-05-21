@@ -20,3 +20,5 @@
   <TabPanel id="call" {active} padding="details">{@render callPanel()}</TabPanel>
   <TabPanel id="attachments" {active} padding="details">{@render attachmentsPanel()}</TabPanel>
 </section>
+
+<style>

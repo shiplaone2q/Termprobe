@@ -15,3 +15,5 @@ async def main():
         await terminal.get_by_text("Shared typed ABI: Python").expect()
         packed, cols, rows = await terminal._packed_screen()
     assert packed.readonly
+    assert b"Shared typed ABI: Python" in packed.tobytes()
+    print("Shared library: {} columns, {} rows".format(cols, rows))
