@@ -81,3 +81,4 @@ fn completed_processes_preserve_comparison_and_internal_failure_causes() {
         .get_by_text("missing marker")
         .wait_with_timeout(Some(0))
         .unwrap_err();
+    session.interrupt();

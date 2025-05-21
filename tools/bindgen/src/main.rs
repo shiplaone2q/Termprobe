@@ -115,3 +115,5 @@ fn emit(root: &Path, path: &str, content: &str, check: bool) -> Result<()> {
         let existing = fs::read_to_string(&destination).with_context(|| format!("read {path}"))?;
         if existing.replace("\r\n", "\n") != content.replace("\r\n", "\n") {
             bail!("{path} is stale; run cargo run -p termprobe-bindgen");
+        }
+    } else {

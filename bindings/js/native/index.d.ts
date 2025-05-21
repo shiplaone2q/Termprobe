@@ -106,3 +106,7 @@ export interface TextMatch {
 
 export interface PackedScreen {
   readonly cols: number
+  readonly rows: number
+  readonly utf8: Uint8Array
+}
+
