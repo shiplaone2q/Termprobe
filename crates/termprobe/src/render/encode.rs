@@ -254,3 +254,7 @@ fn encode_gif(
         let mut pixels = renderer.render(&frames[step.frame])?.into_raw();
         let mut frame = gif::Frame::from_rgba_speed(width, height, &mut pixels, 10);
         frame.delay = step.delay;
+        encoder.write_frame(&frame)?;
+    }
+    let mut output = encoder.into_inner()?;
+    output.flush()?;
