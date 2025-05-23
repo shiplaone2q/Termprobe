@@ -174,3 +174,5 @@ func (runtime *Session) Key(keys []string, action uint32) error {
 
 func (runtime *Session) GetCursor() (Cursor, error) {
 	memory := nativeMemory{}
+	defer memory.release()
+	result := nativeFunctions.GetCursor(memory.text(runtime.name))

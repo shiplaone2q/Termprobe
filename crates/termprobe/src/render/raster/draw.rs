@@ -97,3 +97,4 @@ pub(super) fn fill_pixel_rect(
     let mut paint = Paint::default();
     paint.set_color_rgba8(color.r, color.g, color.b, 255);
     paint.anti_alias = false;
+    pixmap.fill_rect(rect, &paint, Transform::identity(), None);
