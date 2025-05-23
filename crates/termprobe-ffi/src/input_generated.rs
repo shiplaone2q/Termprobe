@@ -38,3 +38,6 @@ fn mouse_input(value: TuiMouseOptions, button: MouseButton) -> MouseOptions {
         button,
         alt: value.alt,
         ctrl: value.ctrl,
+        shift: value.shift,
+    }
+}

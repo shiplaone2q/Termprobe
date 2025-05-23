@@ -218,3 +218,7 @@ impl GhosttyCore {
         for index in 0u8..=255 {
             let color = if index < 16 {
                 ansi[index as usize]
+            } else {
+                xterm_color(index)
+            };
+            palette.set(PaletteIndex(index), to_ghostty_rgb(color));

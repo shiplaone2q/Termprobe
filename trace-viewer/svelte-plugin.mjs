@@ -24,3 +24,6 @@ export function sveltePlugin(generate = "client") {
         };
       });
       build.onResolve({ filter: /\.svelte\.css$/ }, ({ path }) => ({ path, namespace: "svelte-css" }));
+      build.onLoad({ filter: /.*/, namespace: "svelte-css" }, ({ path }) => ({ contents: styles.get(path), loader: "css" }));
+    },
+  };
