@@ -47,3 +47,5 @@ fn identity(file: &File) -> io::Result<Option<(u64, u64)>> {
 }
 
 #[cfg(unix)]
+fn identity_at(path: &Path) -> io::Result<Option<(u64, u64)>> {
+    use std::os::unix::fs::MetadataExt;

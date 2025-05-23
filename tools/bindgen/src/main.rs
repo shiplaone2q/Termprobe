@@ -117,3 +117,5 @@ fn emit(root: &Path, path: &str, content: &str, check: bool) -> Result<()> {
             bail!("{path} is stale; run cargo run -p termprobe-bindgen");
         }
     } else {
+        fs::create_dir_all(destination.parent().context("output parent")?)?;
+        fs::write(&destination, content)?;
