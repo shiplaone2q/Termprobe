@@ -47,3 +47,7 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 	}
 	return terminal
 }
+
+// TerminalSnapshot removes trailing whitespace and blank lines for text comparisons.
+func TerminalSnapshot(text string) string {
+	lines := strings.Split(text, "\n")

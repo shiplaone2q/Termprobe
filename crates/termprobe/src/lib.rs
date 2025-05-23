@@ -19,3 +19,5 @@ mod session;
 
 pub use api::*;
 pub use diagnostics::*;
+pub use engine::Engine;
+pub use runtime::{

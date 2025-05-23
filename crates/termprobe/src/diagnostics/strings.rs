@@ -81,3 +81,7 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::GetExitCode => "get.exit_code",
         Operation::GetCwd => "get.cwd",
         Operation::GetCursor => "get.cursor",
+        Operation::GetModes => "get.modes",
+        Operation::GetColors => "get.colors",
+        Operation::GetSize => "get.size",
+        Operation::GetViewport => "get.viewport",
