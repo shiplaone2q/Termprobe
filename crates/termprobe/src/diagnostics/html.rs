@@ -197,3 +197,4 @@ fn timeline_with_limit(
                     &source.render_state,
                     cursor
                         .visible
+                        .then_some((cursor.column, usize::from(cursor.row))),

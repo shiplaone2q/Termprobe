@@ -75,3 +75,6 @@ node --input-type=module -e '
   }
 '
 ```
+
+The build copies the library to `native/termprobe.<platform>.<extension>`.
+The example prints `Terminal size: 80x30` and text that contains `Ready 界🙂`.
