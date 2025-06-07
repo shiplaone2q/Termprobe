@@ -45,3 +45,6 @@ class ScrollbackTests(unittest.TestCase):
             async with TuiTest.ephemeral(backend="alacritty") as terminal:
                 await terminal.run(sys.executable, "-u", "-c",
                     "import sys; [print('history-'+str(i)) for i in range(40)]; sys.stdin.read()",
+                    rows=5, cols=40)
+                await terminal.get_by_text("history-39").expect()
+                full = await terminal.text(full=True)

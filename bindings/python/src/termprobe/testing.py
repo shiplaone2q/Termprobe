@@ -79,3 +79,4 @@ def set_terminal_defaults(**values: Any) -> None:
 def get_terminal_defaults() -> TerminalOptions:
     return _defaults
 
+

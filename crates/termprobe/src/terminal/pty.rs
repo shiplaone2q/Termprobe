@@ -181,3 +181,7 @@ impl Pty {
         Self::spawn_with_cwd(target, args, opts, opts.cwd.as_deref().map(Path::new))
     }
 
+    pub(crate) fn spawn_with_cwd(
+        target: &str,
+        args: &[String],
+        opts: &SpawnOptions,

@@ -200,3 +200,7 @@ pub extern "C" fn tui_sessions() -> *mut TuiResult {
         Err(_) => output::error(TermprobeError::internal("native engine adapter panicked")),
     }
 }
+#[no_mangle]
+pub extern "C" fn tui_close_all() -> *mut TuiResult {
+    tasks::execute(|| {
+        global_registry().close_all();
