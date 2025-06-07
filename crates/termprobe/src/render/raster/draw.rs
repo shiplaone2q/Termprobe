@@ -98,3 +98,6 @@ pub(super) fn fill_pixel_rect(
     paint.set_color_rgba8(color.r, color.g, color.b, 255);
     paint.anti_alias = false;
     pixmap.fill_rect(rect, &paint, Transform::identity(), None);
+}
+
+pub(super) fn fill_circle(pixmap: &mut Pixmap, x: f32, y: f32, radius: f32, color: Rgb) {

@@ -128,3 +128,4 @@ function decode(type, value) {
       decoded = array(fieldType.slice(1), value[field], value[`${field}_len`]);
       if (field === "modes") decoded = Object.fromEntries(decoded.map((m) => [m.name, m.enabled]));
       if (field === "palette") decoded = Object.fromEntries(decoded.map((p) => [p.key, p.value]));
+    } else if (fieldType.startsWith("Tui")) decoded = decode(fieldType, value[field]);
