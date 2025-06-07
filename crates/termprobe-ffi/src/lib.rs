@@ -204,3 +204,4 @@ pub extern "C" fn tui_sessions() -> *mut TuiResult {
 pub extern "C" fn tui_close_all() -> *mut TuiResult {
     tasks::execute(|| {
         global_registry().close_all();
+        Ok(OperationResult::Unit)
