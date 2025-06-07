@@ -119,3 +119,5 @@ fn emit(root: &Path, path: &str, content: &str, check: bool) -> Result<()> {
     } else {
         fs::create_dir_all(destination.parent().context("output parent")?)?;
         fs::write(&destination, content)?;
+    }
+    Ok(())

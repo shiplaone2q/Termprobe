@@ -69,3 +69,7 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
         ready: v.ready,
         bell_count: v.bell_count,
         modes: modes.0,
+        modes_len: modes.1,
+        mouse_mode: s.string(v.mouse_mode),
+        colors: terminal_colors(s, v.colors),
+        timeouts: effective_timeouts(s, v.timeouts),

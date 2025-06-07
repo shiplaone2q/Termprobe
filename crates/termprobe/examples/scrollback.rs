@@ -53,3 +53,6 @@ fn demonstrate(backend: Backend) -> Result<()> {
         );
         println!("{} history:\n{history}", backend.as_str());
         println!("viewport: {:?}", session.execute(Operation::GetViewport)?);
+
+        session.execute(Operation::Scroll {
+            target: ScrollTarget::Lines(-2),
