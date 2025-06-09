@@ -69,3 +69,5 @@ pub fn generate(
                 writeln!(js, "{field_name}: {},", type_reference(&field.ty)?)?;
                 writeln!(layouts, "{field_name}: {:?},", descriptor(&field.ty)?)?;
             }
+            js.push_str("});\n");
+            layouts.push_str("},\n");

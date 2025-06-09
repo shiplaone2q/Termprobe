@@ -159,3 +159,4 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
         }
         .into(),
         expected: details
+            .comparison
