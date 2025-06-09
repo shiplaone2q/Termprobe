@@ -68,3 +68,5 @@ Click options: `button`, `alt`, `ctrl`, `shift`, `clicks`, and `timeout`.
 ## Session
 
 | Method | Use |
+| --- | --- |
+| `open(options?)` | Open a shell. |

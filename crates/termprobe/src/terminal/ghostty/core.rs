@@ -222,3 +222,4 @@ impl GhosttyCore {
                 xterm_color(index)
             };
             palette.set(PaletteIndex(index), to_ghostty_rgb(color));
+        }
