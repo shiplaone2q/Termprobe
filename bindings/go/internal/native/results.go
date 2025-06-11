@@ -56,3 +56,7 @@ func nativeError(result *abiResult) error {
 	case 1:
 		kind = AssertionError
 	case 2:
+		kind = UsageError
+	case 3:
+		kind = NoSessionError
+	}

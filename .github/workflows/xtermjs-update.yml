@@ -49,3 +49,7 @@ jobs:
           # bundles are what decide this rather than pinned.json alone.
           assets=crates/termprobe/assets/xtermjs
           vendored=("$assets/pinned.json" "$assets/xterm-headless.js" "$assets/addon-unicode11.js")
+          if git diff --quiet -- "${vendored[@]}"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Already on the latest of both."
+          else

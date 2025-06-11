@@ -46,3 +46,5 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
         style: crate::render::style::Style::default(),
         screen_sequence: sequence,
         output_revision: 3,
+        captured_ms: 40,
+        last_visual_change_ms: 30,
