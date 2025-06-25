@@ -181,3 +181,4 @@ impl TerminalMode {
         matches!(self, TerminalMode::Wraparound | TerminalMode::CursorVisible)
     }
 }
+
