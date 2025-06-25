@@ -98,3 +98,6 @@ impl State {
             (TermMode::APP_CURSOR, 1, true),
             (TermMode::SHOW_CURSOR, 25, true),
             (TermMode::MOUSE_REPORT_CLICK, 1000, true),
+            (TermMode::MOUSE_DRAG, 1002, true),
+            (TermMode::MOUSE_MOTION, 1003, true),
+            (TermMode::FOCUS_IN_OUT, 1004, true),

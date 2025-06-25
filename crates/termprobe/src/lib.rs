@@ -21,3 +21,4 @@ pub use api::*;
 pub use diagnostics::*;
 pub use engine::Engine;
 pub use runtime::{
+    global_registry, Locator, LocatorClickOptions, LocatorExpectOptions, LocatorFilterOptions,
