@@ -37,3 +37,6 @@ fn __su_after_command {|cmd-info|
     set status = 1
     if (has-key $cmd-info[error] reason) {
       if (has-key $cmd-info[error][reason] exit-status) {
+        set status = $cmd-info[error][reason][exit-status]
+      }
+    }

@@ -50,3 +50,5 @@ export function parseReport(source) {
       ...display, expectation: describeExpectation(operation.expectation),
       unavailableExpectation: operation.expectation?.kind === "unavailable",
       code: !!(display.locator || operation.input),
+      searchText: `${display.name} ${display.label} ${operation.safe_summary}`.toLowerCase(),
+      failed: operation.result !== "ok", assertion: operation.is_assertion ?? false,
