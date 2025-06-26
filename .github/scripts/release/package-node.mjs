@@ -34,3 +34,5 @@ for (const tag of targets) {
     main: filename,
     files: [filename],
     os: [platform],
+    cpu: [arch],
+    ...(platform === "linux" ? { libc: [abi === "gnu" ? "glibc" : abi] } : {}),

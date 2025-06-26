@@ -76,3 +76,7 @@ func newTextLocator(client *Client, parent *locatorQuery, text string, options T
 	}
 	direction := options.Direction
 	if direction == "" {
+		direction = Within
+	}
+	node := locatorNode{kind: "text", text: Ptr(text), regex: Ptr(options.Regex), whitespace: Ptr(whitespace), full: Ptr(options.Full), direction: Ptr(direction), occurrence: "any"}
+	return &Locator{client: client, query: appendLocatorNode(parent, node)}
