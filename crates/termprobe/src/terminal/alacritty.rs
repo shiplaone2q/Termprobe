@@ -241,3 +241,4 @@ pub struct AlacrittyEmu {
     term: Term<CaptureProxy>,
     processor: ansi::Processor,
     cols: u16,
+    rows: u16,
