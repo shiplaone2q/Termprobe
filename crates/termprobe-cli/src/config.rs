@@ -71,3 +71,6 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
 }
 
 #[cfg(windows)]
+fn pipe_name_in(home: &std::path::Path, user: &str, session: &str) -> String {
+    use std::os::windows::ffi::OsStrExt;
+

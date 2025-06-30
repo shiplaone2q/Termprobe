@@ -559,3 +559,6 @@ fn monitor_frames_and_input_outlive_the_target() {
     input.flush().expect("flush after exit");
     sandbox.ok(&["daemon", "status"]);
 
+    detach_tx.send(()).expect("detach monitor");
+    reader.join().expect("join monitor reader");
+}

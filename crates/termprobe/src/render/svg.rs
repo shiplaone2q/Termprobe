@@ -417,3 +417,5 @@ fn write_cursor(
 }
 
 /// Render the grid. `cursor` is where to draw the cursor *within `rows`*, so a
+/// caller passing scrollback has already offset it, and `None` means the
+/// terminal is not showing one. `title` is the window title a program set,
