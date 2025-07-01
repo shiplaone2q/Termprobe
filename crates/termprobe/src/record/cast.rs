@@ -134,3 +134,7 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
     let blank = EmuCell::blank();
     // ED 2 can push even an empty viewport into history, which changes later
     // resize reflow. Erasing from home clears it without inventing history.
+    let mut output = String::from("\x1b(B\x0f\x1b]8;;\x1b\\\x1b[0m\x1b[?7l\x1b[H\x1b[J");
+    for index in 0..=u8::MAX {
+        write_osc_color(
+            &mut output,

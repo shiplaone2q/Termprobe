@@ -47,3 +47,7 @@ impl Backend {
             Self::Ghostty => "ghostty",
             #[cfg(feature = "rio")]
             Self::Rio => "rio",
+            #[cfg(feature = "xtermjs")]
+            Self::Xtermjs => "xtermjs",
+        }
+    }

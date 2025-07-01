@@ -110,3 +110,4 @@ export interface PackedScreen {
   readonly utf8: Uint8Array
 }
 
+export interface Timeouts {
