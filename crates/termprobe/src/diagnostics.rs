@@ -473,3 +473,6 @@ pub struct ComparisonDiagnostics {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actual: Option<String>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FailureReport {

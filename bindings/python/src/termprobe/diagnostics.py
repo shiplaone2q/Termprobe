@@ -55,3 +55,6 @@ class FailureCellMismatch:
         return cls(
             location=FailureLocation(**value["location"]),
             grapheme=value["grapheme"],
+            property=value["property"],
+            operator=value["operator"],
+            expected=value["expected"],
