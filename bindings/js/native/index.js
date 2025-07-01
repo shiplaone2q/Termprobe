@@ -56,3 +56,7 @@ if (process.platform === "win32") {
   if (close(retained) !== 0) {
     throw new Error(`Failed to release the temporary native library handle: ${lastError()}`);
   }
+}
+// Keep the library handle alive with its functions. Bun cannot safely finalize
+// Koffi's handle during garbage collection, even while native functions remain.
+const functions = { ...bind(library), library, platformLibrary };

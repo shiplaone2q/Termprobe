@@ -65,3 +65,5 @@ func TestClientTimeoutDefaultsReachLaunch(t *testing.T) {
 }
 
 func verifyLaunchTimeouts(t *testing.T, launch string, testCase launchTimeoutCase) {
+	t.Helper()
+	terminal := newClient(t, termprobe.ClientOptions{Timeouts: clientLaunchTimeouts()})
