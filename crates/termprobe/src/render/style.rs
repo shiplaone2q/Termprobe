@@ -220,3 +220,4 @@ impl Padding {
         }
     }
 
+    fn each(self, fallback: Sides) -> [(&'static str, u32); 4] {

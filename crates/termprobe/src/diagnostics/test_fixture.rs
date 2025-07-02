@@ -51,3 +51,6 @@ pub(super) fn fixture() -> (FailureReport, FailureObservation) {
         history,
         process: ProcessDiagnostics {
             pid: Some(123),
+            state: "running".into(),
+            exit_code: None,
+            status_error: None,
