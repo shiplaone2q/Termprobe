@@ -39,3 +39,4 @@ function publicationFixture(t) {
     fixture, remote, git,
     ref(name) { return git(["rev-parse", name], remote).trim(); },
     publish(version = "1.2.3") {
+      const workspace = fs.mkdtempSync(path.join(fixture.root, "publisher-"));

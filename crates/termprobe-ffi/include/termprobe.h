@@ -301,3 +301,5 @@ void tui_result_free(struct TuiResult *result);
  * # Safety
  * Borrowed input buffers must be valid and readable for their stated lengths
  * throughout this call; see TuiString and the input structure contracts.
+ */
+struct TuiResult *tui_open(struct TuiString session, struct TuiOpenOptions options);
