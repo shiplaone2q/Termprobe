@@ -41,3 +41,5 @@ locator = (
 | `unique()` | Require one match. |
 | `first()`, `last()`, `nth(index)` | Select a match. |
 | `locations()`, `location()`, `count()`, `all()` | Read matches. |
+| `wait(state="visible", timeout=None)` | Wait for visible or hidden. |
+| `expect(not_=False, timeout=None)` | Assert. |

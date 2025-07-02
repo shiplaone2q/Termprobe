@@ -74,3 +74,5 @@ pub fn socket_name_in(home: &std::path::Path, session: &str) -> String {
 fn pipe_name_in(home: &std::path::Path, user: &str, session: &str) -> String {
     use std::os::windows::ffi::OsStrExt;
 
+    let absolute = std::path::absolute(home).unwrap_or_else(|_| home.to_path_buf());
+    // Canonicalize the existing ancestor too, so the endpoint is unchanged

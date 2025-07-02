@@ -85,3 +85,7 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::GetColors => "get.colors",
         Operation::GetSize => "get.size",
         Operation::GetViewport => "get.viewport",
+        Operation::GetTitle => "get.title",
+        Operation::GetClipboard => "get.clipboard",
+        Operation::GetBellCount => "get.bell_count",
+        Operation::GetBellEvents => "get.bell_events",

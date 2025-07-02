@@ -42,3 +42,4 @@ test("native history view is independent of full text", async () => {
   try {
     await terminal.run(process.execPath, [typeof globalThis.Deno === "undefined" ? "-e" : "eval",
       "for(let i=0;i<40;i++)console.log('history-'+i);setInterval(()=>{},1000)",
+    ], { rows: 5, cols: 40 });
