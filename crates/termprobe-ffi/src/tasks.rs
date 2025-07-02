@@ -75,3 +75,5 @@ pub(super) fn start(call: impl FnOnce() -> *mut TuiResult) -> *mut TuiTask {
     let receiver = START.with(|slot| slot.borrow_mut().take().flatten());
     let task = Box::into_raw(Box::new(TuiTask {
         receiver,
+        immediate,
+    }));
