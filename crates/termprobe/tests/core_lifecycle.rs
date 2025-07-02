@@ -258,3 +258,6 @@ fn pending_wait_cannot_observe_a_replacement_session() {
     });
     assert!(finished_rx
         .recv_timeout(Duration::from_millis(150))
+        .is_err());
+
+    let mut run = options("commands");

@@ -88,3 +88,7 @@ impl InputDetails {
             _ => 0,
         };
         if size > MAX_INPUT_BYTES {
+            return Some(Self::unavailable());
+        }
+        let arguments = match operation {
+            Operation::Write { data } => InputArguments::Write { data: data.clone() },
