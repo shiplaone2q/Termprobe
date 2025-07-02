@@ -108,3 +108,7 @@ impl Color {
 
 /// The shape of a cell's underline.
 ///
+/// [`UnderlineStyle::None`] is a value, not an absence: it is the shape an
+/// un-underlined cell has. Wrapping this in an `Option` would give two ways to
+/// spell "not underlined" and force every reader through a `map` to reach the
+/// shape, which is why the style and its color sit flat on the cell rather

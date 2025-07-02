@@ -23,3 +23,6 @@
       title={`${action.name} ${action.label} / screen ${action.screen}`} aria-label={`${action.name} ${action.label} ${action.result}`}
       onclick={() => onselect(action.id)}>
       <span class="status"></span>
+      <span class="action-label">
+        <span class="action-line"><span class="name">{action.name}</span>{#if action.code}<code class="query-code">{action.label}</code>{/if}</span>
+        {#if !action.code}<span class="description">{action.label}</span>{/if}

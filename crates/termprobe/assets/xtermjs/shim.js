@@ -162,3 +162,6 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
         if (b === 0x07 || b === 0x1b) {
           if (ANSWERED[code]) { terminators.push({ code: code, bel: b === 0x07 }); }
           inOsc = false; readingCode = false; code = -1; sawEsc = false;
+          continue;
+        }
+        if (readingCode) {
