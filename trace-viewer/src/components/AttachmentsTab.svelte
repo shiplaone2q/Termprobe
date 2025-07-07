@@ -21,3 +21,6 @@
   </div>
   <AttachmentPreview {file} url={file && urls[file.id]} failed={!!file && failedImages.includes(file.id)} {onimageerror} />
 </div>
+<p id="recording-note" class="muted">{recordingNote}</p>
+
+<style>

@@ -80,3 +80,7 @@ The build copies the library to `native/termprobe.<platform>.<extension>`.
 The example prints `Terminal size: 80x30` and text that contains `Ready 界🙂`.
 Set `TERMPROBE__NATIVE_LIBRARY` to the absolute library path to exercise the explicit override.
 The build does not regenerate declarations.
+
+## Generate boundaries
+
+The owned Rust models define the shared fields. Do not edit generated boundary files.

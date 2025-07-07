@@ -86,3 +86,6 @@ const (
 type Timeouts struct{ Text, Idle, Command, Exit, Ready *time.Duration }
 
 type EffectiveTimeouts struct{ Text, Idle, Command, Exit, Ready time.Duration }
+
+type Colors struct {
+	Foreground, Background, Cursor                                                                        string
