@@ -43,3 +43,4 @@
     <PropertyList id="cell-properties" values={display.properties}
       colors={{ Foreground: inspection?.cell.resolved_fg ?? "", Background: inspection?.cell.resolved_bg ?? "" }} />
   </div>
+  <div>
