@@ -122,3 +122,7 @@ impl FrameCapture {
         if let Some(error) = self.error {
             return Err(error);
         }
+        self.collector
+            .push(self.pending.into_frame(self.options.last_frame_duration));
+        Ok(self.collector.finish())
+    }
