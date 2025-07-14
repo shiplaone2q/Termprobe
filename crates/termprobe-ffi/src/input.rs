@@ -65,3 +65,5 @@ pub(crate) unsafe fn strings(data: *const TuiString, len: usize) -> Result<Vec<S
         .iter()
         .map(|s| unsafe { s.required() })
         .collect()
+}
+pub(crate) unsafe fn session(value: TuiString) -> Result<(String, ExecutionContext)> {

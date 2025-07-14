@@ -66,3 +66,7 @@ else {
 $downloadUrl = "$releaseUrl/$asset"
 
 $tempDir = Join-Path ([IO.Path]::GetTempPath()) ("termprobe-" + [Guid]::NewGuid())
+$archivePath = Join-Path $tempDir $asset
+$extractDir = Join-Path $tempDir "extract"
+
+New-Item -ItemType Directory -Path $extractDir -Force | Out-Null

@@ -101,3 +101,4 @@ impl State {
             (TermMode::MOUSE_DRAG, 1002, true),
             (TermMode::MOUSE_MOTION, 1003, true),
             (TermMode::FOCUS_IN_OUT, 1004, true),
+            (TermMode::UTF8_MOUSE, 1005, true),

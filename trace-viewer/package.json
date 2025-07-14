@@ -17,3 +17,5 @@
     "@playwright/test": "1.63.0",
     "@types/node": "22.19.15",
     "esbuild": "0.28.2",
+    "svelte-check": "4.7.6",
+    "typescript": "5.9.3"
