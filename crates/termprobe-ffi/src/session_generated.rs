@@ -44,3 +44,6 @@ impl SessionInput {
         let defaults = DiagnosticRetentionOptions::default();
         let retention = DiagnosticRetentionOptions {
             screen_history_limit: self
+                .screen_history_limit
+                .unwrap_or(defaults.screen_history_limit),
+        };

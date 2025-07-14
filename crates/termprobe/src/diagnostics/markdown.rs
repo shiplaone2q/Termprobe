@@ -160,3 +160,5 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
         .into(),
         expected: details
             .comparison
+            .as_ref()
+            .and_then(|value| value.expected.clone())
