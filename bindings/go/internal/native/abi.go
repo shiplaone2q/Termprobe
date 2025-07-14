@@ -85,3 +85,7 @@ type abiOpenResult struct {
 	shellPID  abiOptionalU64
 	session   abiString
 	ready     bool
+	recording abiString
+}
+type abiCursor struct {
+	_       structs.HostLayout

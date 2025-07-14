@@ -61,3 +61,7 @@ impl TuiString {
     }
 }
 pub(crate) unsafe fn strings(data: *const TuiString, len: usize) -> Result<Vec<String>> {
+    unsafe { slice(data, len)? }
+        .iter()
+        .map(|s| unsafe { s.required() })
+        .collect()

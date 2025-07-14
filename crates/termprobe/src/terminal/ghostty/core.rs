@@ -223,3 +223,4 @@ impl GhosttyCore {
             };
             palette.set(PaletteIndex(index), to_ghostty_rgb(color));
         }
+        terminal

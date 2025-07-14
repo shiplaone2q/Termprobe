@@ -84,3 +84,5 @@ type Visibility string
 
 const (
 	Visible Visibility = "visible"
+	Hidden  Visibility = "hidden"
+)
