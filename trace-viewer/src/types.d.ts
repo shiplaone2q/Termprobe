@@ -44,3 +44,6 @@ export interface ReportData {
   };
   readonly explanation: { readonly title: string; readonly expected: string; readonly actual: string; readonly note: string };
   readonly files: readonly { readonly path: string; readonly status: string; readonly reason?: string }[];
+  readonly errors: readonly string[];
+  readonly attachments: readonly Attachment[];
+}

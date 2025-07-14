@@ -45,3 +45,5 @@ function main() {
   if (args.target.endsWith("-gnu")) {
     checkVersions(readelf("--version-info"));
     checkSymbols(readelf("--dyn-syms", "--wide"));
+  }
+  console.log(`Native dependencies and ABI checks passed: ${args.target}`);
