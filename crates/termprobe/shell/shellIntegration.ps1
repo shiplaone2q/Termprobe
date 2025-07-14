@@ -53,3 +53,4 @@ function Global:Prompt() {
         }
         else {
             $out += __su_seq "133;D"
+        }
