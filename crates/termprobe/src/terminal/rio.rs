@@ -168,3 +168,7 @@ impl ColorState {
             0..=15 => self.profile.colors.ansi()[index],
             16..=255 => xterm_color(index as u8),
             index if index == RioNamedColor::Foreground as usize => self.profile.colors.foreground,
+            index if index == RioNamedColor::Background as usize => self.profile.colors.background,
+            index if index == RioNamedColor::Cursor as usize => self.profile.colors.cursor,
+            _ => self.profile.colors.foreground,
+        }

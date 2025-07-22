@@ -200,3 +200,5 @@ async function invoke<T>(action: () => Promise<T>): Promise<T> {
     return await action();
   } catch (error) {
     throw mapNativeError(error);
+  }
+}
