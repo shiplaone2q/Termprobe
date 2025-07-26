@@ -32,3 +32,7 @@ class UsageError(TuiTestError):
     exit_code = 2
 
 
+class NoSessionError(TuiTestError):
+    kind = "no_session"
+    exit_code = 3
+
