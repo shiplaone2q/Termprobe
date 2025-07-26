@@ -121,3 +121,4 @@ OpenOptions: {
 "cols": ["cols", "Option<u16>"],
 "rows": ["rows", "Option<u16>"],
 "cwd": ["cwd", "Option<String>"],
+"env": ["env", "Option<Vec<(String,String)>>"],

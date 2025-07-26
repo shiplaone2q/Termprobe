@@ -71,3 +71,6 @@ elif [ "$VERSION" = "beta" ]; then
   RELEASES_PATH="${TMP_DIR}/releases.json"
   download \
     "https://api.github.com/repos/${REPOSITORY}/releases?per_page=100" \
+    "$RELEASES_PATH" ||
+    fail "Could not query GitHub releases."
+
