@@ -58,3 +58,5 @@ class FailureCellMismatch:
             property=value["property"],
             operator=value["operator"],
             expected=value["expected"],
+            actual=value["actual"],
+            reason=value["reason"],
