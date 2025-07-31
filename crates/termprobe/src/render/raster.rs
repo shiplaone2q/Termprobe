@@ -199,3 +199,4 @@ impl FrameRenderer for GridRenderer {
             }
             Some(CaptureBackground::Color(color)) => {
                 self.pixmap
+                    .fill(tiny_skia::Color::from_rgba8(color.r, color.g, color.b, 255));

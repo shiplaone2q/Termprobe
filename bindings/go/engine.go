@@ -88,3 +88,5 @@ func (runtime *nativeRuntime) waitIdle(timeout *time.Duration) error {
 	return engineError(runtime.session.WaitIdle(timeout))
 }
 func (runtime *nativeRuntime) waitCommand(timeout *time.Duration) error {
+	return engineError(runtime.session.WaitCommand(timeout))
+}
