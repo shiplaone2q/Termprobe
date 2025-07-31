@@ -300,3 +300,5 @@ impl Locator {
     }
 
     pub fn click(&self) -> Result<(), TermprobeError> {
+        self.click_with(LocatorClickOptions::default())
+    }

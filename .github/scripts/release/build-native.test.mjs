@@ -44,3 +44,7 @@ syncBuiltinESMExports();
     env: { ...process.env, RUSTFLAGS: "-C debuginfo=1", CARGO_TARGET_DIR: "caller-target" },
     stdio: "pipe",
   });
+  return {
+    invocation: JSON.parse(fs.readFileSync(path.join(directory, "invocation.json"), "utf8")),
+    files: fs.readdirSync(path.join(bindings, "native")),
+  };

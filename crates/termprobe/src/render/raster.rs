@@ -196,3 +196,6 @@ impl FrameRenderer for GridRenderer {
         match self.background {
             Some(CaptureBackground::Transparent) => {
                 self.pixmap.fill(tiny_skia::Color::TRANSPARENT);
+            }
+            Some(CaptureBackground::Color(color)) => {
+                self.pixmap

@@ -35,3 +35,5 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 				if field.Offset != native.Offset || field.Type.Size() != native.Type.Size() {
 					t.Errorf("field %s: Go offset/size=%d/%d, C=%d/%d",
 						field.Name, field.Offset, field.Type.Size(), native.Offset, native.Type.Size())
+				}
+				delete(fields, name)
