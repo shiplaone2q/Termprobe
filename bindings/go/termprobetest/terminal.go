@@ -51,3 +51,6 @@ func New(tb testing.TB, options Options) *termprobe.Client {
 // TerminalSnapshot removes trailing whitespace and blank lines for text comparisons.
 func TerminalSnapshot(text string) string {
 	lines := strings.Split(text, "\n")
+	for index, line := range lines {
+		lines[index] = strings.TrimRight(line, " \t\r")
+	}

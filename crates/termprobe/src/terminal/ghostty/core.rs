@@ -224,3 +224,7 @@ impl GhosttyCore {
             palette.set(PaletteIndex(index), to_ghostty_rgb(color));
         }
         terminal
+            .set_default_color_palette(Some(palette))
+            .context("setting palette")?;
+
+        let pending = Rc::new(RefCell::new(Vec::new()));

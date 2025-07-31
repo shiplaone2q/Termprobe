@@ -101,3 +101,4 @@ pub(super) fn fill_pixel_rect(
 }
 
 pub(super) fn fill_circle(pixmap: &mut Pixmap, x: f32, y: f32, radius: f32, color: Rgb) {
+    let Some(path) = PathBuilder::from_circle(x, y, radius) else {
