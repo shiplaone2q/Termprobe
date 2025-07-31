@@ -19,3 +19,5 @@
   hidden={!action?.expectation && !isFailure && !action?.assertion}>
   <strong id="summary">{banner.summary}</strong><span id="summary-observed">{banner.observed}</span>
 </div>
+
+<style>

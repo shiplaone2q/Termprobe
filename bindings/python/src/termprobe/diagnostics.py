@@ -60,3 +60,5 @@ class FailureCellMismatch:
             expected=value["expected"],
             actual=value["actual"],
             reason=value["reason"],
+            resolved=value.get("resolved"),
+        )
