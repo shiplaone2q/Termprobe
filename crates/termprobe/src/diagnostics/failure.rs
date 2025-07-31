@@ -96,3 +96,4 @@ impl FailureReport {
                     }
                     selectors.push(bounded(&selector.description(), 256, truncated));
                 }
+                if stage.is_some_and(|stage| entry.stage_index == stage.stage_index) {
