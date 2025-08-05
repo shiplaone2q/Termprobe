@@ -25,3 +25,7 @@ __su_cwd() {
 	builtin printf '\033]7;file://%s%s\007' "${HOST:-}" "$encoded"
 }
 
+__su_preexec() {
+	__su_osc "C"
+}
+
