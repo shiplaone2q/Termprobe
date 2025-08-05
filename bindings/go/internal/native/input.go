@@ -78,3 +78,6 @@ func nativeUint[Number ~uint16 | ~uint32 | ~uint64](value *Number) abiOptionalU6
 	return abiOptionalU64{present: true, value: uint64(*value)}
 }
 
+func nativeFloat(value *float64) abiOptionalF64 {
+	if value == nil {
+		return abiOptionalF64{}

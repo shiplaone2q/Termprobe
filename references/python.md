@@ -43,3 +43,7 @@ locator = (
 | `locations()`, `location()`, `count()`, `all()` | Read matches. |
 | `wait(state="visible", timeout=None)` | Wait for visible or hidden. |
 | `expect(not_=False, timeout=None)` | Assert. |
+| `click(**options)` | Click. |
+| `highlight(timeout=None)` | Highlight. |
+
+Text options: `regex`, `full`, `whitespace`, and chained `direction`.
