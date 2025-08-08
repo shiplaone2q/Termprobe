@@ -178,3 +178,5 @@ func (runtime *Session) GetCursor() (Cursor, error) {
 	result := nativeFunctions.GetCursor(memory.text(runtime.name))
 	defer nativeFunctions.ResultFree(result)
 	if err := nativeError(result); err != nil {
+		return Cursor{}, err
+	}
