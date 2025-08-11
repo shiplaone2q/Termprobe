@@ -476,3 +476,7 @@ pub struct ComparisonDiagnostics {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FailureReport {
+    pub schema_version: u32,
+    /// Groups failures by operation and locator shape.
+    pub signature: String,
+    pub operation: OperationDiagnostics,

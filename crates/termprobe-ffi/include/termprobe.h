@@ -303,3 +303,7 @@ void tui_result_free(struct TuiResult *result);
  * throughout this call; see TuiString and the input structure contracts.
  */
 struct TuiResult *tui_open(struct TuiString session, struct TuiOpenOptions options);
+
+/**
+ * Pointer form for foreign callers with limited by-value argument space.
+ *

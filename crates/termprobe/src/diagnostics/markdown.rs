@@ -162,3 +162,6 @@ pub(super) fn explanation(details: &FailureReport) -> Explanation {
             .comparison
             .as_ref()
             .and_then(|value| value.expected.clone())
+            .unwrap_or_else(|| "The operation to complete successfully".into()),
+        actual: details
+            .comparison
