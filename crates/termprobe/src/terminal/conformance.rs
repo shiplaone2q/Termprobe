@@ -504,3 +504,4 @@ macro_rules! emulator_conformance_tests {
         #[test]
         fn conformance_underline_styles() {
             // Aliased, not glob-imported: `UnderlineStyle::None` would shadow
+            // `Option::None` in this scope.

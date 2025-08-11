@@ -46,3 +46,7 @@
     "test:all": "npm run test:node && npm run test:bun && npm run test:deno"
   },
   "keywords": [
+    "terminal",
+    "pty",
+    "automation",
+    "testing",
