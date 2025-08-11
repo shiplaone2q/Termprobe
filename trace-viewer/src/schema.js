@@ -65,3 +65,6 @@ const selector = tagged({
   style: shape({ selector: shape({ style, full: bool }) }),
   link: shape({ selector: shape({ uri: text, full: bool }) }),
   and: shape({ selector: shape({ left: locator, right: locator }) }),
+  or: shape({ selector: shape({ left: locator, right: locator }) }),
+  filter: shape({ selector: shape({ input: locator, has: nullable(locator), has_not: nullable(locator) }) }),
+});

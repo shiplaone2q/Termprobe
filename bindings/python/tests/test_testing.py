@@ -70,3 +70,5 @@ class RegistryTests(unittest.TestCase):
 
 
 class SafetyNetTests(unittest.TestCase):
+    def test_registers_the_terminal_closer_at_exit(self):
+        calls = []

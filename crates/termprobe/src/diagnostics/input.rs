@@ -92,3 +92,4 @@ impl InputDetails {
         }
         let arguments = match operation {
             Operation::Write { data } => InputArguments::Write { data: data.clone() },
+            Operation::Submit { data } => InputArguments::Submit {
