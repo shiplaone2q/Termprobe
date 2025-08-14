@@ -21,3 +21,6 @@
 </div>
 
 <style>
+  .expectation-banner { display: grid; gap: 4px; background: var(--panel); border-left: 3px solid var(--muted); padding: 8px 12px; font-size: 12px; overflow: auto; max-height: 110px; flex-shrink: 0; }
+  strong { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
+  [data-outcome="failed"] { background: var(--error-bg); border-color: var(--red); }

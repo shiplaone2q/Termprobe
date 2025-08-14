@@ -90,3 +90,7 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
     {
         Some(0) => InstallScope::Repository,
         Some(1) => InstallScope::Global,
+        Some(_) => unreachable!("scope picker returned an unknown item"),
+        None => return cancelled(),
+    };
+

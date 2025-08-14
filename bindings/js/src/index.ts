@@ -53,3 +53,6 @@ export type {
   FailureDetails,
   FailureLocatorDetails,
   FailureCellMismatch,
+  FailureTextPosition,
+  FailureReason,
+  LocatorFailureReason,

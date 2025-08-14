@@ -102,3 +102,6 @@ impl State {
             (TermMode::MOUSE_MOTION, 1003, true),
             (TermMode::FOCUS_IN_OUT, 1004, true),
             (TermMode::UTF8_MOUSE, 1005, true),
+            (TermMode::SGR_MOUSE, 1006, true),
+            (TermMode::ALTERNATE_SCROLL, 1007, true),
+            (TermMode::BRACKETED_PASTE, 2004, true),
