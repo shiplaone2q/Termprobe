@@ -77,3 +77,6 @@ pub(super) fn start(call: impl FnOnce() -> *mut TuiResult) -> *mut TuiTask {
         receiver,
         immediate,
     }));
+    // Worker termination skips JavaScript cleanup. Native thread teardown still
+    // drops this registry, so an abandoned poll cannot retain a result forever.
+    TASKS.with(|tasks| tasks.borrow_mut().0.insert(task));

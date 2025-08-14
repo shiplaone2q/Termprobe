@@ -41,3 +41,5 @@ impl Read for ConsoleInput {
             // std::io::Stdin strips a trailing Ctrl+Z on Windows. ReadConsoleW
             // preserves it, and avoids depending on the console's code page.
             let success = unsafe {
+                ReadConsoleW(
+                    self.handle,

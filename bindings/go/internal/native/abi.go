@@ -89,3 +89,6 @@ type abiOpenResult struct {
 }
 type abiCursor struct {
 	_       structs.HostLayout
+	x       uint16
+	y       uint16
+	visible bool
