@@ -45,3 +45,6 @@ export class InternalError extends TermprobeError {
 
 export function makeError(kind: ErrorKind, message: string): TermprobeError {
   switch (kind) {
+    case "assertion":
+      return new ExpectationError(message);
+    case "usage":

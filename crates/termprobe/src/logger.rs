@@ -58,3 +58,6 @@ impl Logger {
 
     pub fn reply(&self, bytes: &[u8]) {
         if self.sink.is_some() {
+            self.write_line("REPLY", &escape(bytes));
+        }
+    }
