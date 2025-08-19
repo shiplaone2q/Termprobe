@@ -268,3 +268,5 @@ class IntegrationTests(unittest.TestCase):
                 await su.wait_command()
 
                 initial_state = await su.state()
+                self.assertEqual(initial_state.bell_count, 2)
+                initial_events = await su.get_bell_events()

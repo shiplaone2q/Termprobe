@@ -562,3 +562,5 @@ fn monitor_frames_and_input_outlive_the_target() {
     detach_tx.send(()).expect("detach monitor");
     reader.join().expect("join monitor reader");
 }
+
+/// The accept loop must not park behind a long operation: viewer keystrokes
