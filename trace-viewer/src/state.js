@@ -47,3 +47,7 @@ export function update(model, state, event) {
       const actions = visibleActions(model, state);
       const position = actions.findIndex((action) => action.id === state.actionId);
       const target = position < 0 ? (event.delta < 0 ? actions.length - 1 : 0) : position + event.delta;
+      return actions[target] ? update(model, state, { type: "select-action", id: actions[target].id }) : state;
+    }
+    case "select-tab":
+      return event.tab === "actions" || event.tab === "metadata"

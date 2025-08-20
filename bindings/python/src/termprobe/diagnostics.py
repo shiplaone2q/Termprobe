@@ -62,3 +62,6 @@ class FailureCellMismatch:
             reason=value["reason"],
             resolved=value.get("resolved"),
         )
+
+
+@dataclass(frozen=True)

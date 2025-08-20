@@ -129,3 +129,6 @@ Both fields count rows. An offset of zero means the live screen.
 Counts outside JavaScript's safe integer range produce an error instead of lost precision.
 
 Visible text, locators, and captures use this viewport.
+`text({ full: true })` remains independent: it returns history plus the live screen.
+New output preserves the historical view until retained history expires.
+Keyboard input returns to the live screen.

@@ -61,3 +61,4 @@ def resolve_timeout(
     return None
 
 
+def normalize_backend(backend: object) -> Optional[str]:
