@@ -85,3 +85,6 @@ jobs:
       - name: Test Go binding
         shell: bash
         run: |
+          case "$RUNNER_OS" in
+            Linux) library=libtermprobe_ffi.so ;;
+            macOS) library=libtermprobe_ffi.dylib ;;

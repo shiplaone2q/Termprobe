@@ -421,3 +421,4 @@ fn write_cursor(
 /// terminal is not showing one. `title` is the window title a program set,
 /// drawn in the title bar, and `None` leaves the bar bare.
 ///
+/// Its row is a `usize` because it indexes `rows`, which for a full-history
