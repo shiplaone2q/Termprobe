@@ -307,3 +307,7 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
             }
             sequence.push(if mods.ctrl { '\u{8}' } else { '\u{7f}' });
         }
+    }
+    sequence
+}
+

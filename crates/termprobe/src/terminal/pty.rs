@@ -185,3 +185,6 @@ impl Pty {
         target: &str,
         args: &[String],
         opts: &SpawnOptions,
+        cwd: Option<&Path>,
+    ) -> anyhow::Result<(Pty, Box<dyn Read + Send>)> {
+        validate_size(opts.cols, opts.rows)?;
