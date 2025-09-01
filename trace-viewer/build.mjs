@@ -44,3 +44,4 @@ const options = {
           if (dependency && !runtimePackages.includes(dependency)) throw new Error(`Unexpected viewer runtime dependency: ${dependency}`);
         }
         const assets = new Map(result.outputFiles.map((file) => [path.basename(file.path), file.text.replace(/\r\n/g, "\n")]));
+        for (const name of ["report.min.js", "report.min.css"]) {

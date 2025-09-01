@@ -257,3 +257,6 @@ class _LocatorQuery:
     def payload(self) -> Dict[str, object]:
         return {"nodes": self.nodes, "root": self.root}
 
+    def current(self) -> Dict[str, object]:
+        return self.nodes[self.root]
+

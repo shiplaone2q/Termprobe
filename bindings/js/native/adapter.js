@@ -129,3 +129,5 @@ function decode(type, value) {
       if (field === "modes") decoded = Object.fromEntries(decoded.map((m) => [m.name, m.enabled]));
       if (field === "palette") decoded = Object.fromEntries(decoded.map((p) => [p.key, p.value]));
     } else if (fieldType.startsWith("Tui")) decoded = decode(fieldType, value[field]);
+    else decoded = typeof value[field] === "bigint" ? Number(value[field]) : value[field];
+    result[field === "character" ? "char" : field] = decoded;
