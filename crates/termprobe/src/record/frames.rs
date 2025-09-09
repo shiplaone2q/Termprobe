@@ -126,3 +126,7 @@ impl FrameCapture {
             .push(self.pending.into_frame(self.options.last_frame_duration));
         Ok(self.collector.finish())
     }
+}
+
+fn validate_options(options: &TimelineOptions) -> anyhow::Result<()> {
+    if options.fps == 0 {

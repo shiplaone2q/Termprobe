@@ -74,3 +74,6 @@ elif [ "$VERSION" = "beta" ]; then
     "$RELEASES_PATH" ||
     fail "Could not query GitHub releases."
 
+  VERSION="$(
+    awk '
+      /^    "tag_name": "/ {

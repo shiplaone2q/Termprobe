@@ -86,3 +86,4 @@ impl LocatorExpression {
                 || (node.kind != LocatorNodeKind::Link && node.link.is_some())
                 || (!leaf
                     && (node.full.is_some() || node.within.is_some() || node.direction.is_some()))
+                || (!binary && (node.left.is_some() || node.right.is_some()))
