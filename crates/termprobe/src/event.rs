@@ -56,3 +56,7 @@ impl BellTracker {
     }
 
     pub fn sequence(&self) -> u64 {
+        self.inner.published_sequence.load(Ordering::Acquire)
+    }
+
+    pub fn snapshot(&self) -> BellSnapshot {

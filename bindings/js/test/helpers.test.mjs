@@ -87,3 +87,4 @@ test("untrackTerminal removes a terminal from the registry", async () => {
   };
   trackTerminal(stub);
   assert.equal(trackedCount(), 1);
+  untrackTerminal(stub);

@@ -32,3 +32,6 @@ class TuiTest < Formula
     bin.install "tui-test"
   end
 
+  test do
+    system bin/"tui-test", "--version"
+  end
