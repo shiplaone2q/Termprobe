@@ -40,3 +40,5 @@ func loadNativeFunctions(path string) (nativeFunctionTable, error) {
 		if registerErr := registerNativeFunction(library, registration); registerErr != nil {
 			return nativeFunctionTable{}, errors.Join(registerErr, library.close())
 		}
+	}
+	if version := table.AbiVersion(); version != abiVersion {

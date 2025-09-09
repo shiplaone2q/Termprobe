@@ -204,3 +204,7 @@ impl FrameRenderer for GridRenderer {
             None => {
                 self.pixmap.fill(tiny_skia::Color::from_rgba8(
                     style.canvas_background.r,
+                    style.canvas_background.g,
+                    style.canvas_background.b,
+                    255,
+                ));
