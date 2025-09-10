@@ -45,3 +45,7 @@ const options = {
         }
         const assets = new Map(result.outputFiles.map((file) => [path.basename(file.path), file.text.replace(/\r\n/g, "\n")]));
         for (const name of ["report.min.js", "report.min.css"]) {
+          if (!assets.get(name)) throw new Error(`Missing required bundled asset: ${name}`);
+        }
+        const template = (await readFile(templatePath, "utf8")).replace(/\r\n/g, "\n");
+        assets.set("report.html", template);

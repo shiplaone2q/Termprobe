@@ -180,3 +180,6 @@ func (runtime *Session) GetCursor() (Cursor, error) {
 	if err := nativeError(result); err != nil {
 		return Cursor{}, err
 	}
+	return nativeCursor(result.cursor), nil
+}
+
