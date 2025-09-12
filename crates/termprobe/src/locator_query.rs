@@ -87,3 +87,7 @@ impl LocatorExpression {
                 || (!leaf
                     && (node.full.is_some() || node.within.is_some() || node.direction.is_some()))
                 || (!binary && (node.left.is_some() || node.right.is_some()))
+                || (!filter
+                    && (node.input.is_some() || node.has.is_some() || node.has_not.is_some()))
+            {
+                return Err(error("fields do not match locator node kind"));
