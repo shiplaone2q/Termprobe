@@ -42,3 +42,5 @@ try {
   const readme = fs.readFileSync(path.join(packagePath, "README.md"), "utf8");
   const example = readme.split("```go\n")[1]?.split("\n```")[0];
   if (!example) throw new Error("README Go example is missing");
+  fs.writeFileSync(path.join(directory, "main.go"), `${example}\n`);
+  execFileSync(go, ["build", "-buildvcs=false", "-o", path.join(directory, "readme.exe"), "."], {

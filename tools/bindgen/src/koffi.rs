@@ -71,3 +71,4 @@ pub fn generate(
             }
             js.push_str("});\n");
             layouts.push_str("},\n");
+            emitted.insert(id);

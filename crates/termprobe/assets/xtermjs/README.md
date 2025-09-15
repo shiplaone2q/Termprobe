@@ -48,3 +48,5 @@ and the shim supplies them rather than the Rust side working around them:
 
 A query has to echo the terminator it was asked with, and an OSC handler is
 given its payload but not that terminator, so the shim scans the incoming bytes
+for it. The scan carries state between calls because a PTY read splits wherever
+it likes, and it keys what it finds by OSC code so that a title arriving between

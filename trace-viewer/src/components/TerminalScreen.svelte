@@ -41,3 +41,7 @@
 </div>
 
 <style>
+  .viewport { container-type: size; display: flex; align-items: flex-start; flex: 1; min-height: 0; overflow: auto; padding: 12px; background: var(--panel); }
+  #terminal { position: relative; flex-shrink: 0; margin: 0 auto; padding: 0; border: 0; border-radius: 0; line-height: 0; cursor: crosshair; box-shadow: 0 1px 5px #0003; }
+  .fit #terminal { max-width: 100%; }
+  #screen-image { width: 100%; height: auto; display: block; }
