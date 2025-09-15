@@ -48,3 +48,4 @@ export function makeError(kind: ErrorKind, message: string): TermprobeError {
     case "assertion":
       return new ExpectationError(message);
     case "usage":
+      return new UsageError(message);
