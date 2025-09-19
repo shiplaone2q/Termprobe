@@ -22,3 +22,4 @@
 </section>
 
 <style>
+  .details-panel { grid-column: 1 / -1; min-height: 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; }
