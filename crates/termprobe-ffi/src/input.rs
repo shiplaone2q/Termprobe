@@ -67,3 +67,5 @@ pub(crate) unsafe fn strings(data: *const TuiString, len: usize) -> Result<Vec<S
         .collect()
 }
 pub(crate) unsafe fn session(value: TuiString) -> Result<(String, ExecutionContext)> {
+    let json = unsafe { value.required()? };
+    let value: SessionInput = serde_json::from_str(&json)

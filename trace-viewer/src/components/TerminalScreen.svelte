@@ -45,3 +45,4 @@
   #terminal { position: relative; flex-shrink: 0; margin: 0 auto; padding: 0; border: 0; border-radius: 0; line-height: 0; cursor: crosshair; box-shadow: 0 1px 5px #0003; }
   .fit #terminal { max-width: 100%; }
   #screen-image { width: 100%; height: auto; display: block; }
+  #screen-text { padding: 10px; white-space: pre; align-self: stretch; width: 100%; }
