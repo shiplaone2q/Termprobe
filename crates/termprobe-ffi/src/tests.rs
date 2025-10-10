@@ -131,3 +131,5 @@ fn pointer_options_reject_null_and_preserve_validation() {
     }
 }
 #[test]
+fn panic_is_contained_and_next_call_succeeds() {
+    let result = boundary(|| panic!("intentional boundary test"));
