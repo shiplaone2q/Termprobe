@@ -37,3 +37,7 @@ test("platform packages include the shared library at the release version", (t) 
   const original = fs.readFileSync(packagePath, "utf8");
   execFileSync(process.execPath, [script], { cwd: directory, stdio: "pipe" });
   assert.equal(fs.readFileSync(packagePath, "utf8"), original);
+  for (const platform of targets) {
+    const archive = path.join(directory, "package-artifacts/npm", `fixture-termprobe-${platform}-1.0.0.tgz`);
+    const entries = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).split("\n");
+    assert.ok(entries.includes(`package/${library(platform)}`));

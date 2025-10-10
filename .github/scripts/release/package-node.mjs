@@ -36,3 +36,7 @@ for (const tag of targets) {
     os: [platform],
     cpu: [arch],
     ...(platform === "linux" ? { libc: [abi === "gnu" ? "glibc" : abi] } : {}),
+    license: rootPackage.license,
+    author: rootPackage.author,
+    repository: rootPackage.repository,
+    engines: rootPackage.engines,

@@ -183,3 +183,7 @@ func (runtime *Session) GetCursor() (Cursor, error) {
 	return nativeCursor(result.cursor), nil
 }
 
+func (runtime *Session) GetViewport() (Viewport, error) {
+	memory := nativeMemory{}
+	defer memory.release()
+	result := nativeFunctions.GetViewport(memory.text(runtime.name))
