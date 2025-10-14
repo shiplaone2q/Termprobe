@@ -208,3 +208,6 @@ impl FrameRenderer for GridRenderer {
                     style.canvas_background.b,
                     255,
                 ));
+            }
+        }
+        draw_shadow(

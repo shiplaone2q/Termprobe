@@ -203,3 +203,5 @@ async function invoke<T>(action: () => Promise<T>): Promise<T> {
   }
 }
 
+async function createSession(
+  name: string,
