@@ -18,3 +18,5 @@ if (packageRoot) {
 
     const { Termprobe } = await import(pathToFileURL(packageEntry).href);
     const session = Termprobe.ephemeral("release-integration");
+    try {
+      await session.open();
