@@ -55,3 +55,4 @@ For musl, also select the destination interpreter:
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
   go build -ldflags '-I /lib/ld-musl-x86_64.so.1' .
 ```
+

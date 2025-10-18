@@ -172,3 +172,7 @@ impl ColorState {
             index if index == RioNamedColor::Cursor as usize => self.profile.colors.cursor,
             _ => self.profile.colors.foreground,
         }
+    }
+
+    fn get(&self, index: usize) -> Rgb {
+        self.overrides
