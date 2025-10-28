@@ -78,3 +78,7 @@ export async function readArchive(data) {
       strict: true,
       onReadEntry(entry) {
         const chunks = [];
+        entry.on("data", chunk => chunks.push(chunk));
+        entry.on("error", reject);
+        entry.on("end", () => entries.push({
+          name: entry.path, type: entry.type, size: entry.size,

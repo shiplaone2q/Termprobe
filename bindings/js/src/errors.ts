@@ -49,3 +49,6 @@ export function makeError(kind: ErrorKind, message: string): TermprobeError {
       return new ExpectationError(message);
     case "usage":
       return new UsageError(message);
+    case "no_session":
+      return new NoSessionError(message);
+    case "internal":

@@ -42,3 +42,5 @@ func loadNativeFunctions(path string) (nativeFunctionTable, error) {
 		}
 	}
 	if version := table.AbiVersion(); version != abiVersion {
+		return nativeFunctionTable{}, errors.Join(fmt.Errorf("native ABI version %d is incompatible with required version %d", version, abiVersion), library.close())
+	}

@@ -41,3 +41,4 @@ fn mouse_input(value: TuiMouseOptions, button: MouseButton) -> MouseOptions {
         shift: value.shift,
     }
 }
+unsafe fn recording_input(
