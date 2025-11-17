@@ -138,3 +138,7 @@ func TestLocatorsPreserveSelection(t *testing.T) {
 	terminal := newTerminal(t, termprobe.ClientOptions{})
 	items := terminal.GetByText("item", termprobe.TextSelectorOptions{})
 	count, err := items.Count()
+	requireNoError(t, err)
+	if count != 2 {
+		t.Fatalf("item count=%d", count)
+	}

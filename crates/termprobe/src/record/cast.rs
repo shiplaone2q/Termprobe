@@ -138,3 +138,7 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
     for index in 0..=u8::MAX {
         write_osc_color(
             &mut output,
+            &format!("4;{index}"),
+            emulator.color(ColorSlot::Indexed(index)),
+        );
+    }
