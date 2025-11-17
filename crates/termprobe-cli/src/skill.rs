@@ -94,3 +94,4 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
         None => return cancelled(),
     };
 
+    let directory_items = [".agents (GitHub Copilot / Codex)", ".claude (Claude Code)"];
