@@ -105,3 +105,7 @@ impl State {
             (TermMode::SGR_MOUSE, 1006, true),
             (TermMode::ALTERNATE_SCROLL, 1007, true),
             (TermMode::BRACKETED_PASTE, 2004, true),
+        ] {
+            let _ = write!(
+                output,
+                "\x1b[{}{number}{}",
