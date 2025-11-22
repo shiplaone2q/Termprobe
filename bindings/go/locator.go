@@ -80,3 +80,7 @@ func newTextLocator(client *Client, parent *locatorQuery, text string, options T
 	}
 	node := locatorNode{kind: "text", text: Ptr(text), regex: Ptr(options.Regex), whitespace: Ptr(whitespace), full: Ptr(options.Full), direction: Ptr(direction), occurrence: "any"}
 	return &Locator{client: client, query: appendLocatorNode(parent, node)}
+}
+
+func newStyleLocator(client *Client, parent *locatorQuery, style TextStyle, options StyleSelectorOptions) *Locator {
+	style = cloneTextStyle(style)

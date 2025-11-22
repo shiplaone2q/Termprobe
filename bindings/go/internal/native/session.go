@@ -187,3 +187,5 @@ func (runtime *Session) GetViewport() (Viewport, error) {
 	memory := nativeMemory{}
 	defer memory.release()
 	result := nativeFunctions.GetViewport(memory.text(runtime.name))
+	defer nativeFunctions.ResultFree(result)
+	if err := nativeError(result); err != nil {
