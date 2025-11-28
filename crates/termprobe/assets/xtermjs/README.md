@@ -50,3 +50,26 @@ A query has to echo the terminator it was asked with, and an OSC handler is
 given its payload but not that terminator, so the shim scans the incoming bytes
 for it. The scan carries state between calls because a PTY read splits wherever
 it likes, and it keys what it finds by OSC code so that a title arriving between
+two colour queries cannot put the wrong terminator on a reply.
+
+## Known divergence
+
+xterm.js records a cell's underline colour only when that cell also has an
+underline style, so `SGR 58` on its own is not readable back off the cell.
+Nothing renders differently. The backend declares this where it opts into the
+conformance suite, so the exception is visible rather than silent.
+
+Two addons are deliberately not used yet: [#175](https://github.com/microsoft/termprobe/issues/175).
+
+## Updating
+
+`.github/workflows/xtermjs-update.yml` does this weekly and opens a pull
+request. To do it by hand:
+
+```sh
+.github/scripts/vendor-xtermjs.sh --latest   # or omit --latest to re-fetch the pinned versions
+```
+
+Then run `cargo test -p termprobe-rs --features xtermjs conformance`, re-measure
+the width table above, and re-check each package's `LICENSE`, since they carry
+separate notices.

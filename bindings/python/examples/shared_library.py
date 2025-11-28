@@ -19,3 +19,7 @@ async def main():
     print("Shared library: {} columns, {} rows".format(cols, rows))
     print("Copied screen remains valid after close:")
     print(packed.tobytes().decode("utf-8").strip())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
