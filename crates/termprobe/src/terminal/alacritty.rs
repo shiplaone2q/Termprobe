@@ -242,3 +242,514 @@ pub struct AlacrittyEmu {
     processor: ansi::Processor,
     cols: u16,
     rows: u16,
+    pending: Arc<Mutex<Vec<Reply>>>,
+    title: Arc<Mutex<Option<String>>>,
+    clipboard: Arc<Mutex<Clipboard>>,
+    clipboard_validator: ClipboardValidator,
+    color_query_pending: Arc<AtomicBool>,
+    /// The settings this session was opened with. A program can shadow the
+    /// colors at runtime but never reach them, so a reset always has a value
+    /// to restore.
+    profile: Profile,
+}
+
+impl AlacrittyEmu {
+    pub fn new(cols: u16, rows: u16, profile: &Profile) -> Self {
+        Self::with_bell_tracker(cols, rows, profile, BellTracker::default())
+    }
+
+    pub(crate) fn with_bell_tracker(
+        cols: u16,
+        rows: u16,
+        profile: &Profile,
+        bells: BellTracker,
+    ) -> Self {
+        let size = TermSize::new(cols as usize, rows as usize);
+        let alac_config = AlacConfig {
+            scrolling_history: profile.scrollback,
+            kitty_keyboard: true,
+            osc52: Osc52::CopyPaste,
+            ..Default::default()
+        };
+        let pending: Arc<Mutex<Vec<Reply>>> = Arc::default();
+        let title: Arc<Mutex<Option<String>>> = Arc::default();
+        let clipboard: Arc<Mutex<Clipboard>> = Arc::default();
+        let color_query_pending = Arc::new(AtomicBool::new(false));
+        let proxy = CaptureProxy {
+            pending: pending.clone(),
+            title: title.clone(),
+            clipboard: clipboard.clone(),
+            bells,
+            color_query_pending: color_query_pending.clone(),
+        };
+        AlacrittyEmu {
+            term: Term::new(alac_config, &size, proxy),
+            processor: ansi::Processor::new(),
+            cols,
+            rows,
+            pending,
+            title,
+            clipboard,
+            clipboard_validator: ClipboardValidator::new(),
+            color_query_pending,
+            profile: *profile,
+        }
+    }
+
+    /// Resolve any color queries parked at the current parser position.
+    ///
+    /// Each answer replaces the query where it sits in the queue, so replies
+    /// leave in the order the program asked for them. The listener cannot read
+    /// the terminal palette itself, so `process` calls this immediately after
+    /// the byte that completed the query and before parsing any later color
+    /// change from the same PTY chunk.
+    fn answer_queries(&mut self) {
+        let parked: Vec<Reply> = match self.pending.lock() {
+            Ok(mut queue) => {
+                if !queue.iter().any(|r| matches!(r, Reply::Color(..))) {
+                    return;
+                }
+                std::mem::take(&mut queue)
+            }
+            Err(_) => return,
+        };
+        let resolved: Vec<Reply> = parked
+            .into_iter()
+            .map(|reply| match reply {
+                Reply::Bytes(bytes) => Reply::Bytes(bytes),
+                Reply::Color(index, format) => {
+                    let slot = match index {
+                        i if i == NamedColor::Foreground as usize => ColorSlot::Foreground,
+                        i if i == NamedColor::Background as usize => ColorSlot::Background,
+                        i if i == NamedColor::Cursor as usize => ColorSlot::Cursor,
+                        i => ColorSlot::Indexed(i as u8),
+                    };
+                    let c = self.color(slot);
+                    Reply::Bytes(
+                        format(AlacRgb {
+                            r: c.r,
+                            g: c.g,
+                            b: c.b,
+                        })
+                        .into_bytes(),
+                    )
+                }
+            })
+            .collect();
+        if let Ok(mut queue) = self.pending.lock() {
+            // Anything queued meanwhile was asked for later, so it goes after.
+            queue.splice(0..0, resolved);
+        }
+    }
+
+    fn rows_in_range(&self, start: i32, end: i32) -> Vec<Vec<EmuCell>> {
+        let grid = self.term.grid();
+        let mut out = Vec::with_capacity((end - start).max(0) as usize);
+        let mut links = LinkCache::default();
+        for line in start..end {
+            let mut row = Vec::with_capacity(self.cols as usize);
+            for col in 0..self.cols as usize {
+                let cell = &grid[Line(line)][Column(col)];
+                row.push(cell_from_alac(cell, &mut links));
+            }
+            out.push(row);
+        }
+        out
+    }
+}
+
+impl Emulator for AlacrittyEmu {
+    fn process(&mut self, bytes: &[u8]) {
+        self.clipboard_validator.process(bytes);
+        let mut start = 0;
+        for (index, byte) in bytes.iter().enumerate() {
+            // OSC replies are emitted when BEL, ST (ESC \), or C1 ST closes
+            // the sequence. A backslash is also a cheap split point when it
+            // is ordinary text, and catches ST split across two PTY reads.
+            if !matches!(*byte, b'\x07' | b'\\' | b'\x9c') {
+                continue;
+            }
+            self.processor
+                .advance(&mut self.term, &bytes[start..=index]);
+            if self.color_query_pending.swap(false, Ordering::AcqRel) {
+                self.answer_queries();
+            }
+            start = index + 1;
+        }
+        if start < bytes.len() {
+            self.processor.advance(&mut self.term, &bytes[start..]);
+            if self.color_query_pending.swap(false, Ordering::AcqRel) {
+                self.answer_queries();
+            }
+        }
+    }
+
+    fn fault(&self) -> Option<String> {
+        self.clipboard_validator.fault()
+    }
+
+    fn take_pending_writes(&mut self) -> Vec<u8> {
+        let queued = match self.pending.lock() {
+            Ok(mut queue) => std::mem::take(&mut *queue),
+            Err(_) => return Vec::new(),
+        };
+        queued
+            .into_iter()
+            .flat_map(|reply| match reply {
+                Reply::Bytes(bytes) => bytes,
+                // `answer_queries` runs at every query boundary, so a query is
+                // always resolved before anything can drain it.
+                Reply::Color(..) => Vec::new(),
+            })
+            .collect()
+    }
+
+    fn cursor_key_application(&self) -> bool {
+        self.term.mode().contains(TermMode::APP_CURSOR)
+    }
+
+    fn clipboard(&self, clipboard: ClipboardType) -> anyhow::Result<String> {
+        Ok(self
+            .clipboard
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .get(clipboard)
+            .to_string())
+    }
+
+    fn clipboard_revision(&self, clipboard: ClipboardType) -> anyhow::Result<u64> {
+        Ok(self
+            .clipboard
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .revision(clipboard))
+    }
+
+    fn keyboard_mode(&self) -> KeyboardMode {
+        let mode = self.term.mode();
+        let mut keyboard_mode = KeyboardMode::empty();
+        for (term_mode, keyboard_flag) in [
+            (
+                TermMode::DISAMBIGUATE_ESC_CODES,
+                KeyboardMode::DISAMBIGUATE_ESC_CODES,
+            ),
+            (
+                TermMode::REPORT_EVENT_TYPES,
+                KeyboardMode::REPORT_EVENT_TYPES,
+            ),
+            (
+                TermMode::REPORT_ALTERNATE_KEYS,
+                KeyboardMode::REPORT_ALTERNATE_KEYS,
+            ),
+            (
+                TermMode::REPORT_ALL_KEYS_AS_ESC,
+                KeyboardMode::REPORT_ALL_KEYS_AS_ESC,
+            ),
+            (
+                TermMode::REPORT_ASSOCIATED_TEXT,
+                KeyboardMode::REPORT_ASSOCIATED_TEXT,
+            ),
+        ] {
+            keyboard_mode.set(keyboard_flag, mode.contains(term_mode));
+        }
+        keyboard_mode
+    }
+
+    fn mode(&self, mode: TerminalMode) -> bool {
+        let flag = match mode {
+            TerminalMode::ApplicationCursorKeys => TermMode::APP_CURSOR,
+            TerminalMode::ApplicationKeypad => TermMode::APP_KEYPAD,
+            TerminalMode::Origin => TermMode::ORIGIN,
+            TerminalMode::Wraparound => TermMode::LINE_WRAP,
+            TerminalMode::Insert => TermMode::INSERT,
+            TerminalMode::FocusEvents => TermMode::FOCUS_IN_OUT,
+            TerminalMode::BracketedPaste => TermMode::BRACKETED_PASTE,
+            TerminalMode::AlternateScreen => TermMode::ALT_SCREEN,
+            // `Hidden` is a shape alacritty uses for a cursor it will not
+            // draw, so this flag means the same thing as `DECTCEM`.
+            TerminalMode::CursorVisible => TermMode::SHOW_CURSOR,
+        };
+        self.term.mode().contains(flag)
+    }
+
+    fn title(&self) -> Option<String> {
+        self.title.lock().ok()?.clone()
+    }
+
+    fn resize(&mut self, cols: u16, rows: u16) {
+        self.term
+            .resize(TermSize::new(cols as usize, rows as usize));
+        self.cols = cols;
+        self.rows = rows;
+    }
+
+    fn size(&self) -> (u16, u16) {
+        (self.cols, self.rows)
+    }
+
+    fn scroll(&mut self, target: crate::api::ScrollTarget) {
+        use crate::api::ScrollTarget;
+        use alacritty_terminal::grid::Scroll;
+        self.term
+            .scroll_display(match target.clamped(self.viewport()) {
+                ScrollTarget::Lines(lines) => Scroll::Delta(lines),
+                ScrollTarget::Top => Scroll::Top,
+                ScrollTarget::Bottom => Scroll::Bottom,
+            });
+    }
+
+    fn viewport(&self) -> crate::api::Viewport {
+        let grid = self.term.grid();
+        crate::api::Viewport {
+            offset: grid.display_offset(),
+            history: grid.total_lines() - grid.screen_lines(),
+        }
+    }
+
+    /// alacritty stores only what a program set, leaving every other slot
+    /// empty, so an empty slot falls through to the profile, and then to the
+    /// xterm table for an index the profile does not name.
+    ///
+    /// The indices are alacritty's own: it lays its table out as the
+    /// 256-color palette followed by the dynamic colors, which is why the
+    /// three are 256, 257, 258. That layout stops here.
+    fn color(&self, slot: ColorSlot) -> Rgb {
+        let colors = &self.profile.colors;
+        let (index, configured) = match slot {
+            ColorSlot::Indexed(index) => (
+                index as usize,
+                colors
+                    .ansi()
+                    .get(index as usize)
+                    .copied()
+                    .unwrap_or_else(|| xterm_color(index)),
+            ),
+            ColorSlot::Foreground => (NamedColor::Foreground as usize, colors.foreground),
+            ColorSlot::Background => (NamedColor::Background as usize, colors.background),
+            ColorSlot::Cursor => (NamedColor::Cursor as usize, colors.cursor),
+        };
+        match self.term.colors()[index] {
+            Some(set) => Rgb::new(set.r, set.g, set.b),
+            None => configured,
+        }
+    }
+
+    fn cursor_visible(&self) -> bool {
+        // `Hidden` is a shape alacritty uses for a cursor it will not draw, so
+        // it means the same thing as the mode being off.
+        self.term.mode().contains(TermMode::SHOW_CURSOR)
+            && self.term.cursor_style().shape != AlacCursorShape::Hidden
+    }
+
+    fn cursor_shape(&self) -> CursorShape {
+        match self.term.cursor_style().shape {
+            AlacCursorShape::Underline => CursorShape::Underline,
+            AlacCursorShape::Beam => CursorShape::Bar,
+            // `HollowBlock` is what alacritty draws for an unfocused window,
+            // which a headless terminal has no notion of.
+            _ => CursorShape::Block,
+        }
+    }
+
+    fn cursor(&self) -> (u16, u16) {
+        let p = self.term.grid().cursor.point;
+        let y = p.line.0.max(0).min(self.rows as i32 - 1) as u16;
+        let x = (p.column.0 as u16).min(self.cols.saturating_sub(1));
+        (x, y)
+    }
+
+    fn viewable_rows(&self) -> Vec<Vec<EmuCell>> {
+        let start = -(self.term.grid().display_offset() as i32);
+        self.rows_in_range(start, start + self.rows as i32)
+    }
+
+    fn full_rows(&self) -> Vec<Vec<EmuCell>> {
+        let grid = self.term.grid();
+        let total = grid.total_lines() as i32;
+        let screen = grid.screen_lines() as i32;
+        let history = (total - screen).max(0);
+        self.rows_in_range(-history, screen)
+    }
+
+    fn active_rows(&self) -> Vec<Vec<EmuCell>> {
+        self.rows_in_range(0, self.rows as i32)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    crate::emulator_conformance_tests!(
+        |c, r, p| Box::new(AlacrittyEmu::new(c, r, p)),
+        &[crate::terminal::conformance::Divergence::NoLegacyAlternateScreen]
+    );
+
+    #[test]
+    fn multiple_bells_in_one_chunk_are_counted_individually() {
+        let bells = BellTracker::default();
+        let mut emulator =
+            AlacrittyEmu::with_bell_tracker(80, 24, &Profile::default(), bells.clone());
+
+        emulator.process(b"\x07\x07");
+
+        assert_eq!(bells.count(), 2);
+        assert_eq!(bells.sequence(), 2);
+    }
+
+    #[test]
+    fn an_osc_bell_terminator_does_not_ring_the_terminal_bell() {
+        let bells = BellTracker::default();
+        let mut emulator =
+            AlacrittyEmu::with_bell_tracker(80, 24, &Profile::default(), bells.clone());
+
+        emulator.process(b"\x1b]0;window title\x07");
+
+        assert_eq!(bells.count(), 0);
+    }
+
+    /// Every slot a program can address resolves, so a query always has an
+    /// answer and a reset always has something to restore. The profile names
+    /// sixteen; everything above falls through to the xterm table.
+    #[test]
+    fn every_slot_resolves_through_the_profile_then_xterm() {
+        use crate::profile::{Colors, Rgb};
+        let profile = Profile {
+            colors: Colors {
+                red: Rgb::new(1, 2, 3),
+                background: Rgb::new(4, 5, 6),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let emu = AlacrittyEmu::new(10, 2, &profile);
+
+        assert_eq!(
+            emu.color(ColorSlot::Indexed(1)),
+            Rgb::new(1, 2, 3),
+            "the profile names slot 1"
+        );
+        assert_eq!(emu.color(ColorSlot::Background), Rgb::new(4, 5, 6));
+        assert_eq!(
+            emu.color(ColorSlot::Foreground),
+            Colors::default().foreground,
+            "an unset profile color keeps its default"
+        );
+        for index in 16u8..=255 {
+            assert_eq!(
+                emu.color(ColorSlot::Indexed(index)),
+                xterm_color(index),
+                "slot {index} is not the profile's to name"
+            );
+        }
+    }
+
+    /// A program's color outranks the profile until it is reset, at which
+    /// point the profile shows through again.
+    #[test]
+    fn a_program_color_outranks_the_profile_until_reset() {
+        let mut emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        let configured = emu.color(ColorSlot::Background);
+
+        emu.process(b"\x1b]11;#123456\x07");
+        assert_eq!(emu.color(ColorSlot::Background), Rgb::new(0x12, 0x34, 0x56));
+
+        emu.process(b"\x1b]111\x07");
+        assert_eq!(emu.color(ColorSlot::Background), configured);
+    }
+
+    #[test]
+    fn queries_pushes_and_pops_kitty_keyboard_modes() {
+        let mut emu = AlacrittyEmu::new(10, 2, &Profile::default());
+
+        emu.process(b"\x1b[?u");
+        assert_eq!(emu.take_pending_writes(), b"\x1b[?0u");
+
+        emu.process(b"\x1b[>3u");
+        assert_eq!(
+            emu.keyboard_mode(),
+            KeyboardMode::DISAMBIGUATE_ESC_CODES | KeyboardMode::REPORT_EVENT_TYPES
+        );
+
+        emu.process(b"\x1b[?u");
+        assert_eq!(emu.take_pending_writes(), b"\x1b[?3u");
+
+        emu.process(b"\x1b[>8u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::REPORT_ALL_KEYS_AS_ESC);
+        emu.process(b"\x1b[<u");
+        assert_eq!(
+            emu.keyboard_mode(),
+            KeyboardMode::DISAMBIGUATE_ESC_CODES | KeyboardMode::REPORT_EVENT_TYPES
+        );
+        emu.process(b"\x1b[<u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::empty());
+    }
+
+    #[test]
+    fn sets_kitty_keyboard_modes_with_each_apply_behavior() {
+        let mut emu = AlacrittyEmu::new(10, 2, &Profile::default());
+
+        emu.process(b"\x1b[=1u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::DISAMBIGUATE_ESC_CODES);
+
+        emu.process(b"\x1b[=2;2u");
+        assert_eq!(
+            emu.keyboard_mode(),
+            KeyboardMode::DISAMBIGUATE_ESC_CODES | KeyboardMode::REPORT_EVENT_TYPES
+        );
+
+        emu.process(b"\x1b[=1;3u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::REPORT_EVENT_TYPES);
+
+        emu.process(b"\x1b[=8u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::REPORT_ALL_KEYS_AS_ESC);
+    }
+
+    #[test]
+    fn main_and_alternate_screens_keep_independent_keyboard_modes() {
+        let mut emu = AlacrittyEmu::new(10, 2, &Profile::default());
+
+        emu.process(b"\x1b[>1u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::DISAMBIGUATE_ESC_CODES);
+
+        emu.process(b"\x1b[?1049h");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::empty());
+        emu.process(b"\x1b[>2u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::REPORT_EVENT_TYPES);
+
+        emu.process(b"\x1b[?1049l");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::DISAMBIGUATE_ESC_CODES);
+        emu.process(b"\x1b[?1049h");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::REPORT_EVENT_TYPES);
+
+        emu.process(b"\x1b[<u");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::empty());
+        emu.process(b"\x1b[?1049l");
+        assert_eq!(emu.keyboard_mode(), KeyboardMode::DISAMBIGUATE_ESC_CODES);
+    }
+
+    #[test]
+    fn key_encoding_follows_the_active_negotiated_mode() {
+        use crate::input::keys::{token_to_seq_for_action_with_mode, token_to_seq_with_mode};
+        use crate::KeyAction;
+
+        let mut emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        emu.process(b"\x1b[>1u");
+        assert_eq!(
+            token_to_seq_with_mode("Ctrl+i", emu.keyboard_mode()).unwrap(),
+            "\x1b[105;5u"
+        );
+
+        emu.process(b"\x1b[<u");
+        assert_eq!(
+            token_to_seq_with_mode("Ctrl+i", emu.keyboard_mode()).unwrap(),
+            "\t"
+        );
+
+        emu.process(b"\x1b[>10u");
+        assert_eq!(
+            token_to_seq_for_action_with_mode("a", KeyAction::Repeat, emu.keyboard_mode()).unwrap(),
+            "\x1b[97;1:2u"
+        );
+    }
+}
