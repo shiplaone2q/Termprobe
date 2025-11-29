@@ -6,3 +6,4 @@ end
 function __su_preexec --on-event fish_preexec; __su_osc C; end
 function __su_postexec --on-event fish_postexec; __su_osc "D;$status"; end
 function fish_prompt; __su_osc A; __su_cwd; printf '> '; __su_osc B; end
+set -U fish_greeting
