@@ -44,3 +44,19 @@ func loadNativeFunctions(path string) (nativeFunctionTable, error) {
 	if version := table.AbiVersion(); version != abiVersion {
 		return nativeFunctionTable{}, errors.Join(fmt.Errorf("native ABI version %d is incompatible with required version %d", version, abiVersion), library.close())
 	}
+	return table, nil
+}
+
+func registerNativeFunction(library *nativeLibraryHandle, registration nativeRegistration) (err error) {
+	address, err := library.symbol(registration.symbol)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if failure := recover(); failure != nil {
+			err = fmt.Errorf("register native function %s: %v", registration.symbol, failure)
+		}
+	}()
+	purego.RegisterFunc(registration.target, address)
+	return nil
+}

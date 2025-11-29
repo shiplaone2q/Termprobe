@@ -48,3 +48,4 @@ __su_precmd() {
     __su_started=1
     __su_preexec_armed=1
 }
+PROMPT_COMMAND=__su_precmd
