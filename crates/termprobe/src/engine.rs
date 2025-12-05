@@ -1131,3 +1131,6 @@ impl Engine {
                         primary.errors.push(format!(
                             "trace export was not fully written at {}",
                             artifact.directory
+                        ));
+                        primary.errors.extend(
+                            artifact

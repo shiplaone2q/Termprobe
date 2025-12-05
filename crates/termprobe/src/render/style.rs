@@ -221,3 +221,6 @@ impl Padding {
     }
 
     fn each(self, fallback: Sides) -> [(&'static str, u32); 4] {
+        [
+            ("top", self.side(|s| s.top, fallback.top)),
+            ("right", self.side(|s| s.right, fallback.right)),

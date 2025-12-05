@@ -88,3 +88,5 @@ class OwnershipTests(unittest.TestCase):
             "root": 0,
         }
         query = native._query(expression)
+        self.assertEqual(expression["nodes"][0]["nth"], 2)
+        self.assertEqual(expression["nodes"][0]["occurrence"], "nth")
