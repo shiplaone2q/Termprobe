@@ -29,3 +29,5 @@ __su_preexec() {
 	__su_osc "C"
 }
 
+__su_precmd() {
+	local ec=$?

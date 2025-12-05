@@ -84,3 +84,7 @@ pub struct TuiResult {
     pub matches: *const TuiMatch,
     pub matches_len: usize,
     pub bells: *const TuiBellEvent,
+    pub bells_len: usize,
+    pub strings: *const TuiString,
+    pub strings_len: usize,
+    pub snapshot: u32,
