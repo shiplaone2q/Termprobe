@@ -142,3 +142,6 @@ func TestLocatorsPreserveSelection(t *testing.T) {
 	if count != 2 {
 		t.Fatalf("item count=%d", count)
 	}
+	_, err = items.Location()
+	requireKind(t, err, termprobe.AssertionError)
+	first, err := items.First().Location()

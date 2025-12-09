@@ -514,3 +514,5 @@ pub enum SignalArg {
 
 impl SignalArg {
     pub fn as_str(self) -> &'static str {
+        match self {
+            SignalArg::Int => "INT",
