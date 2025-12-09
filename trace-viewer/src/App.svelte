@@ -52,3 +52,4 @@
   onaction={(id) => send({ type: "select-action", id })}
   onframe={(index) => send({ type: "select-frame", index })}
   onimageerror={(index) => send({ type: "image-failed", index })} />
+
