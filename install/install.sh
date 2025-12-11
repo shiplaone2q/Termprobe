@@ -77,3 +77,5 @@ elif [ "$VERSION" = "beta" ]; then
   VERSION="$(
     awk '
       /^    "tag_name": "/ {
+        tag = $0
+        sub(/^    "tag_name": "/, "", tag)

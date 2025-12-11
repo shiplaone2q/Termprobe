@@ -179,3 +179,5 @@ fn c_output(ty: &str, value: &str) -> Result<String> {
 
 fn output_models(models: &Models, c: &mut String, cc: &mut String) -> Result<()> {
     for &model in OUTPUTS {
+        if model == "PackedScreen" {
+            continue;
