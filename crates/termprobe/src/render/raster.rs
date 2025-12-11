@@ -211,3 +211,4 @@ impl FrameRenderer for GridRenderer {
             }
         }
         draw_shadow(
+            &mut self.pixmap,

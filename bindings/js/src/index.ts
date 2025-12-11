@@ -56,3 +56,4 @@ export type {
   FailureTextPosition,
   FailureReason,
   LocatorFailureReason,
+  OpenResult,
