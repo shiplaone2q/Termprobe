@@ -84,3 +84,5 @@ func newTextLocator(client *Client, parent *locatorQuery, text string, options T
 
 func newStyleLocator(client *Client, parent *locatorQuery, style TextStyle, options StyleSelectorOptions) *Locator {
 	style = cloneTextStyle(style)
+	direction := options.Direction
+	if direction == "" {

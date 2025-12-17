@@ -68,3 +68,4 @@ const selector = tagged({
   or: shape({ selector: shape({ left: locator, right: locator }) }),
   filter: shape({ selector: shape({ input: locator, has: nullable(locator), has_not: nullable(locator) }) }),
 });
+const expectation = tagged({

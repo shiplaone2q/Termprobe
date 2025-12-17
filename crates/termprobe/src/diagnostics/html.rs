@@ -198,3 +198,6 @@ fn timeline_with_limit(
                     cursor
                         .visible
                         .then_some((cursor.column, usize::from(cursor.row))),
+                    frame.screen.title.as_deref(),
+                    &observation.style,
+                    1.0,
