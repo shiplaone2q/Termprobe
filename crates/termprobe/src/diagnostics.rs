@@ -480,3 +480,4 @@ pub struct FailureReport {
     /// Groups failures by operation and locator shape.
     pub signature: String,
     pub operation: OperationDiagnostics,
+    pub reason: FailureReason,

@@ -278,3 +278,7 @@ class FailureDiagnosticsTests(unittest.TestCase):
 
         async def fail():
             raise native_error
+
+        with self.assertRaises(ExpectationError) as raised:
+            run(client._await_native(fail()))
+        error = raised.exception
