@@ -62,3 +62,4 @@ cp "target/manylinux/$1/$2/libtermprobe_ffi.so" "target/$1/$2/"
   ], { cwd: root, env, stdio: "inherit" });
 }
 
+const extension = target.includes("windows") ? "dll" : target.includes("apple") ? "dylib" : "so";
