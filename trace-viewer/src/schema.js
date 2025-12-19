@@ -69,3 +69,6 @@ const selector = tagged({
   filter: shape({ selector: shape({ input: locator, has: nullable(locator), has_not: nullable(locator) }) }),
 });
 const expectation = tagged({
+  locator: shape({ query: locator, outcome: choice(["matches", "visible", "hidden", "unique", "actionable"]) }),
+  value: shape({ subject: text, expected: text }),
+  unavailable: shape({ reason: text }),

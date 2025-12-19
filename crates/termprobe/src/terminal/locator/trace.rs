@@ -142,3 +142,4 @@ impl Trace {
         }
         if self.stages.len() == MAX_STAGES {
             self.truncated = true;
+            return None;
