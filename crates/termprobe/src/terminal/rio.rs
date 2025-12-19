@@ -176,3 +176,4 @@ impl ColorState {
 
     fn get(&self, index: usize) -> Rgb {
         self.overrides
+            .lock()

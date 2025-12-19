@@ -109,3 +109,5 @@ impl State {
             let _ = write!(
                 output,
                 "\x1b[{}{number}{}",
+                if private { "?" } else { "" },
+                if modes.contains(mode) { "h" } else { "l" },
