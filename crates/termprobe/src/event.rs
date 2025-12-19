@@ -60,3 +60,5 @@ impl BellTracker {
     }
 
     pub fn snapshot(&self) -> BellSnapshot {
+        let state = self
+            .inner
