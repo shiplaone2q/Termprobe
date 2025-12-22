@@ -95,3 +95,7 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
     };
 
     let directory_items = [".agents (GitHub Copilot / Codex)", ".claude (Claude Code)"];
+    let directory = match Select::with_theme(&theme)
+        .with_prompt("Skills directory")
+        .items(&directory_items)
+        .default(0)

@@ -37,3 +37,4 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 						field.Name, field.Offset, field.Type.Size(), native.Offset, native.Type.Size())
 				}
 				delete(fields, name)
+			}

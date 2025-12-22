@@ -82,3 +82,6 @@ export async function readArchive(data) {
         entry.on("error", reject);
         entry.on("end", () => entries.push({
           name: entry.path, type: entry.type, size: entry.size,
+          uid: entry.uid, gid: entry.gid, mtime: entry.mtime, mode: entry.mode,
+          data: Buffer.concat(chunks),
+        }));
