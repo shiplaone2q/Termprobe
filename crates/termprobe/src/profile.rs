@@ -333,3 +333,5 @@ impl Default for Profile {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RecordingConfig {
+    pub directory: Option<PathBuf>,
+    /// How screenshots and recordings taken under this profile are drawn.
