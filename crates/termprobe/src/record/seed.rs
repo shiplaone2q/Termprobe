@@ -111,3 +111,7 @@ impl State {
                 "\x1b[{}{number}{}",
                 if private { "?" } else { "" },
                 if modes.contains(mode) { "h" } else { "l" },
+            );
+        }
+        output.push_str(if modes.contains(TermMode::APP_KEYPAD) {
+            "\x1b="
