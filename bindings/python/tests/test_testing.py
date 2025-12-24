@@ -72,3 +72,7 @@ class RegistryTests(unittest.TestCase):
 class SafetyNetTests(unittest.TestCase):
     def test_registers_the_terminal_closer_at_exit(self):
         calls = []
+        installed = testing._safety_net_installed
+        testing._safety_net_installed = False
+        try:
+            with mock.patch.object(
