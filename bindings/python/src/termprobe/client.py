@@ -260,3 +260,6 @@ class _LocatorQuery:
     def current(self) -> Dict[str, object]:
         return self.nodes[self.root]
 
+
+def _append_node(
+    query: Optional[_LocatorQuery],

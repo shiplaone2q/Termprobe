@@ -731,3 +731,7 @@ fn restart_preserves_recording_without_a_trace_override_and_honors_an_explicit_o
 #[test]
 fn on_failure_recording_is_kept_only_after_an_operation_failure() {
     let registry = SessionRegistry::default();
+    let root =
+        std::env::temp_dir().join(format!("termprobe-recording-failure-{}", std::process::id()));
+
+    let success = registry.session("recording-success");

@@ -20,3 +20,4 @@ if (packageRoot) {
     const session = Termprobe.ephemeral("release-integration");
     try {
       await session.open();
+      await session.submit("echo release-integration");
