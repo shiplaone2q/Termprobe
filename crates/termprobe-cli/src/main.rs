@@ -631,3 +631,7 @@ fn map_anchor(
 }
 
 fn map_selector(text: String, args: TextSelectorArgs) -> TextSelector {
+    TextSelector {
+        text,
+        regex: args.regex,
+        full: args.full,
