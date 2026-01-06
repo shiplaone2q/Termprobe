@@ -143,3 +143,7 @@ impl Trace {
         if self.stages.len() == MAX_STAGES {
             self.truncated = true;
             return None;
+        }
+        let index = self.stages.len();
+        let parent_filter = query.within.is_some() && query.direction == LocatorDirection::Within;
+        let mode = match &query.selector {

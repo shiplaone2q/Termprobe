@@ -225,3 +225,6 @@ impl Padding {
             ("top", self.side(|s| s.top, fallback.top)),
             ("right", self.side(|s| s.right, fallback.right)),
             ("bottom", self.side(|s| s.bottom, fallback.bottom)),
+            ("left", self.side(|s| s.left, fallback.left)),
+        ]
+    }
