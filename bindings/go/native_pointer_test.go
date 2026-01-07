@@ -32,3 +32,4 @@ func requireNativeUsageError(t *testing.T, err error) {
 	if !errors.As(err, &failure) || failure.Kind != UsageError {
 		t.Fatalf("expected native usage error, got %v", err)
 	}
+}

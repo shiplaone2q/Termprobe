@@ -21,3 +21,10 @@ if (packageRoot) {
     try {
       await session.open();
       await session.submit("echo release-integration");
+      await session.waitCommand();
+      await session.getByText("release-integration").first().expect();
+    } finally {
+      await session.closeQuiet();
+    }
+  });
+}

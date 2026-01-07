@@ -318,3 +318,6 @@ test("recording API writes an asciicast file", async () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("trace retention and recording directory are configurable", async () => {
+  const root = mkdtempSync(join(tmpdir(), "termprobe-auto-recording-"));

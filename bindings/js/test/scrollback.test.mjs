@@ -45,3 +45,26 @@ test("native history view is independent of full text", async () => {
     ], { rows: 5, cols: 40 });
     await terminal.getByText("history-39").expect();
     const full = await terminal.text({ full: true });
+    const live = await terminal.text();
+    const bottom = await terminal.getViewport();
+    assert.equal(bottom.offset, 0);
+    assert.ok(bottom.history > 0);
+    await terminal.scroll(2);
+    assert.equal((await terminal.getViewport()).offset, 2);
+    await terminal.scroll(-1);
+    assert.equal((await terminal.getViewport()).offset, 1);
+    await terminal.scrollToTop();
+    const top = await terminal.getViewport();
+    assert.equal(top.offset, top.history);
+    assert.match(await terminal.text(), /history-0/);
+    assert.equal(await terminal.text({ full: true }), full);
+    await assert.rejects(terminal.getByText("history-0").click());
+    await terminal.scrollToBottom();
+    assert.equal(await terminal.text(), live);
+    await terminal.scrollToTop();
+    await terminal.keyboard.press("a");
+    assert.equal((await terminal.getViewport()).offset, 0);
+  } finally {
+    await terminal.closeQuiet();
+  }
+});
