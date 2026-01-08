@@ -20,3 +20,4 @@ def unique_session(prefix: Optional[str] = None) -> str:
     max_prefix = 64 - len(suffix)
     if max_prefix < 1:
         return (base + suffix)[:64]
+    return (base[:max_prefix] + suffix)[:64]
