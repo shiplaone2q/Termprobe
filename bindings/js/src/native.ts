@@ -205,3 +205,333 @@ async function invoke<T>(action: () => Promise<T>): Promise<T> {
 
 async function createSession(
   name: string,
+  recording?: AutomaticRecordingOptions,
+  artifacts?: FailureArtifactOptions,
+  trace?: TraceOptions,
+): Promise<NativeSessionHandle> {
+  const binding = await loadBinding();
+  return new binding.NativeSession(name, recording, artifacts, trace);
+}
+
+export class NativeRuntime {
+  #session: Promise<NativeSessionHandle>;
+
+  constructor(
+    name: string,
+    recording?: AutomaticRecordingOptions,
+    artifacts?: FailureArtifactOptions,
+    trace?: TraceOptions,
+  ) {
+    this.#session = createSession(name, recording, artifacts, trace);
+  }
+
+  async #call<T>(action: (session: NativeSessionHandle) => Promise<T>): Promise<T> {
+    return invoke(async () => action(await this.#session));
+  }
+
+  open(options?: RuntimeOpenOptions): Promise<OpenResult> {
+    return this.#call((session) => session.open(options as OpenOptions | undefined));
+  }
+
+  run(options: RuntimeRunOptions): Promise<OpenResult> {
+    return this.#call((session) => session.run(options as RunOptions));
+  }
+
+  restart(gracefulTimeoutMs: number): Promise<OpenResult> {
+    return this.#call((session) => session.restart(gracefulTimeoutMs));
+  }
+
+  close(failed?: boolean): Promise<void> {
+    return this.#call((session) => session.close(failed));
+  }
+
+  state(): Promise<State> {
+    return this.#call((session) => session.state());
+  }
+
+  text(full = false): Promise<string> {
+    return this.#call((session) => session.text(full));
+  }
+
+  findLocator(
+    expression: RuntimeLocatorExpression,
+    requireOne = false,
+  ): Promise<TextMatch[]> {
+    return this.#call((session) =>
+      session.findLocator(expression as LocatorExpression, requireOne),
+    );
+  }
+
+  waitLocator(
+    expression: RuntimeLocatorExpression,
+    not = false,
+    timeoutMs?: number,
+  ): Promise<void> {
+    return this.#call((session) =>
+      session.waitLocator(expression as LocatorExpression, not, timeoutMs),
+    );
+  }
+
+  clickLocator(
+    expression: RuntimeLocatorExpression,
+    button = 0,
+    clicks = 1,
+    timeoutMs?: number,
+  ): Promise<void> {
+    return this.#call((session) =>
+      session.clickLocator(expression as LocatorExpression, button, clicks, timeoutMs),
+    );
+  }
+
+  highlightLocator(
+    expression: RuntimeLocatorExpression,
+    timeoutMs?: number,
+  ): Promise<TextMatch[]> {
+    return this.#call((session) =>
+      session.highlightLocator(expression as LocatorExpression, timeoutMs),
+    );
+  }
+
+  expectLocator(
+    expression: RuntimeLocatorExpression,
+    not = false,
+    timeoutMs?: number,
+  ): Promise<void> {
+    return this.#call((session) =>
+      session.expectLocator(expression as LocatorExpression, not, timeoutMs),
+    );
+  }
+
+  /**
+   * Private packed snapshot. The detached Uint8Array is read-only by contract
+   * and contains newline-delimited full logical rows, including trailing spaces
+   * and blank rows. UTF-8 byte offsets are not terminal cell offsets.
+   */
+  async packedScreen(full = false): Promise<PackedScreen> {
+    const screen = await this.#call((session) => session.packedScreen(full));
+    return Object.freeze(screen);
+  }
+
+  cells(x: number, y: number, w = 1, h = 1): Promise<Cell[]> {
+    return this.#call((session) => session.cells(x, y, w, h));
+  }
+
+  getCommand(): Promise<string | null> {
+    return this.#call((session) => session.getCommand());
+  }
+
+  getOutput(): Promise<string | null> {
+    return this.#call((session) => session.getOutput());
+  }
+
+  getExitCode(): Promise<number | null> {
+    return this.#call((session) => session.getExitCode());
+  }
+
+  getCwd(): Promise<string | null> {
+    return this.#call((session) => session.getCwd());
+  }
+
+  getTitle(): Promise<string | null> {
+    return this.#call((session) => session.getTitle());
+  }
+
+  getClipboard(): Promise<string> {
+    return this.#call((session) => session.getClipboard());
+  }
+
+  getCursor(): Promise<Cursor> {
+    return this.#call((session) => session.getCursor());
+  }
+
+  getViewport(): Promise<Viewport> {
+    return this.#call((session) => session.getViewport());
+  }
+
+  scroll(lines: number): Promise<void> {
+    return this.#call((session) => session.scroll(lines));
+  }
+
+  scrollToTop(): Promise<void> {
+    return this.#call((session) => session.scrollToTop());
+  }
+
+  scrollToBottom(): Promise<void> {
+    return this.#call((session) => session.scrollToBottom());
+  }
+
+  getSize(): Promise<Size> {
+    return this.#call((session) => session.getSize());
+  }
+
+  getBellCount(): Promise<number> {
+    return this.#call((session) => session.getBellCount());
+  }
+
+  getBellEvents(): Promise<BellEvent[]> {
+    return this.#call((session) => session.getBellEvents());
+  }
+
+  write(data: string): Promise<void> {
+    return this.#call((session) => session.write(data));
+  }
+
+  type(text: string): Promise<void> {
+    return this.#call((session) => session.type(text));
+  }
+
+  submit(data?: string): Promise<void> {
+    return this.#call((session) => session.submit(data));
+  }
+
+  press(keys: string[]): Promise<void> {
+    return this.#call((session) => session.press(keys));
+  }
+
+  keyDown(keys: string[]): Promise<void> {
+    return this.#call((session) => session.keyDown(keys));
+  }
+
+  repeat(keys: string[]): Promise<void> {
+    return this.#call((session) => session.repeat(keys));
+  }
+
+  keyUp(keys: string[]): Promise<void> {
+    return this.#call((session) => session.keyUp(keys));
+  }
+
+  mouseClick(options?: MouseClickOptions): Promise<void> {
+    return this.#call((session) => session.mouseClick(options));
+  }
+
+  mouseMove(x: number, y: number): Promise<void> {
+    return this.#call((session) => session.mouseMove(x, y));
+  }
+
+  mouseDown(x: number, y: number, button = 0): Promise<void> {
+    return this.#call((session) => session.mouseDown(x, y, button));
+  }
+
+  mouseUp(x: number, y: number, button = 0): Promise<void> {
+    return this.#call((session) => session.mouseUp(x, y, button));
+  }
+
+  mouseDrag(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    button = 0,
+  ): Promise<void> {
+    return this.#call((session) => session.mouseDrag(x1, y1, x2, y2, button));
+  }
+
+  mouseScroll(direction: "up" | "down", amount = 3): Promise<void> {
+    return this.#call((session) => session.mouseScroll(direction, amount));
+  }
+
+  resize(cols: number, rows: number): Promise<void> {
+    return this.#call((session) => session.resize(cols, rows));
+  }
+
+  signal(name: string): Promise<void> {
+    return this.#call((session) => session.signal(name));
+  }
+
+  waitTitle(text: string, options?: TitleOptions): Promise<void> {
+    return this.#call((session) => session.waitTitle(text, options));
+  }
+
+  waitClipboard(text?: string, options?: ClipboardWaitOptions): Promise<void> {
+    return this.#call((session) => session.waitClipboard(text, options));
+  }
+
+  waitIdle(timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.waitIdle(timeoutMs));
+  }
+
+  waitCommand(timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.waitCommand(timeoutMs));
+  }
+
+  waitExit(timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.waitExit(timeoutMs));
+  }
+
+  waitReady(timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.waitReady(timeoutMs));
+  }
+
+  waitBell(timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.waitBell(timeoutMs));
+  }
+
+  expectTitle(text: string, options?: TitleOptions): Promise<void> {
+    return this.#call((session) => session.expectTitle(text, options));
+  }
+
+  expectExitCode(code: number, timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.expectExitCode(code, timeoutMs));
+  }
+
+  expectOutput(text: string, regex = false): Promise<void> {
+    return this.#call((session) => session.expectOutput(text, regex));
+  }
+
+  expectBellCount(count: number, timeoutMs?: number): Promise<void> {
+    return this.#call((session) => session.expectBellCount(count, timeoutMs));
+  }
+
+  async snapshot(name: string, options?: SnapshotOptions): Promise<string> {
+    return this.#call((session) => session.snapshot(name, options));
+  }
+
+  screenshot(options?: ScreenshotOptions): Promise<string> {
+    return this.#call((session) => session.screenshot(options));
+  }
+
+  startRecording(options: RuntimeRecordingOptions): Promise<void> {
+    return this.#call((session) => session.startRecording(options as RecordingOptions));
+  }
+
+  stopRecording(): Promise<string> {
+    return this.#call((session) => session.stopRecording());
+  }
+
+  panicProbe(): Promise<void> {
+    return this.#call((session) => session.panicProbe());
+  }
+}
+
+export async function sessions(): Promise<string[]> {
+  const binding = await loadBinding();
+  return invoke(() => binding.sessions());
+}
+
+export async function closeAll(): Promise<void> {
+  const binding = await loadBinding();
+  await invoke(() => binding.closeAll());
+}
+
+export async function recording(name: string): Promise<string> {
+  const binding = await loadBinding();
+  return invoke(() => binding.recording(name));
+}
+
+export type {
+  Cell as NativeCell,
+  Cursor as NativeCursor,
+  EffectiveTimeouts as NativeEffectiveTimeouts,
+  MouseClickOptions as NativeMouseClickOptions,
+  OpenOptions as NativeOpenOptions,
+  OpenResult as NativeOpenResult,
+  PackedScreen as NativePackedScreen,
+  RecordingOptions as NativeRecordingOptions,
+  RunOptions as NativeRunOptions,
+  ScreenshotOptions as NativeScreenshotOptions,
+  Size as NativeSize,
+  SnapshotOptions as NativeSnapshotOptions,
+  State as NativeState,
+  TextMatch as NativeTextMatch,
+  Timeouts as NativeTimeouts,
+};

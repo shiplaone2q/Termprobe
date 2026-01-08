@@ -57,3 +57,11 @@ export type {
   FailureReason,
   LocatorFailureReason,
   OpenResult,
+  Profile,
+  Shell,
+  Size,
+  SpawnOptions,
+  State,
+  TextMatch,
+  Timeouts,
+} from "./types.js";
