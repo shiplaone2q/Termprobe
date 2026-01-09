@@ -27,3 +27,8 @@ pub const MOUSE_MOTION_ENABLE: &str = "\x1b[?1006h\x1b[?1003h";
 
 pub fn kitty_keyboard_mode(flags: u8) -> String {
     format!("\x1b[={flags}u")
+}
+
+pub fn sgr_mouse(button: u16, x: u16, y: u16, final_byte: u8) -> Vec<u8> {
+    format!("\x1b[<{button};{x};{y}{}", final_byte as char).into_bytes()
+}
