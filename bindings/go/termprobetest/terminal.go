@@ -54,3 +54,8 @@ func TerminalSnapshot(text string) string {
 	for index, line := range lines {
 		lines[index] = strings.TrimRight(line, " \t\r")
 	}
+	for len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+	return strings.Join(lines, "\n")
+}
