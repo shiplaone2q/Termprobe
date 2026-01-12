@@ -104,3 +104,6 @@ export function timeoutsPayload(
     if (value !== undefined && value !== null) {
       out[cls] = value;
       any = true;
+    }
+  }
+  return any ? (out as Record<TimeoutClass, number>) : undefined;

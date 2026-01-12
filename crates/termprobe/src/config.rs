@@ -44,3 +44,5 @@ impl TimeoutClass {
     /// The environment override, read at call time so tests can vary it.
     pub fn env_ms(self) -> Option<u64> {
         env_timeout_ms(self.env_var())
+    }
+

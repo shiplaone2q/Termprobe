@@ -102,3 +102,7 @@ class NativeSurfaceTests(unittest.TestCase):
             "press",
             "key_down",
             "repeat",
+            "key_up",
+            "mouse_click",
+            "mouse_move",
+            "mouse_down",

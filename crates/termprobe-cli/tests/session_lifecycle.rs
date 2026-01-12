@@ -564,3 +564,6 @@ fn monitor_frames_and_input_outlive_the_target() {
 }
 
 /// The accept loop must not park behind a long operation: viewer keystrokes
+/// have to reach the child while the agent is still waiting on it.
+#[test]
+fn monitor_input_is_delivered_while_a_long_operation_is_running() {
