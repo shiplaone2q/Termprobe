@@ -311,3 +311,5 @@ fn legacy_control_key(key: ControlKey, mods: Mods) -> String {
     sequence
 }
 
+fn legacy_character(ch: char, mods: Mods) -> Option<String> {
+    if mods.has_kitty_only_modifier() {

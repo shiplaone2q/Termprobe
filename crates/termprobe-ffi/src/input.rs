@@ -69,3 +69,5 @@ pub(crate) unsafe fn strings(data: *const TuiString, len: usize) -> Result<Vec<S
 pub(crate) unsafe fn session(value: TuiString) -> Result<(String, ExecutionContext)> {
     let json = unsafe { value.required()? };
     let value: SessionInput = serde_json::from_str(&json)
+        .map_err(|error| TermprobeError::usage(format!("invalid native session context: {error}")))?;
+    value.validate()
