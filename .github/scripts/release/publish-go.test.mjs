@@ -41,3 +41,4 @@ function publicationFixture(t) {
     publish(version = "1.2.3") {
       const workspace = fs.mkdtempSync(path.join(fixture.root, "publisher-"));
       git(["clone", "-q", "--no-checkout", remote, workspace]);
+      git(["checkout", "-q", "--detach", version], workspace);

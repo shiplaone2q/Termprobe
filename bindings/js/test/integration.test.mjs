@@ -321,3 +321,5 @@ test("recording API writes an asciicast file", async () => {
 
 test("trace retention and recording directory are configurable", async () => {
   const root = mkdtempSync(join(tmpdir(), "termprobe-auto-recording-"));
+  const disabled = new Termprobe(uniqueSession("recording-disabled"), {
+    recording: { directory: root },
