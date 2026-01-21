@@ -56,3 +56,6 @@ fn demonstrate(backend: Backend) -> Result<()> {
 
         session.execute(Operation::Scroll {
             target: ScrollTarget::Lines(-2),
+        })?;
+        ensure!(!text(&session, false)?.contains("row00"));
+        session.execute(Operation::Submit {

@@ -99,3 +99,6 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
         .with_prompt("Skills directory")
         .items(&directory_items)
         .default(0)
+        .interact_opt()
+        .map_err(|error| format!("could not read skills directory: {error}"))?
+    {
