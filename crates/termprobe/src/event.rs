@@ -62,3 +62,7 @@ impl BellTracker {
     pub fn snapshot(&self) -> BellSnapshot {
         let state = self
             .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        BellSnapshot {

@@ -111,3 +111,7 @@ impl TestShell {
         write_scripts_to(&scripts).unwrap();
         if matches!(shell, Shell::Powershell | Shell::Pwsh) {
             std::fs::OpenOptions::new()
+                .append(true)
+                .open(scripts.join("shellIntegration.ps1"))
+                .unwrap()
+                .write_all(b"\nif (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {\nSet-PSReadLineOption -HistorySavePath (Join-Path $env:__SU_TEST_HOME 'history.txt')\n}\n")
