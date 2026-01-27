@@ -50,3 +50,7 @@ pub(crate) fn close(
             },
             || {
                 handle
+                    .execute_with_context(Operation::Close, context.clone().with_operation("close"))
+            },
+        );
+    }
