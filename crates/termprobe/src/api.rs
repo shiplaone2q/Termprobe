@@ -496,3 +496,5 @@ impl LocatorSelector {
                 input,
                 has,
                 has_not,
+            } => {
+                let mut description = input.selector.description();

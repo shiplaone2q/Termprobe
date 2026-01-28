@@ -133,3 +133,7 @@ pub fn rgb_to_ansi256(r: u8, g: u8, b: u8) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::profile::{Colors, Profile};
+    use crate::terminal::alacritty::AlacrittyEmu;
+    use crate::terminal::cell::Color;
+    use crate::terminal::emu::Emulator;

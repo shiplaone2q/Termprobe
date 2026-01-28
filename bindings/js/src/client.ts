@@ -255,3 +255,7 @@ function occurrenceOptions(occurrence?: TextOccurrence): {
   occurrence?: string;
   nth?: number;
 } {
+  if (occurrence === undefined) {
+    return {};
+  }
+  if (typeof occurrence === "string") {
