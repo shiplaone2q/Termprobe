@@ -84,3 +84,5 @@ The build does not regenerate declarations.
 ## Generate boundaries
 
 The owned Rust models define the shared fields. Do not edit generated boundary files.
+The existing `tools/bindgen` tool reads these models with `syn`.
+It generates C boundary structs and fieldwise conversions, then uses `cbindgen` for the C header.

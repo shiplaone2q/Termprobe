@@ -54,3 +54,5 @@ function installSafetyNet(): void {
   if (safetyNetInstalled) {
     return;
   }
+  safetyNetInstalled = true;
+  const proc: NodeJS.Process | undefined =
