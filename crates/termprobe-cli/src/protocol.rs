@@ -257,3 +257,6 @@ impl Request {
             mut context,
         } = self
         {
+            if context.operation_name.is_none() {
+                context.operation_name = Some(request.diagnostic_operation_name().to_string());
+            }

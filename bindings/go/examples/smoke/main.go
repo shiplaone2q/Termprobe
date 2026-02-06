@@ -39,3 +39,7 @@ func smoke() error {
 		return fmt.Errorf("create smoke terminal: %w", err)
 	}
 	defer terminal.CloseQuiet()
+	executable, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("locate smoke executable: %w", err)
+	}

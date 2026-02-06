@@ -124,3 +124,4 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
         CellStyle::default(),
     );
     grid
+}
