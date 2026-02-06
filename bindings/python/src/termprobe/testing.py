@@ -80,3 +80,7 @@ def get_terminal_defaults() -> TerminalOptions:
     return _defaults
 
 
+def reset_terminal_defaults() -> None:
+    global _defaults
+    with _defaults_lock:
+        _defaults = TerminalOptions()

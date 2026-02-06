@@ -36,3 +36,5 @@ class NoSessionError(TuiTestError):
     kind = "no_session"
     exit_code = 3
 
+
+class InternalError(TuiTestError):
