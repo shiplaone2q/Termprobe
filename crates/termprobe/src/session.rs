@@ -320,3 +320,5 @@ impl Session {
             shell,
             backend,
             child_pid,
+            timeouts,
+            pty,

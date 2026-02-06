@@ -56,3 +56,7 @@ function Global:Prompt() {
         }
     }
 
+    $out += __su_seq "133;A"
+    if ($pwd.Provider.Name -eq 'FileSystem') {
+        $path = $pwd.ProviderPath
+        if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {

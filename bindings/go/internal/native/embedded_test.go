@@ -100,3 +100,6 @@ func TestCacheLibraryReusesFileAndSeparatesVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	library.archive = nil
+	again, err := cacheLibrary(cache, library)
+	if err != nil || again != path {
+		t.Fatalf("path = %q, error = %v", again, err)

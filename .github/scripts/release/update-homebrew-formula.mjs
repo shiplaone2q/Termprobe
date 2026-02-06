@@ -42,3 +42,6 @@ const formula = `class Termprobe < Formula
       url "https://github.com/microsoft/termprobe/releases/download/${version}/termprobe-aarch64-unknown-linux-gnu.tar.gz"
       sha256 "${linuxArm}"
     end
+
+    on_intel do
+      url "https://github.com/microsoft/termprobe/releases/download/${version}/termprobe-x86_64-unknown-linux-gnu.tar.gz"
