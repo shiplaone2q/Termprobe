@@ -76,3 +76,5 @@ class SafetyNetTests(unittest.TestCase):
         testing._safety_net_installed = False
         try:
             with mock.patch.object(
+                testing.atexit,
+                "register",
