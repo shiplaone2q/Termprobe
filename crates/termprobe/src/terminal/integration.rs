@@ -117,3 +117,7 @@ impl TrackerState {
                 self.region = Region::Output;
                 self.output_buf.clear();
                 self.started_count += 1;
+            }
+            "D" => {
+                self.last_output = Some(clean(&self.output_buf));
+                self.prompt_active = false;

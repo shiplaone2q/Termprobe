@@ -38,3 +38,7 @@ class NoSessionError(TuiTestError):
 
 
 class InternalError(TuiTestError):
+    kind = "internal"
+    exit_code = 5
+
+
