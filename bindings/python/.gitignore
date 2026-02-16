@@ -7,3 +7,4 @@ dist/
 .venv/
 src/termprobe/termprobe_ffi.dll
 src/termprobe/libtermprobe_ffi.so
+src/termprobe/libtermprobe_ffi.dylib

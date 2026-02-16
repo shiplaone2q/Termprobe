@@ -45,3 +45,4 @@ func nativeLayoutPairs() []nativeLayoutPair {
 		{reflect.TypeFor[abiRecordingOptions](), reflect.TypeFor[C.TuiRecordingOptions]()},
 		{reflect.TypeFor[abiScreenshotOptions](), reflect.TypeFor[C.TuiScreenshotOptions]()},
 	}
+}
