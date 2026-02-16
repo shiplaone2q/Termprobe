@@ -47,3 +47,4 @@
   .thumbnail span { display: block; padding: 1px 4px; font-size: 10px; color: var(--muted); }
   .thumbnail[aria-current="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
   @media (max-width: 600px) { .timeline { height: 112px; } .filmstrip { height: 58px; } .thumbnail img { height: 30px; } }
+</style>
