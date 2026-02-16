@@ -12,3 +12,4 @@
     "noEmit": true
   },
   "include": ["src/**/*.js", "src/**/*.d.ts", "src/**/*.svelte"]
+}

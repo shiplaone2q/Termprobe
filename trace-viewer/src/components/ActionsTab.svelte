@@ -26,3 +26,29 @@
       <span class="action-label">
         <span class="action-line"><span class="name">{action.name}</span>{#if action.code}<code class="query-code">{action.label}</code>{/if}</span>
         {#if !action.code}<span class="description">{action.label}</span>{/if}
+      </span>
+      <span class="result">{time(action.duration)}{action.frameIndex === undefined ? "\nnot retained" : ""}</span>
+    </button>
+  {:else}
+    <p class="muted">No matching actions.</p>
+  {/each}
+</nav>
+
+<style>
+  .action-filter { padding: 8px; display: grid; gap: 6px; border-bottom: 1px solid var(--border); }
+  .action-filter label { font-size: 11px; color: var(--muted); }
+  .point { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 7px; width: 100%; border: 0; border-radius: 0; padding: 9px 10px; text-align: left; }
+  .status { width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-top: 6px; }
+  .failed .status { background: var(--red); }
+  .name, .description { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .action-label { min-width: 0; }
+  .action-line { display: flex; gap: 9px; align-items: baseline; min-width: 0; }
+  .action-line .name { flex: 0 1 auto; max-width: 48%; }
+  .query-code { color: #887120; font: 12px/1.5 Consolas, monospace; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+  .description { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .result { font-size: 10px; color: var(--muted); text-align: right; white-space: pre-line; }
+  .failed .name, .failed .result { color: var(--red); }
+  .point[aria-current="true"] { background: var(--selected); }
+  @media (prefers-color-scheme: dark) { .query-code { color: #d5bf75; } }
+  @media (max-width: 600px) { .point { padding: 8px 5px; gap: 4px; } }
+</style>
