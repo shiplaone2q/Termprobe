@@ -43,3 +43,34 @@ impl Read for ConsoleInput {
             let success = unsafe {
                 ReadConsoleW(
                     self.handle,
+                    utf16[offset..].as_mut_ptr().cast(),
+                    (utf16.len() - offset) as u32,
+                    &mut count,
+                    std::ptr::null(),
+                )
+            };
+            if success == 0 {
+                self.high_surrogate = (offset != 0).then_some(utf16[0]);
+                return Err(io::Error::last_os_error());
+            }
+            if count == 0 {
+                return if offset == 0 {
+                    Ok(0)
+                } else {
+                    Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "incomplete console surrogate pair",
+                    ))
+                };
+            }
+            let mut end = count as usize + offset;
+            if matches!(utf16[end - 1], 0xd800..=0xdbff) {
+                self.high_surrogate = Some(utf16[end - 1]);
+                end -= 1;
+            }
+            let text = String::from_utf16(&utf16[..end])
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            self.bytes = Cursor::new(text.into_bytes());
+        }
+    }
+}
