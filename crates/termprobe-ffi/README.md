@@ -86,3 +86,71 @@ The build does not regenerate declarations.
 The owned Rust models define the shared fields. Do not edit generated boundary files.
 The existing `tools/bindgen` tool reads these models with `syn`.
 It generates C boundary structs and fieldwise conversions, then uses `cbindgen` for the C header.
+The C function signatures in `src/lib.rs` define the entrypoints.
+The same tool generates the Go, Python, and JavaScript boundary declarations.
+JavaScript uses generated `native/abi.js`, `native/models.js`, and `native/index.d.ts`.
+The handwritten loader and adapter consume these declarations.
+
+| Authoritative source in `crates/termprobe/src/` | Coverage |
+| --- | --- |
+| `api.rs` | Options, styles, results, operations, and input actions |
+| `locator_query.rs` | Locator nodes, expressions, and node kinds |
+| `profile.rs` | Profile fields |
+| `diagnostics.rs` | Artifact, trace, retention, and session options |
+| `shell/mod.rs`, `terminal/backend.rs` | Shell and backend variants |
+| `terminal/cell.rs` | Underline variants |
+
+From the repository root:
+
+```sh
+env -u CARGO_TARGET_DIR cargo run --locked -p termprobe-bindgen
+env -u CARGO_TARGET_DIR cargo run --locked -p termprobe-bindgen -- --check
+```
+
+`--check` checks generated files without changes.
+Normal generation can replace missing or stale output.
+The generator does not compile the FFI crate to discover its models.
+Keep `rustfmt` and `gofmt` on `PATH`.
+Release packages include generated files and do not need the generator.
+
+Transport mappings handle strings, pointer/length pairs, optional values, property names, colors, maps, and numeric conversions.
+They are not another list of shared model fields.
+Pointer ownership, result cleanup, lifecycle behavior, and public convenience APIs remain handwritten.
+The core retains separate input and effective timeout models.
+
+## Ownership
+
+Input buffers must remain valid until a call returns.
+The engine copies inputs before it executes an operation.
+A null string pointer means absent.
+A non-null pointer with zero length means an explicit empty string.
+
+Every result belongs to this library until `tui_result_free` releases it.
+Copy strings, arrays, and packed screen bytes before that call.
+Do not free individual fields.
+The called function determines which result field contains successful output.
+Check `error_kind` before reading a successful result.
+
+The JavaScript adapter follows these same rules.
+JavaScript values remain valid after the adapter frees the native result.
+Keep the library loaded while any call or allocation remains active.
+Increase `ABI_VERSION` when a change makes existing declarations incompatible.
+
+## Asynchronous calls
+
+Immediate getters use Koffi's asynchronous calls without a polling timer.
+The adapter retains their input buffers until the callback completes.
+It limits concurrent reads without limiting the number of callers.
+
+Other JavaScript operations use generated typed `tui_*_start` entrypoints.
+Each start call copies its inputs before it returns an owned `TuiTask`.
+A native worker executes the owned operation.
+JavaScript polls `tui_task_poll` until it receives the result, then frees the result and task.
+Start, poll, and free each task on the same thread.
+Native thread teardown frees unclaimed tasks and their results, including after forced JavaScript worker termination.
+The existing synchronous functions remain available to Go and Python.
+
+This avoids Koffi worker exhaustion: pending terminal waits cannot prevent input or close calls.
+The current implementation uses one native thread per active operation and a one-millisecond poll interval.
+Freeing a pending task abandons its result; it does not cancel the operation.
+Close the session to interrupt its pending waits.

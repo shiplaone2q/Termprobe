@@ -103,3 +103,98 @@ func TestCacheLibraryReusesFileAndSeparatesVersions(t *testing.T) {
 	again, err := cacheLibrary(cache, library)
 	if err != nil || again != path {
 		t.Fatalf("path = %q, error = %v", again, err)
+	}
+	after, err := os.Stat(path)
+	if err != nil || !os.SameFile(before, after) {
+		t.Fatalf("cached file was replaced: %v", err)
+	}
+	next, err := cacheLibrary(cache, libraryFixture(t, "second release"))
+	if err != nil || next == path {
+		t.Fatalf("new release path = %q, error = %v", next, err)
+	}
+}
+
+func TestCacheLibraryRejectsCorruptFile(t *testing.T) {
+	cache := t.TempDir()
+	library := libraryFixture(t, "correct library")
+	path, err := cacheLibrary(cache, library)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("corrupt"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cacheLibrary(cache, library); err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestCacheLibraryRejectsInvalidArchive(t *testing.T) {
+	for _, kind := range []string{"missing", "checksum", "gzip", "truncated"} {
+		t.Run(kind, func(t *testing.T) {
+			cache := t.TempDir()
+			library := libraryFixture(t, "correct library")
+			switch kind {
+			case "missing":
+				library.name = "missing.so"
+			case "checksum":
+				library.checksum = strings.Repeat("0", 64)
+			case "gzip":
+				library.archive = []byte("not a gzip file")
+			case "truncated":
+				library.archive = library.archive[:len(library.archive)-4]
+			}
+			if _, err := cacheLibrary(cache, library); err == nil {
+				t.Fatal("expected an extraction error")
+			}
+			entries, err := os.ReadDir(filepath.Join(cache, "termprobe", "native", library.checksum))
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("failed extraction left files: %v, %v", entries, err)
+			}
+		})
+	}
+}
+
+func TestCacheLibraryRejectsUnusableCache(t *testing.T) {
+	cache := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(cache, []byte("not a directory"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cacheLibrary(cache, libraryFixture(t, "library")); err == nil {
+		t.Fatal("expected a cache error")
+	}
+}
+
+func TestCacheLibraryConcurrentProcesses(t *testing.T) {
+	cache := t.TempDir()
+	var group sync.WaitGroup
+	for range 8 {
+		group.Go(func() {
+			command := exec.Command(os.Args[0], "-test.run=^TestCacheLibraryChild$")
+			command.Env = append(os.Environ(), "TERMPROBE__EXTRACTION_TEST_CACHE="+cache)
+			if output, err := command.CombinedOutput(); err != nil {
+				t.Errorf("child failed: %v\n%s", err, output)
+			}
+		})
+	}
+	group.Wait()
+	library := libraryFixture(t, strings.Repeat("native library", 10000))
+	path, err := cacheLibrary(cache, library)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(filepath.Dir(path))
+	if err != nil || len(entries) != 1 || entries[0].Name() != library.name {
+		t.Fatalf("unexpected cache entries: %v, %v", entries, err)
+	}
+}
+
+func TestCacheLibraryChild(t *testing.T) {
+	cache := os.Getenv("TERMPROBE__EXTRACTION_TEST_CACHE")
+	if cache == "" {
+		return
+	}
+	if _, err := cacheLibrary(cache, libraryFixture(t, strings.Repeat("native library", 10000))); err != nil {
+		t.Fatal(err)
+	}
+}
