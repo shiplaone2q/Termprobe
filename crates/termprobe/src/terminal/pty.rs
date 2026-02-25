@@ -188,3 +188,7 @@ impl Pty {
         cwd: Option<&Path>,
     ) -> anyhow::Result<(Pty, Box<dyn Read + Send>)> {
         validate_size(opts.cols, opts.rows)?;
+        if let Some(cwd) = cwd {
+            validate_cwd(cwd)?;
+        }
+        let pty_system = native_pty_system();

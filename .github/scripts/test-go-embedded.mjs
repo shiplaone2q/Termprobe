@@ -44,3 +44,4 @@ try {
   if (!example) throw new Error("README Go example is missing");
   fs.writeFileSync(path.join(directory, "main.go"), `${example}\n`);
   execFileSync(go, ["build", "-buildvcs=false", "-o", path.join(directory, "readme.exe"), "."], {
+    cwd: directory, env: environment, stdio: "inherit",

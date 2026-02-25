@@ -53,3 +53,6 @@
   onframe={(index) => send({ type: "select-frame", index })}
   onimageerror={(index) => send({ type: "image-failed", index })} />
 
+<main>
+  <SideNav active={view.sidebarTab} onselect={(tab) => send({ type: "select-tab", tab })}>
+    {#snippet actionsPanel()}

@@ -70,3 +70,4 @@ Click options: `button`, `alt`, `ctrl`, `shift`, `clicks`, and `timeout`.
 | Method | Use |
 | --- | --- |
 | `open(options?)` | Open a shell. |
+| `run(program, args?, options?)` | Run an app. |
