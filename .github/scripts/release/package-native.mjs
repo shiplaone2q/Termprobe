@@ -85,3 +85,7 @@ export async function readArchive(data) {
           uid: entry.uid, gid: entry.gid, mtime: entry.mtime, mode: entry.mode,
           data: Buffer.concat(chunks),
         }));
+      },
+    });
+    parser.on("error", reject);
+    parser.on("end", () => resolve(entries));

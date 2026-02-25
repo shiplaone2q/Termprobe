@@ -222,3 +222,4 @@ jobs:
       - name: Pack shared native engine
         shell: bash
         run: |
+          case "${{ matrix.target }}" in
