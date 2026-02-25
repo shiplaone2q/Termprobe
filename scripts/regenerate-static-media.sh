@@ -59,3 +59,6 @@ close_session() {
     set +e
     "$cli_path" --session "$session" close >/dev/null 2>&1
     exit_code=$?
+    set -e
+    if ((exit_code != 0 && exit_code != 3)); then
+        echo "warning: could not close termprobe session '$session'" >&2

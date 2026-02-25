@@ -65,3 +65,4 @@ class FailureCellMismatch:
 
 
 @dataclass(frozen=True)
+class FailureLocatorDetails:

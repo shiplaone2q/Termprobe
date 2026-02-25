@@ -238,3 +238,7 @@ impl Emulator for GhosttyEmu {
                 continue;
             }
 
+            let owned = bytes[start..=index].to_vec();
+            self.call_result("processing output", move |core| {
+                core.process(&owned)?;
+                for operation in operations {
