@@ -66,3 +66,7 @@ impl BellTracker {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         BellSnapshot {
+            count: state.count,
+            events: state.events.iter().copied().collect(),
+        }
+    }

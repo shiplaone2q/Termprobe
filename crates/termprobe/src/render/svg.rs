@@ -422,3 +422,4 @@ fn write_cursor(
 /// drawn in the title bar, and `None` leaves the bar bare.
 ///
 /// Its row is a `usize` because it indexes `rows`, which for a full-history
+/// render is as long as the scrollback and so is not bounded by the screen.

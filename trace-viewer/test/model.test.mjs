@@ -82,3 +82,5 @@ for (const [name, change, error] of [
   ["wrong attachment size", (data) => { data.attachments[0].bytes = 0; }, /byte count does not match/],
   ["duplicate attachments", (data) => { data.attachments.push(data.attachments[0]); }, /Duplicate attachment/],
   ["null optional object", (data) => { data.details.runtime = null; }, /report.details.runtime/],
+]) {
+  test(`malformed evidence fails explicitly: ${name}`, () => {

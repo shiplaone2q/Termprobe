@@ -24,3 +24,5 @@
 <p id="recording-note" class="muted">{recordingNote}</p>
 
 <style>
+  .attachment-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
+  .attachment { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--border); padding: 6px 0; }
