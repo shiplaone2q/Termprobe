@@ -43,3 +43,7 @@ func smoke() error {
 	if err != nil {
 		return fmt.Errorf("locate smoke executable: %w", err)
 	}
+	if _, err = terminal.Run(executable, []string{"--child"}, termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false)}); err != nil {
+		return fmt.Errorf("run smoke child: %w", err)
+	}
+	return exerciseTerminal(terminal)
