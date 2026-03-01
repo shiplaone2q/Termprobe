@@ -61,3 +61,6 @@ impl Logger {
             self.write_line("REPLY", &escape(bytes));
         }
     }
+
+    fn write_line(&self, tag: &str, body: &str) {
+        let Some(sink) = &self.sink else { return };

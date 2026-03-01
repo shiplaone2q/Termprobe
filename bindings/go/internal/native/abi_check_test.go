@@ -38,3 +38,5 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 				}
 				delete(fields, name)
 			}
+			for name := range fields {
+				t.Errorf("C field %s has no Go counterpart", name)
