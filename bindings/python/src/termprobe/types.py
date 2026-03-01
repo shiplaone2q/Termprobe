@@ -55,3 +55,5 @@ class Colors:
     bright_cyan: Optional[str] = None
     bright_white: Optional[str] = None
 
+
+@dataclass

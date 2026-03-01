@@ -635,3 +635,5 @@ fn map_selector(text: String, args: TextSelectorArgs) -> TextSelector {
         text,
         regex: args.regex,
         full: args.full,
+        whitespace: match args.whitespace {
+            WhitespaceArg::Exact => WhitespaceMode::Exact,

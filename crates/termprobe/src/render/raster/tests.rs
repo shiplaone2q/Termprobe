@@ -237,3 +237,7 @@ fn invalid_zoom_is_rejected() {
         assert!(GridRenderer::with_zoom(1, 1, zoom, Style::default()).is_err());
     }
 }
+
+#[test]
+fn smaller_terminal_is_centered_on_the_recording_canvas() {
+    let mut renderer = GridRenderer::new(4, 3);
