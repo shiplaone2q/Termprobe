@@ -47,3 +47,6 @@ func smoke() error {
 		return fmt.Errorf("run smoke child: %w", err)
 	}
 	return exerciseTerminal(terminal)
+}
+
+func exerciseTerminal(terminal *termprobe.Client) error {

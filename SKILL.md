@@ -61,3 +61,4 @@ try {
 
 ## Locators
 
+Use text and style locators for visible terminal state.

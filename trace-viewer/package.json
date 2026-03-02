@@ -19,3 +19,4 @@
     "esbuild": "0.28.2",
     "svelte-check": "4.7.6",
     "typescript": "5.9.3"
+  }

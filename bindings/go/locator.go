@@ -86,3 +86,6 @@ func newStyleLocator(client *Client, parent *locatorQuery, style TextStyle, opti
 	style = cloneTextStyle(style)
 	direction := options.Direction
 	if direction == "" {
+		direction = Within
+	}
+	node := locatorNode{kind: "style", style: &style, full: Ptr(options.Full), direction: Ptr(direction), occurrence: "any"}
