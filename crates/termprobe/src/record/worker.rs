@@ -72,3 +72,7 @@ pub(super) fn worker_loop(
                 }
             }
             Message::Start { at, request, reply } => {
+                if active.is_some() {
+                    let _ = reply.send(Err(CaptureError::AlreadyActive));
+                    continue;
+                }
