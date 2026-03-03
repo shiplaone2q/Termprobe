@@ -42,3 +42,5 @@ func helperOptions(t *testing.T) termprobetest.Options {
 func TestCleanupAndParallelIsolation(t *testing.T) {
 	names := make(chan string, 2)
 	t.Cleanup(func() {
+		close(names)
+		verifyClosedSessions(t, names)

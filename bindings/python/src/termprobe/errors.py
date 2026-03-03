@@ -42,3 +42,5 @@ class InternalError(TuiTestError):
     exit_code = 5
 
 
+_BY_KIND = {
+    "assertion": ExpectationError,
