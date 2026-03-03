@@ -56,3 +56,6 @@
 <main>
   <SideNav active={view.sidebarTab} onselect={(tab) => send({ type: "select-tab", tab })}>
     {#snippet actionsPanel()}
+      <ActionsTab {actions} selected={view.actionId} filter={view.filter} assertionsOnly={view.assertionsOnly}
+        onselect={(id) => send({ type: "select-action", id })}
+        onfilter={(value) => send({ type: "filter", value })}

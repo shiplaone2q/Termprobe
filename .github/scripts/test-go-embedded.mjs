@@ -45,3 +45,7 @@ try {
   fs.writeFileSync(path.join(directory, "main.go"), `${example}\n`);
   execFileSync(go, ["build", "-buildvcs=false", "-o", path.join(directory, "readme.exe"), "."], {
     cwd: directory, env: environment, stdio: "inherit",
+  });
+  const hostPath = Object.entries(process.env).find(([name]) => name.toUpperCase() === "PATH")?.[1] ?? "";
+  const output = execFileSync(path.join(directory, "readme.exe"), [], {
+    cwd: directory, env: { ...runtime, PATH: hostPath }, encoding: "utf8", timeout: 60000,

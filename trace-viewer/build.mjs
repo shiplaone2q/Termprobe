@@ -49,3 +49,5 @@ const options = {
         }
         const template = (await readFile(templatePath, "utf8")).replace(/\r\n/g, "\n");
         assets.set("report.html", template);
+        const shell = template.replace("/* REPORT_CSS */", () => assets.get("report.min.css"))
+          .replace("/* REPORT_JS */", () => assets.get("report.min.js"));
