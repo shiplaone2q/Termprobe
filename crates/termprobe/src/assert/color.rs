@@ -137,3 +137,6 @@ mod tests {
     use crate::terminal::alacritty::AlacrittyEmu;
     use crate::terminal::cell::Color;
     use crate::terminal::emu::Emulator;
+
+    /// A real emulator, so these exercise the same resolution path a session
+    /// uses rather than a stand-in that could drift from it.

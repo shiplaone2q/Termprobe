@@ -76,3 +76,4 @@ pub(super) fn worker_loop(
                     let _ = reply.send(Err(CaptureError::AlreadyActive));
                     continue;
                 }
+                let request = *request;

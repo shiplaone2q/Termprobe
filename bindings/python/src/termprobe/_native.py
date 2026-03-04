@@ -168,3 +168,6 @@ def _result(result, kind):
                 result.size.cols, result.size.rows)
     if kind in ("cells", "matches", "bells", "strings"):
         values = getattr(result, kind)
+        return [_copy(values[index]) for index in range(getattr(result, kind + "_len"))]
+    if kind == "snapshot":
+        return ("passed", "written", "updated")[result.snapshot]
