@@ -111,3 +111,7 @@ export interface PackedScreen {
 }
 
 export interface Timeouts {
+  text?: number
+  idle?: number
+  command?: number
+  exit?: number

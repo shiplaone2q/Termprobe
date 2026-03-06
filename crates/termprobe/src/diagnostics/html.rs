@@ -201,3 +201,4 @@ fn timeline_with_limit(
                     frame.screen.title.as_deref(),
                     &observation.style,
                     1.0,
+                    None,
