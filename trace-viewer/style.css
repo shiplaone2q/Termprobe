@@ -14,3 +14,4 @@ input { min-width: 0; background: var(--bg); border: 1px solid var(--border); pa
 h1 { font-size: 17px; margin: 0; }
 h2 { font-size: 12px; margin: 12px 0 7px; }
 p { margin: 8px 0; }
+pre { font: 12px/1.5 Consolas, "Liberation Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; margin: 6px 0; }

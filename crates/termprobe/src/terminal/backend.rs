@@ -51,3 +51,7 @@ impl Backend {
             Self::Xtermjs => "xtermjs",
         }
     }
+
+    pub fn build(
+        self,
+        cols: u16,
