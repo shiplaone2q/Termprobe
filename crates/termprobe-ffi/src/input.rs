@@ -71,3 +71,4 @@ pub(crate) unsafe fn session(value: TuiString) -> Result<(String, ExecutionConte
     let value: SessionInput = serde_json::from_str(&json)
         .map_err(|error| TermprobeError::usage(format!("invalid native session context: {error}")))?;
     value.validate()
+}

@@ -44,3 +44,5 @@
       colors={{ Foreground: inspection?.cell.resolved_fg ?? "", Background: inspection?.cell.resolved_bg ?? "" }} />
   </div>
   <div>
+    <div id="cell-mismatches" class="cell-mismatches" hidden={!inspection?.mismatches.length}>
+      {#each inspection?.mismatches ?? [] as entry}

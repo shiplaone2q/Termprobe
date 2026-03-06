@@ -65,3 +65,4 @@ impl Logger {
     fn write_line(&self, tag: &str, body: &str) {
         let Some(sink) = &self.sink else { return };
         if let Ok(mut w) = sink.lock() {
+            let _ = writeln!(w, "{} {tag} {body}", timestamp());
