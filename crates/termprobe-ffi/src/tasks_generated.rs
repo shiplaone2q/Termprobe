@@ -154,3 +154,6 @@ pub unsafe extern "C" fn tui_get_title_start(session: TuiString) -> *mut TuiTask
 /// Inputs follow the synchronous function contract through this call only.
 pub unsafe extern "C" fn tui_get_clipboard_start(session: TuiString) -> *mut TuiTask {
     tasks::start(|| unsafe { tui_get_clipboard(session) })
+}
+#[no_mangle]
+/// Start a typed call after copying all borrowed inputs.

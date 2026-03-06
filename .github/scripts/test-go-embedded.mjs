@@ -49,3 +49,7 @@ try {
   const hostPath = Object.entries(process.env).find(([name]) => name.toUpperCase() === "PATH")?.[1] ?? "";
   const output = execFileSync(path.join(directory, "readme.exe"), [], {
     cwd: directory, env: { ...runtime, PATH: hostPath }, encoding: "utf8", timeout: 60000,
+  });
+  if (!output.includes("hello")) throw new Error(`README example failed: ${output}`);
+  console.log(`README quick start: ${output.trim()}`);
+} finally {
