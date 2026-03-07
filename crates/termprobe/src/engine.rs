@@ -1134,3 +1134,4 @@ impl Engine {
                         ));
                         primary.errors.extend(
                             artifact
+                                .errors
