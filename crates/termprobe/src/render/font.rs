@@ -243,3 +243,6 @@ fn style_index(bold: bool, italic: bool) -> usize {
 /// Split a CSS font stack without splitting commas inside quoted names.
 fn split_font_stack(stack: &str) -> Vec<String> {
     let mut families = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    for character in stack.chars() {

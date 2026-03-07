@@ -50,3 +50,7 @@ export function createFixture(t) {
     root: directory, source, artifacts: path.join(directory, "artifacts"),
     output: path.join(directory, "assembled"),
     revision: execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(),
+    writeNative(target) {
+      const data = libraryFixture(target);
+      const manifest = {
+        version: "1.2.3", revision: this.revision, target,

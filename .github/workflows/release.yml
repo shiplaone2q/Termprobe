@@ -223,3 +223,6 @@ jobs:
         shell: bash
         run: |
           case "${{ matrix.target }}" in
+            *windows*) library=termprobe_ffi.dll ;;
+            *apple*) library=libtermprobe_ffi.dylib ;;
+            *) library=libtermprobe_ffi.so ;;
