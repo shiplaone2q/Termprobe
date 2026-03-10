@@ -263,3 +263,4 @@ class _LocatorQuery:
 
 def _append_node(
     query: Optional[_LocatorQuery],
+    node: Dict[str, object],

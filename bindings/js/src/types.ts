@@ -101,3 +101,6 @@ export interface TraceOptions {
 }
 export interface SpawnOptions {
   backend?: Backend;
+  cols?: number;
+  rows?: number;
+  cwd?: string;
