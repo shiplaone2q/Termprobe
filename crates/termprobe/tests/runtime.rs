@@ -735,3 +735,4 @@ fn on_failure_recording_is_kept_only_after_an_operation_failure() {
         std::env::temp_dir().join(format!("termprobe-recording-failure-{}", std::process::id()));
 
     let success = registry.session("recording-success");
+    let opened = success

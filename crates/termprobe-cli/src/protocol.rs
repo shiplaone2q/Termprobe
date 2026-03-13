@@ -260,3 +260,4 @@ impl Request {
             if context.operation_name.is_none() {
                 context.operation_name = Some(request.diagnostic_operation_name().to_string());
             }
+            let request_retention = request.diagnostic_retention();

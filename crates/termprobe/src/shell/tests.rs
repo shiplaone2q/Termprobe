@@ -115,3 +115,4 @@ impl TestShell {
                 .open(scripts.join("shellIntegration.ps1"))
                 .unwrap()
                 .write_all(b"\nif (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {\nSet-PSReadLineOption -HistorySavePath (Join-Path $env:__SU_TEST_HOME 'history.txt')\n}\n")
+                .unwrap();

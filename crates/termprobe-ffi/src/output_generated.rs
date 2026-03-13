@@ -76,3 +76,4 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
         text: s.string(v.text),
     }
 }
+#[allow(unused_variables)]
