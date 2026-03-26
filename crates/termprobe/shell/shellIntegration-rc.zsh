@@ -31,3 +31,6 @@ __su_preexec() {
 
 __su_precmd() {
 	local ec=$?
+	if [[ -n $__su_started ]]; then
+		__su_osc "D;$ec"
+	fi
