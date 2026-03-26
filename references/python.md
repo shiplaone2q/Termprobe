@@ -47,3 +47,4 @@ locator = (
 | `highlight(timeout=None)` | Highlight. |
 
 Text options: `regex`, `full`, `whitespace`, and chained `direction`.
+

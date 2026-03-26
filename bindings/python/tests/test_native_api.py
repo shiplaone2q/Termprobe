@@ -106,3 +106,5 @@ class NativeSurfaceTests(unittest.TestCase):
             "mouse_click",
             "mouse_move",
             "mouse_down",
+            "mouse_up",
+            "mouse_drag",
