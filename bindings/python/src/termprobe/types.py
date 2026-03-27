@@ -61,3 +61,6 @@ class Profile:
     scrollback: Optional[int] = None
     colors: Optional[Colors] = None
 
+
+@dataclass
+class Timeouts:

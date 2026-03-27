@@ -498,3 +498,5 @@ impl LocatorSelector {
                 has_not,
             } => {
                 let mut description = input.selector.description();
+                if let Some(has) = has {
+                    description.push_str(&format!(" has ({})", has.selector.description()));
