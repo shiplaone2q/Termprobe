@@ -18,3 +18,5 @@ func (mouse *Mouse) Down(x, y uint16, options MouseButtonOptions) error {
 }
 func (mouse *Mouse) Up(x, y uint16, options MouseButtonOptions) error {
 	return mouse.runtime.mouseUp(x, y, options)
+}
+func (mouse *Mouse) Drag(x1, y1, x2, y2 uint16, options MouseButtonOptions) error {

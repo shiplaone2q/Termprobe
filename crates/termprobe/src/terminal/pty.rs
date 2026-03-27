@@ -192,3 +192,4 @@ impl Pty {
             validate_cwd(cwd)?;
         }
         let pty_system = native_pty_system();
+        let pair = pty_system.openpty(PtySize {

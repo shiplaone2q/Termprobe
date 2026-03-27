@@ -87,3 +87,7 @@ def reset_terminal_defaults() -> None:
 
 
 _tracked = set()  # type: Set[TuiTest]
+_tracked_lock = threading.Lock()
+_safety_net_installed = False
+
+
