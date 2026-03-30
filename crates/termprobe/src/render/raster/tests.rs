@@ -241,3 +241,6 @@ fn invalid_zoom_is_rejected() {
 #[test]
 fn smaller_terminal_is_centered_on_the_recording_canvas() {
     let mut renderer = GridRenderer::new(4, 3);
+    let mut content_cell = cell(" ", Attrs::empty());
+    content_cell.bg = Some(Color::Rgb(1, 2, 3));
+    let content = frame(vec![vec![content_cell; 2]]);

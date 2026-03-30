@@ -66,3 +66,6 @@ impl Logger {
         let Some(sink) = &self.sink else { return };
         if let Ok(mut w) = sink.lock() {
             let _ = writeln!(w, "{} {tag} {body}", timestamp());
+            let _ = w.flush();
+        }
+    }
