@@ -165,3 +165,5 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
           continue;
         }
         if (readingCode) {
+          if (b >= 0x30 && b <= 0x39) { code = (code < 0 ? 0 : code) * 10 + (b - 0x30); }
+          else { readingCode = false; }

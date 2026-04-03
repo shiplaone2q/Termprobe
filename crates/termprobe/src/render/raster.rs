@@ -214,3 +214,5 @@ impl FrameRenderer for GridRenderer {
             &mut self.pixmap,
             origin_x,
             origin_y,
+            panel_width as f32,
+            panel_height as f32,

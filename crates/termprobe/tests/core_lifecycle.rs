@@ -261,3 +261,7 @@ fn pending_wait_cannot_observe_a_replacement_session() {
         .is_err());
 
     let mut run = options("commands");
+    run.restart = true;
+    run.wait_ready = Some(true);
+    let started = Instant::now();
+    session.run(run).unwrap();
