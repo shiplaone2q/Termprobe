@@ -55,3 +55,6 @@ pub(crate) fn close(
         );
     }
     handle.execute_with_context(Operation::Close, context.with_operation("close"))
+}
+
+pub(crate) fn recording(name: &str) -> Result<OperationResult> {

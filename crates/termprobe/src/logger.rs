@@ -69,3 +69,7 @@ impl Logger {
             let _ = w.flush();
         }
     }
+}
+
+/// UTC time-of-day as `HH:MM:SS.mmm`.
+fn timestamp() -> String {
