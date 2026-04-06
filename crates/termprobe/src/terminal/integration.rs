@@ -121,3 +121,7 @@ impl TrackerState {
             "D" => {
                 self.last_output = Some(clean(&self.output_buf));
                 self.prompt_active = false;
+                self.region = Region::None;
+                self.last_exit = exit.and_then(|s| s.trim().parse::<i32>().ok());
+                self.finished_count += 1;
+            }

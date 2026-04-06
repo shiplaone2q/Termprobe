@@ -104,3 +104,4 @@ export interface SpawnOptions {
   cols?: number;
   rows?: number;
   cwd?: string;
+  env?: Record<string, string | number | boolean> | [string, string][];

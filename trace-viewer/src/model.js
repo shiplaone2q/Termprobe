@@ -55,3 +55,6 @@ export function parseReport(source) {
       started: operation.started_ms, ended: operation.ended_ms, duration: operation.ended_ms - operation.started_ms,
       result: operation.result, pointer: pointer && { x: pointer.column, y: pointer.row }, evidence: operation,
     };
+  });
+  const failureAction = hasFailure ? actions.findLast((action, index) => action.failed &&
+    action.screen === timeline.failure_screen_sequence && operations[index].name === details.operation.name) : undefined;
