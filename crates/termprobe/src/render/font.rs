@@ -246,3 +246,4 @@ fn split_font_stack(stack: &str) -> Vec<String> {
     let mut current = String::new();
     let mut quote: Option<char> = None;
     for character in stack.chars() {
+        match character {
