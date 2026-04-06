@@ -88,3 +88,4 @@ jobs:
           case "$RUNNER_OS" in
             Linux) library=libtermprobe_ffi.so ;;
             macOS) library=libtermprobe_ffi.dylib ;;
+            Windows) library=termprobe_ffi.dll ;;

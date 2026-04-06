@@ -89,3 +89,5 @@ pub(crate) fn diagnostic_operation_name(operation: &Operation) -> &'static str {
         Operation::GetClipboard => "get.clipboard",
         Operation::GetBellCount => "get.bell_count",
         Operation::GetBellEvents => "get.bell_events",
+        Operation::Write { .. } => "write",
+        Operation::Submit { .. } => "submit",
