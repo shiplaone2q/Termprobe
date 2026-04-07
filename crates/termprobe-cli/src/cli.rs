@@ -516,3 +516,1198 @@ impl SignalArg {
     pub fn as_str(self) -> &'static str {
         match self {
             SignalArg::Int => "INT",
+            SignalArg::Term => "TERM",
+            SignalArg::Kill => "KILL",
+            SignalArg::Quit => "QUIT",
+        }
+    }
+}
+
+/// Parse an `INDEX=COLOR` palette expectation.
+///
+/// The color is left as written so it is resolved against the session's own
+/// palette later, the same way `--foreground` is.
+fn parse_palette_entry(value: &str) -> Result<(u8, String), String> {
+    let (index, color) = value
+        .split_once('=')
+        .ok_or_else(|| format!("expected INDEX=COLOR, got `{value}`"))?;
+    let index: u8 = index
+        .trim()
+        .parse()
+        .map_err(|_| format!("`{index}` is not a palette index in 0-255"))?;
+    if color.is_empty() {
+        return Err(format!("palette entry {index} names no color"));
+    }
+    Ok((index, color.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn expect_colors_accepts_defaults_and_palette_entries() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "expect",
+            "colors",
+            "--foreground",
+            "#ff0000",
+            "--background",
+            "0",
+            "--palette",
+            "1=#00ff00",
+            "--palette",
+            "200=blue",
+        ])
+        .expect("parse color expectation");
+        let Some(Command::Expect {
+            what:
+                ExpectCmd::Colors(ExpectColorsArgs {
+                    foreground,
+                    background,
+                    cursor,
+                    palette,
+                    ..
+                }),
+        }) = cli.command
+        else {
+            panic!("expected `expect colors`");
+        };
+        assert_eq!(foreground.as_deref(), Some("#ff0000"));
+        assert_eq!(background.as_deref(), Some("0"));
+        assert_eq!(cursor, None);
+        assert_eq!(
+            palette,
+            [(1, "#00ff00".to_string()), (200, "blue".to_string())],
+            "--palette is repeatable and keeps the color as written"
+        );
+    }
+
+    /// An index outside a `u8` cannot name a palette slot, so it is rejected
+    /// where it is written rather than becoming a wait that never succeeds.
+    #[test]
+    fn a_palette_expectation_needs_an_index_and_a_color() {
+        assert!(parse_palette_entry("1=#00ff00").is_ok());
+        assert!(parse_palette_entry("#00ff00").is_err(), "no index");
+        assert!(parse_palette_entry("256=#00ff00").is_err(), "out of range");
+        assert!(parse_palette_entry("1=").is_err(), "no color");
+    }
+
+    #[test]
+    fn key_action_commands_parse() {
+        for action in ["press", "down", "repeat", "up"] {
+            let cli = Cli::try_parse_from(["termprobe", "key", action, "Ctrl+a"])
+                .expect("parse key action");
+            let Some(Command::Key { action: parsed }) = cli.command else {
+                panic!("expected key command for {action}");
+            };
+            let keys = match parsed {
+                KeyCmd::Press { keys }
+                | KeyCmd::Down { keys }
+                | KeyCmd::Repeat { keys }
+                | KeyCmd::Up { keys } => keys,
+            };
+            assert_eq!(keys, ["Ctrl+a"]);
+        }
+
+        let cli = Cli::try_parse_from(["termprobe", "press", "Ctrl+a"]).expect("parse press alias");
+        match cli.command {
+            Some(Command::Press { keys }) => assert_eq!(keys, ["Ctrl+a"]),
+            _ => panic!("unexpected press alias command"),
+        }
+        assert!(Cli::try_parse_from(["termprobe", "keys", "Ctrl+a"]).is_err());
+    }
+
+    #[test]
+    fn mouse_commands_parse_named_buttons_and_modifiers() {
+        let cli = Cli::try_parse_from([
+            "termprobe", "mouse", "click", "4", "7", "--button", "right", "--ctrl", "--shift",
+        ])
+        .expect("parse mouse options");
+        let Some(Command::Mouse {
+            action: MouseCmd::Click { options, .. },
+        }) = cli.command
+        else {
+            panic!("expected mouse click");
+        };
+        assert_eq!(
+            MouseOptions::from(options),
+            MouseOptions {
+                button: MouseButton::Right,
+                ctrl: true,
+                shift: true,
+                ..MouseOptions::default()
+            }
+        );
+
+        let numeric = Cli::try_parse_from(["termprobe", "mouse", "down", "4", "7", "--button", "1"])
+            .expect("parse legacy numeric button");
+        let Some(Command::Mouse {
+            action: MouseCmd::Down { options, .. },
+        }) = numeric.command
+        else {
+            panic!("expected mouse down");
+        };
+        assert_eq!(MouseOptions::from(options).button, MouseButton::Middle);
+    }
+
+    #[test]
+    fn skill_accepts_the_add_flag() {
+        let cli = Cli::try_parse_from(["termprobe", "skill", "--add"]).expect("parse skill");
+        assert!(matches!(cli.command, Some(Command::Skill { add: true })));
+    }
+
+    #[test]
+    fn wait_ready_parses_with_a_timeout() {
+        let cli = Cli::try_parse_from(["termprobe", "wait", "ready", "--timeout", "1234"])
+            .expect("parse wait ready");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Wait {
+                what: WaitCmd::Ready {
+                    timeout: Some(1234)
+                }
+            })
+        ));
+    }
+
+    #[test]
+    fn bell_commands_parse_with_counts_and_timeouts() {
+        let cli = Cli::try_parse_from(["termprobe", "wait", "bell", "--timeout", "1234"])
+            .expect("parse wait bell");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Wait {
+                what: WaitCmd::Bell {
+                    timeout: Some(1234)
+                }
+            })
+        ));
+
+        let cli = Cli::try_parse_from(["termprobe", "expect", "bell", "3", "--timeout", "4321"])
+            .expect("parse expect bell");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Expect {
+                what: ExpectCmd::Bell {
+                    count: 3,
+                    timeout: Some(4321)
+                }
+            })
+        ));
+
+        assert!(Cli::try_parse_from(["termprobe", "expect", "bell"]).is_err());
+    }
+
+    #[test]
+    fn open_accepts_readiness_flags() {
+        let cli = Cli::try_parse_from(["termprobe", "open", "--no-wait-ready"]).expect("parse open");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Open {
+                wait_ready: false,
+                no_wait_ready: true,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn open_and_run_accept_restart_and_force() {
+        for args in [
+            vec!["termprobe", "open", "--restart"],
+            vec!["termprobe", "open", "--force"],
+        ] {
+            let cli = Cli::try_parse_from(args).expect("parse open restart");
+            assert!(matches!(
+                cli.command,
+                Some(Command::Open { restart: true, .. })
+            ));
+        }
+
+        for args in [
+            vec!["termprobe", "run", "--restart", "vim"],
+            vec!["termprobe", "run", "--force", "vim"],
+        ] {
+            let cli = Cli::try_parse_from(args).expect("parse run restart");
+            assert!(matches!(
+                cli.command,
+                Some(Command::Run { restart: true, .. })
+            ));
+        }
+    }
+
+    #[test]
+    fn restart_accepts_a_named_session_and_graceful_timeout() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "restart",
+            "--session",
+            "work",
+            "--graceful-timeout",
+            "1234",
+        ])
+        .expect("parse named restart");
+        assert_eq!(cli.session.as_deref(), Some("work"));
+        assert!(matches!(
+            cli.command,
+            Some(Command::Restart {
+                graceful_timeout: 1234
+            })
+        ));
+    }
+
+    #[test]
+    fn open_shell_values_map_to_library_shells() {
+        let cases = [
+            ("bash", Shell::Bash),
+            ("powershell", Shell::Powershell),
+            ("pwsh", Shell::Pwsh),
+            ("cmd", Shell::Cmd),
+            ("fish", Shell::Fish),
+            ("zsh", Shell::Zsh),
+            ("xonsh", Shell::Xonsh),
+            ("elvish", Shell::Elvish),
+            ("nushell", Shell::Nushell),
+        ];
+        for (value, expected) in cases {
+            let cli =
+                Cli::try_parse_from(["termprobe", "open", "--shell", value]).expect("parse shell");
+            let Some(Command::Open {
+                shell: Some(shell), ..
+            }) = cli.command
+            else {
+                panic!("expected Open with a shell");
+            };
+            assert_eq!(Shell::from(shell), expected);
+        }
+    }
+
+    #[test]
+    fn open_backend_values_map_to_terminal_backends() {
+        for (name, expected) in [
+            ("alacritty", Backend::Alacritty),
+            ("ghostty", Backend::Ghostty),
+            ("rio", Backend::Rio),
+        ] {
+            let cli = Cli::try_parse_from(["termprobe", "open", "--backend", name])
+                .unwrap_or_else(|error| panic!("parse {name}: {error}"));
+            let Some(Command::Open {
+                backend: Some(backend),
+                ..
+            }) = cli.command
+            else {
+                panic!("expected Open with backend {name}");
+            };
+            assert_eq!(Backend::from(backend), expected);
+        }
+        assert!(Cli::try_parse_from(["termprobe", "open", "--backend", "libghostty"]).is_err());
+    }
+
+    #[test]
+    fn run_accepts_readiness_flags() {
+        let cli =
+            Cli::try_parse_from(["termprobe", "run", "--wait-ready", "vim"]).expect("parse run");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Run {
+                wait_ready: true,
+                no_wait_ready: false,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn open_rejects_contradictory_readiness_flags() {
+        assert!(
+            Cli::try_parse_from(["termprobe", "open", "--wait-ready", "--no-wait-ready"]).is_err()
+        );
+    }
+
+    #[test]
+    fn run_rejects_contradictory_readiness_flags() {
+        assert!(
+            Cli::try_parse_from(["termprobe", "run", "--wait-ready", "--no-wait-ready", "vim"])
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn open_accepts_per_class_timeout_defaults() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "open",
+            "--timeout-text",
+            "30000",
+            "--timeout-idle",
+            "15000",
+            "--timeout-ready",
+            "20000",
+        ])
+        .expect("parse open with timeouts");
+        let Some(Command::Open { timeouts, .. }) = cli.command else {
+            panic!("expected Open");
+        };
+        let defaults: Timeouts = timeouts.into();
+        assert_eq!(defaults.text, Some(30_000));
+        assert_eq!(defaults.idle, Some(15_000));
+        assert_eq!(defaults.ready, Some(20_000));
+        assert_eq!(defaults.command, None, "unset classes stay unset");
+        assert_eq!(defaults.exit, None);
+    }
+
+    #[test]
+    fn recording_start_accepts_timeline_options() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "record",
+            "start",
+            "demo.mp4",
+            "--format",
+            "mp4",
+            "--fps",
+            "24",
+            "--speed",
+            "2",
+            "--idle-time-limit",
+            "3",
+            "--zoom",
+            "0.5",
+        ])
+        .expect("parse recording start");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Record {
+                cmd: RecordCmd::Start {
+                    format: Some(RecordingFormatArg::Mp4),
+                    fps: Some(24),
+                    speed: Some(2.0),
+                    idle_time_limit: Some(3.0),
+                    zoom: Some(0.5),
+                    ..
+                }
+            })
+        ));
+    }
+
+    #[test]
+    fn screenshot_accepts_zoom() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "screenshot",
+            "--out",
+            "screen.svg",
+            "--zoom",
+            "0.5",
+        ])
+        .expect("parse screenshot zoom");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Screenshot(ScreenshotArgs {
+                zoom: Some(0.5),
+                ..
+            }))
+        ));
+    }
+
+    #[test]
+    fn open_has_no_catch_all_timeout_flag() {
+        assert!(Cli::try_parse_from(["termprobe", "open", "--timeout", "1000"]).is_err());
+    }
+
+    #[test]
+    fn per_call_timeouts_are_unset_when_omitted() {
+        let cli = Cli::try_parse_from(["termprobe", "wait", "idle"]).expect("parse wait idle");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Wait {
+                what: WaitCmd::Idle { timeout: None }
+            })
+        ));
+
+        let cli =
+            Cli::try_parse_from(["termprobe", "expect", "text", "hi"]).expect("parse expect text");
+        let Some(Command::Expect {
+            what: ExpectCmd::Text { timeout, .. },
+        }) = cli.command
+        else {
+            panic!("expected Expect text");
+        };
+        assert_eq!(timeout, None);
+    }
+
+    #[test]
+    fn find_text_accepts_scope_and_occurrence() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "find",
+            "text",
+            "Save",
+            "--after-text",
+            "Settings",
+            "--after-match",
+            "last",
+            "--whitespace",
+            "normalize",
+            "--nth",
+            "1",
+        ])
+        .expect("parse find text");
+        let Some(Command::Find {
+            what: FindCmd::Text { query },
+        }) = cli.command
+        else {
+            panic!("expected Find text");
+        };
+        assert_eq!(query.selector.after_text.as_deref(), Some("Settings"));
+        assert_eq!(query.selector.after_match, Some(MatchArg::Last));
+        assert_eq!(query.selector.whitespace, WhitespaceArg::Normalize);
+        assert_eq!(query.selector.nth, Some(1));
+    }
+
+    #[test]
+    fn click_text_accepts_selector_style_and_action_options() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "click",
+            "text",
+            "Save",
+            "--after-text",
+            "Settings",
+            "--whitespace",
+            "normalize",
+            "--nth",
+            "1",
+            "--fg",
+            "2",
+            "--clicks",
+            "2",
+        ])
+        .expect("parse click text");
+        let Some(Command::Click {
+            what: ClickCmd::Text { query, clicks, .. },
+        }) = cli.command
+        else {
+            panic!("expected click text");
+        };
+        assert_eq!(query.selector.after_text.as_deref(), Some("Settings"));
+        assert_eq!(query.selector.whitespace, WhitespaceArg::Normalize);
+        assert_eq!(query.selector.nth, Some(1));
+        assert_eq!(query.style.fg.as_deref(), Some("2"));
+        assert_eq!(clicks, 2);
+    }
+
+    #[test]
+    fn expect_text_accepts_generic_styles() {
+        let cli = Cli::try_parse_from([
+            "termprobe",
+            "expect",
+            "text",
+            "Warning",
+            "--bold",
+            "--italic=false",
+            "--underline-style",
+            "curly",
+        ])
+        .expect("parse styled expectation");
+        let Some(Command::Expect {
+            what: ExpectCmd::Text { query, .. },
+        }) = cli.command
+        else {
+            panic!("expected Expect text");
+        };
+        assert_eq!(query.style.bold, Some(true));
+        assert_eq!(query.style.italic, Some(false));
+        assert_eq!(query.style.underline_style.as_deref(), Some("curly"));
+    }
+
+    /// `--link ""` has to survive parsing as an empty string rather than as
+    /// an absent option, because that is how a caller asks for a cell that
+    /// links nowhere.
+    #[test]
+    fn expect_text_accepts_a_link_target() {
+        for (argument, expected) in [("https://example.com", "https://example.com"), ("", "")] {
+            let cli =
+                Cli::try_parse_from(["termprobe", "expect", "text", "Docs", "--link", argument])
+                    .expect("parse link expectation");
+            let Some(Command::Expect {
+                what: ExpectCmd::Text { query, .. },
+            }) = cli.command
+            else {
+                panic!("expected Expect text");
+            };
+            assert_eq!(query.link.as_deref(), Some(expected));
+        }
+    }
+
+    #[test]
+    fn expect_exit_code_accepts_a_timeout() {
+        let cli =
+            Cli::try_parse_from(["termprobe", "expect", "exit-code", "0", "--timeout", "1234"])
+                .expect("parse expect exit-code");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Expect {
+                what: ExpectCmd::ExitCode {
+                    code: 0,
+                    timeout: Some(1234)
+                }
+            })
+        ));
+    }
+
+    #[test]
+    fn daemon_stop_accepts_all() {
+        let cli = Cli::try_parse_from(["termprobe", "daemon", "stop", "--all"]).expect("parse stop");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Daemon {
+                cmd: DaemonCmd::Stop { all: true }
+            })
+        ));
+    }
+
+    #[test]
+    fn daemon_start_is_its_own_subcommand() {
+        let cli = Cli::try_parse_from(["termprobe", "daemon", "start"]).expect("parse start");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Daemon {
+                cmd: DaemonCmd::Start
+            })
+        ));
+    }
+
+    #[test]
+    fn daemon_stop_defaults_to_no_target() {
+        let cli = Cli::try_parse_from(["termprobe", "daemon", "stop"]).expect("parse stop");
+        assert!(matches!(
+            cli.command,
+            Some(Command::Daemon {
+                cmd: DaemonCmd::Stop { all: false }
+            })
+        ));
+        assert_eq!(cli.session, None, "no session means no target was named");
+    }
+
+    #[test]
+    fn daemon_stop_records_an_explicit_session() {
+        let cli = Cli::try_parse_from(["termprobe", "--session", "work", "daemon", "stop"])
+            .expect("parse stop");
+        assert_eq!(cli.session.as_deref(), Some("work"));
+    }
+}
+
+#[derive(Subcommand)]
+pub enum DaemonCmd {
+    /// Start this session's daemon (idempotent; blocks until it accepts connections).
+    Start,
+    /// Show daemon status, socket, and log path.
+    /// Reports without starting one; exits 3 when nothing is running.
+    Status,
+    /// Stop a session's daemon.
+    /// Each session has its own daemon, so this needs --session <NAME> or --all.
+    Stop {
+        /// Stop every daemon in this home.
+        #[arg(long)]
+        all: bool,
+    },
+}
+
+#[derive(Clone, Copy, clap::ValueEnum)]
+#[clap(rename_all = "kebab-case")]
+pub enum GetArg {
+    /// Scrollback offset and available history, in rows.
+    Viewport,
+    /// Last command line.
+    Command,
+    /// Output of the last command.
+    Output,
+    /// Exit code of the last command.
+    ExitCode,
+    /// Current working directory.
+    Cwd,
+    /// Cursor row and column.
+    Cursor,
+    /// Terminal size.
+    Size,
+    /// Window title, as set with OSC 0/2.
+    Title,
+    /// Current clipboard.
+    Clipboard,
+    /// Every terminal mode and whether it is set.
+    Modes,
+    /// The terminal's colors: the three defaults (OSC 10/11/12) and any
+    /// palette entry a program overrode (OSC 4).
+    Colors,
+    /// Cumulative terminal bell count.
+    Bells,
+    /// Recorded terminal bell events (sequence + elapsed time).
+    BellEvents,
+}
+
+#[derive(Subcommand)]
+pub enum ScrollCmd {
+    /// Show older output.
+    Up {
+        #[arg(default_value_t = 1, value_parser = clap::value_parser!(i32).range(0..))]
+        lines: i32,
+    },
+    /// Show newer output.
+    Down {
+        #[arg(default_value_t = 1, value_parser = clap::value_parser!(i32).range(0..))]
+        lines: i32,
+    },
+    /// Show the oldest available output.
+    Top,
+    /// Return to the live screen.
+    Bottom,
+}
+
+#[derive(Subcommand)]
+pub enum KeyCmd {
+    /// Simulate key presses, reporting releases when the negotiated mode supports them.
+    Press {
+        /// Key names or combos to press in sequence.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        keys: Vec<String>,
+    },
+    /// Simulate explicit keydown events.
+    Down {
+        /// Key names or combos to send down events for.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        keys: Vec<String>,
+    },
+    /// Send repeat events, or press-equivalent input in legacy mode.
+    Repeat {
+        /// Key names or combos to send repeat events for.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        keys: Vec<String>,
+    },
+    /// Simulate explicit keyup events when the negotiated mode supports them.
+    Up {
+        /// Key names or combos to send up events for.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        keys: Vec<String>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+#[clap(rename_all = "lowercase")]
+pub enum MouseButtonArg {
+    #[default]
+    #[value(alias = "0")]
+    Left,
+    #[value(alias = "1")]
+    Middle,
+    #[value(alias = "2")]
+    Right,
+}
+
+impl From<MouseButtonArg> for MouseButton {
+    fn from(button: MouseButtonArg) -> Self {
+        match button {
+            MouseButtonArg::Left => MouseButton::Left,
+            MouseButtonArg::Middle => MouseButton::Middle,
+            MouseButtonArg::Right => MouseButton::Right,
+        }
+    }
+}
+
+#[derive(Args, Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MouseOptionsArg {
+    /// Mouse button.
+    #[arg(long, value_enum, default_value = "left")]
+    button: MouseButtonArg,
+    /// Hold Alt while sending the mouse action.
+    #[arg(long)]
+    alt: bool,
+    /// Hold Ctrl while sending the mouse action.
+    #[arg(long)]
+    ctrl: bool,
+    /// Hold Shift while sending the mouse action.
+    #[arg(long)]
+    shift: bool,
+}
+
+impl From<MouseOptionsArg> for MouseOptions {
+    fn from(options: MouseOptionsArg) -> Self {
+        Self {
+            button: options.button.into(),
+            alt: options.alt,
+            ctrl: options.ctrl,
+            shift: options.shift,
+        }
+    }
+}
+
+#[derive(Subcommand)]
+pub enum MouseCmd {
+    /// Click at a cell, or on the first cell matching --on-text.
+    Click {
+        /// Column to click, 0-based (omit when using --on-text).
+        x: Option<u16>,
+        /// Row to click, 0-based (omit when using --on-text).
+        y: Option<u16>,
+        /// Click the first cell containing this text.
+        #[arg(long)]
+        on_text: Option<String>,
+        #[command(flatten)]
+        options: MouseOptionsArg,
+        /// Number of clicks.
+        #[arg(long, default_value_t = 1)]
+        clicks: u8,
+    },
+    /// Move the pointer to a cell.
+    Move {
+        /// Target column, 0-based.
+        x: u16,
+        /// Target row, 0-based.
+        y: u16,
+    },
+    /// Press a button at a cell (no release).
+    Down {
+        /// Column, 0-based.
+        x: u16,
+        /// Row, 0-based.
+        y: u16,
+        #[command(flatten)]
+        options: MouseOptionsArg,
+    },
+    /// Release a button at a cell.
+    Up {
+        /// Column, 0-based.
+        x: u16,
+        /// Row, 0-based.
+        y: u16,
+        #[command(flatten)]
+        options: MouseOptionsArg,
+    },
+    /// Drag from one cell to another.
+    Drag {
+        /// Start column, 0-based.
+        x1: u16,
+        /// Start row, 0-based.
+        y1: u16,
+        /// End column, 0-based.
+        x2: u16,
+        /// End row, 0-based.
+        y2: u16,
+        #[command(flatten)]
+        options: MouseOptionsArg,
+    },
+    /// Scroll the wheel up or down.
+    Scroll {
+        /// Scroll direction.
+        #[arg(value_enum)]
+        direction: ScrollDir,
+        /// Number of wheel steps.
+        #[arg(long, default_value_t = 3)]
+        amount: u16,
+    },
+}
+
+/// Scroll-wheel direction.
+#[derive(Clone, Copy, clap::ValueEnum)]
+#[clap(rename_all = "lower")]
+pub enum ScrollDir {
+    /// Scroll up.
+    Up,
+    /// Scroll down.
+    Down,
+}
+
+impl ScrollDir {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ScrollDir::Up => "up",
+            ScrollDir::Down => "down",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+#[clap(rename_all = "lower")]
+pub enum WhitespaceArg {
+    Exact,
+    Normalize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+#[clap(rename_all = "lower")]
+pub enum MatchArg {
+    Any,
+    Unique,
+    First,
+    Last,
+}
+
+#[derive(Args)]
+pub struct TextSelectorArgs {
+    /// Treat the target text as a regular expression.
+    #[arg(long)]
+    pub regex: bool,
+    /// Search the full scrollback, not just the visible viewport.
+    #[arg(long)]
+    pub full: bool,
+    /// Compare whitespace exactly or collapse runs and line breaks.
+    #[arg(long, value_enum, default_value_t = WhitespaceArg::Exact)]
+    pub whitespace: WhitespaceArg,
+    /// Search only after this literal anchor.
+    #[arg(long)]
+    pub after_text: Option<String>,
+    /// Treat --after-text as a regular expression.
+    #[arg(long, requires = "after_text")]
+    pub after_regex: bool,
+    /// Select the anchor occurrence used by --after-text.
+    #[arg(
+        long,
+        value_enum,
+        requires = "after_text",
+        conflicts_with = "after_nth"
+    )]
+    pub after_match: Option<MatchArg>,
+    /// Use the zero-based nth --after-text occurrence.
+    #[arg(long, requires = "after_text", conflicts_with = "after_match")]
+    pub after_nth: Option<usize>,
+    /// Search only before this literal anchor.
+    #[arg(long)]
+    pub before_text: Option<String>,
+    /// Treat --before-text as a regular expression.
+    #[arg(long, requires = "before_text")]
+    pub before_regex: bool,
+    /// Select the anchor occurrence used by --before-text.
+    #[arg(
+        long,
+        value_enum,
+        requires = "before_text",
+        conflicts_with = "before_nth"
+    )]
+    pub before_match: Option<MatchArg>,
+    /// Use the zero-based nth --before-text occurrence.
+    #[arg(long, requires = "before_text", conflicts_with = "before_match")]
+    pub before_nth: Option<usize>,
+    /// Select all, unique, first, or last target occurrences.
+    #[arg(long = "match", value_enum, conflicts_with = "nth")]
+    pub match_mode: Option<MatchArg>,
+    /// Select the zero-based nth target occurrence.
+    #[arg(long, conflicts_with = "match_mode")]
+    pub nth: Option<usize>,
+}
+
+#[derive(Args)]
+pub struct TextStyleArgs {
+    /// Required foreground color.
+    #[arg(long)]
+    pub fg: Option<String>,
+    /// Required background color.
+    #[arg(long)]
+    pub bg: Option<String>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub bold: Option<bool>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub dim: Option<bool>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub italic: Option<bool>,
+    #[arg(long)]
+    pub underline_style: Option<String>,
+    #[arg(long)]
+    pub underline_color: Option<String>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub inverse: Option<bool>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub hidden: Option<bool>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub strikethrough: Option<bool>,
+    #[arg(long, num_args = 0..=1, default_missing_value = "true", require_equals = true)]
+    pub blink: Option<bool>,
+}
+
+#[derive(Args)]
+pub struct TextQueryArgs {
+    /// Text or regular expression to match.
+    pub text: String,
+    #[command(flatten)]
+    pub selector: TextSelectorArgs,
+    #[command(flatten)]
+    pub style: Box<TextStyleArgs>,
+    /// Required OSC 8 link target on every matched cell. Empty means unlinked.
+    #[arg(long)]
+    pub link: Option<String>,
+}
+
+#[derive(Subcommand)]
+pub enum FindCmd {
+    /// Find text and return its row/column spans.
+    Text {
+        #[command(flatten)]
+        query: TextQueryArgs,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum ClickCmd {
+    /// Wait for matching text, then click its middle cell.
+    Text {
+        #[command(flatten)]
+        query: TextQueryArgs,
+        #[command(flatten)]
+        options: MouseOptionsArg,
+        /// Number of clicks.
+        #[arg(long, default_value_t = 1)]
+        clicks: u8,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum HighlightCmd {
+    /// Wait for matching text, then highlight every selected occurrence.
+    Text {
+        #[command(flatten)]
+        query: TextQueryArgs,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum WaitCmd {
+    /// Wait until the window title (set with OSC 0/2) matches text/regex.
+    ///
+    /// Programs set the title to announce what they are doing, so this is how
+    /// to wait for one that reports progress there rather than on screen.
+    Title {
+        /// Text or regex to wait for in the title.
+        text: String,
+        /// Treat <text> as a regular expression.
+        #[arg(long)]
+        regex: bool,
+        /// Invert: wait until the title does NOT match.
+        #[arg(long)]
+        not: bool,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Wait for a clipboard change or match.
+    Clipboard {
+        /// Literal text or regex to wait for; omit to wait for any change.
+        text: Option<String>,
+        /// Treat <text> as a regular expression.
+        #[arg(long, requires = "text")]
+        regex: bool,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Wait until the screen stops repainting (visual idle, NOT command done).
+    ///
+    /// A silent command (e.g. `sleep 100`) counts as idle right away. To wait
+    /// for a command to finish, use `wait command`.
+    Idle {
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Wait until the foreground command finishes (via shell integration).
+    ///
+    /// Use this after `submit`. Without shell integration it falls back to
+    /// "prompt returned and screen idle". Raise --timeout for long commands.
+    Command {
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Wait until the session's program/shell itself exits.
+    ///
+    /// Use this for `run <program>` sessions or after sending `exit`.
+    Exit {
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Wait until the shell reports a ready prompt (via shell integration).
+    /// Use after `run`-ing something prompt-aware, or to re-synchronise before input.
+    Ready {
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Wait for the next terminal bell event.
+    Bell {
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum ExpectCmd {
+    /// Assert text is visible, optionally with a required color.
+    Text {
+        #[command(flatten)]
+        query: TextQueryArgs,
+        /// Invert: assert the text is NOT present.
+        #[arg(long)]
+        not: bool,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Assert the window title (set with OSC 0/2) matches text/regex.
+    Title {
+        /// Text or regex to match against the title.
+        text: String,
+        /// Treat <text> as a regular expression.
+        #[arg(long)]
+        regex: bool,
+        /// Invert: assert the title does NOT match.
+        #[arg(long)]
+        not: bool,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Assert the last command's exit code.
+    /// Waits for the foreground command first, so this is safe right after `submit`.
+    ExitCode {
+        /// Expected exit code.
+        code: i32,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Assert the last command's output.
+    Output {
+        /// Text or regex to match.
+        text: String,
+        /// Treat <text> as a regular expression.
+        #[arg(long)]
+        regex: bool,
+    },
+    /// Wait until the cumulative terminal bell count reaches this value.
+    /// Assert a terminal mode is set.
+    Mode {
+        /// Mode name, as reported by `get modes`.
+        name: String,
+        /// Require the mode to be off instead of on.
+        #[arg(long)]
+        off: bool,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Assert the terminal's colors (OSC 4 and OSC 10/11/12).
+    ///
+    /// Every color takes the same spellings `--fg` does, minus `default`.
+    Colors(ExpectColorsArgs),
+    /// Assert the cursor's position, visibility, or shape.
+    Cursor(ExpectCursorArgs),
+    Bell {
+        /// Minimum cumulative bell count.
+        count: u64,
+        /// Timeout in milliseconds.
+        #[arg(long, value_name = "MS")]
+        timeout: Option<u64>,
+    },
+    /// Assert the screen matches a saved snapshot.
+    Snapshot {
+        /// Snapshot name.
+        name: String,
+        /// Write the current screen as the new snapshot.
+        #[arg(short = 'u', long)]
+        update: bool,
+        /// Include each cell's colors, attributes and link in the snapshot.
+        #[arg(long)]
+        include_style: bool,
+        /// Include the window title in the snapshot's frame. Off by default:
+        /// a shell prompt often sets the title to a hostname and path, which
+        /// would tie the snapshot to one machine.
+        #[arg(long)]
+        include_title: bool,
+    },
+}
+
+// Keep these builders out of the parent Subcommand stack frame on Windows.
+#[derive(clap::Args)]
+pub struct ExpectColorsArgs {
+    /// Required default foreground.
+    #[arg(long)]
+    pub foreground: Option<String>,
+    /// Required default background.
+    #[arg(long)]
+    pub background: Option<String>,
+    /// Required cursor color.
+    #[arg(long)]
+    pub cursor: Option<String>,
+    /// Required palette entry, as `INDEX=COLOR`. Repeatable.
+    #[arg(long, value_name = "INDEX=COLOR", value_parser = parse_palette_entry)]
+    pub palette: Vec<(u8, String)>,
+    /// Timeout in milliseconds.
+    #[arg(long, value_name = "MS")]
+    pub timeout: Option<u64>,
+}
+
+#[derive(clap::Args)]
+pub struct ExpectCursorArgs {
+    /// Require the cursor to be drawn.
+    #[arg(long, conflicts_with = "hidden")]
+    pub visible: bool,
+    /// Require the cursor to be hidden.
+    #[arg(long)]
+    pub hidden: bool,
+    /// Required shape: block, underline, or bar.
+    #[arg(long)]
+    pub shape: Option<String>,
+    /// Required column.
+    #[arg(long)]
+    pub x: Option<u16>,
+    /// Required row.
+    #[arg(long)]
+    pub y: Option<u16>,
+    /// Timeout in milliseconds.
+    #[arg(long, value_name = "MS")]
+    pub timeout: Option<u64>,
+}
+
+#[cfg(test)]
+mod scroll_tests {
+    use super::*;
+
+    #[test]
+    fn native_scroll_arguments_are_typed() {
+        for direction in ["up", "down"] {
+            let cli = Cli::try_parse_from(["termprobe", "scroll", direction]).unwrap();
+            assert!(matches!(
+                cli.command,
+                Some(Command::Scroll {
+                    target: ScrollCmd::Up { lines: 1 } | ScrollCmd::Down { lines: 1 }
+                })
+            ));
+            for lines in ["0", "12", "2147483647"] {
+                assert!(Cli::try_parse_from(["termprobe", "scroll", direction, lines]).is_ok());
+            }
+            for lines in ["-1", "1.5", "2147483648", "NaN"] {
+                assert!(Cli::try_parse_from(["termprobe", "scroll", direction, lines]).is_err());
+            }
+        }
+        for target in ["top", "bottom"] {
+            assert!(Cli::try_parse_from(["termprobe", "scroll", target]).is_ok());
+            assert!(Cli::try_parse_from(["termprobe", "scroll", target, "1"]).is_err());
+        }
+        assert!(matches!(
+            Cli::try_parse_from(["termprobe", "get", "viewport"])
+                .unwrap()
+                .command,
+            Some(Command::Get {
+                field: GetArg::Viewport
+            })
+        ));
+    }
+}
