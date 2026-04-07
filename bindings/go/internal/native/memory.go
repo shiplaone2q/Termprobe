@@ -35,3 +35,29 @@ func (memory *nativeMemory) nonemptyText(value string) abiString {
 }
 
 func (memory *nativeMemory) pairs(values map[string]string) (*abiPair, uintptr) {
+	if len(values) == 0 {
+		return nil, 0
+	}
+	entries := make([]abiPair, len(values))
+	pointer := &entries[0]
+	memory.pinner.Pin(pointer)
+	index := 0
+	for key, value := range values {
+		entries[index] = abiPair{key: memory.text(key), value: memory.text(value)}
+		index++
+	}
+	return pointer, uintptr(len(values))
+}
+
+func (memory *nativeMemory) strings(values []string) (*abiString, uintptr) {
+	if len(values) == 0 {
+		return nil, 0
+	}
+	entries := make([]abiString, len(values))
+	pointer := &entries[0]
+	memory.pinner.Pin(pointer)
+	for index, value := range values {
+		entries[index] = memory.text(value)
+	}
+	return pointer, uintptr(len(values))
+}
