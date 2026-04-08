@@ -84,3 +84,76 @@ pub(super) fn start(call: impl FnOnce() -> *mut TuiResult) -> *mut TuiTask {
 }
 
 #[no_mangle]
+/// Returns NULL while pending. Transfers ownership of a completed result once.
+///
+/// # Safety
+/// task must be a live task returned by a start function on the current thread.
+pub unsafe extern "C" fn tui_task_poll(task: *mut TuiTask) -> *mut TuiResult {
+    let task = unsafe { &mut *task };
+    if !task.immediate.is_null() {
+        return std::mem::replace(&mut task.immediate, std::ptr::null_mut());
+    }
+    let Some(receiver) = &task.receiver else {
+        return std::ptr::null_mut();
+    };
+    match receiver.try_recv() {
+        Ok(completion) => {
+            task.receiver = None;
+            match completion {
+                Ok(value) => output::operation(value),
+                Err(error) => output::error(error),
+            }
+        }
+        Err(TryRecvError::Empty) => std::ptr::null_mut(),
+        Err(TryRecvError::Disconnected) => {
+            task.receiver = None;
+            output::error(TermprobeError::internal("native worker disconnected"))
+        }
+    }
+}
+
+#[no_mangle]
+/// # Safety
+/// task must be NULL or a live task from the current thread, freed exactly once.
+pub unsafe extern "C" fn tui_task_free(task: *mut TuiTask) {
+    if !task.is_null() {
+        TASKS.with(|tasks| tasks.borrow_mut().0.remove(&task));
+        drop(unsafe { Box::from_raw(task) });
+    }
+}
+
+#[no_mangle]
+/// Exercise panic containment without terminating the host process.
+pub extern "C" fn tui_panic_probe_start() -> *mut TuiTask {
+    start(|| execute(|| panic!("intentional native panic probe")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn thread_exit_releases_pending_and_completed_tasks() {
+        for completed in [false, true] {
+            let (sender, receiver) = mpsc::channel();
+            if completed {
+                sender
+                    .send(Ok(OperationResult::Text("unclaimed result".into())))
+                    .unwrap();
+            }
+            std::thread::spawn(move || {
+                let task = start(|| {
+                    START.with(|slot| *slot.borrow_mut() = Some(Some(receiver)));
+                    std::ptr::null_mut()
+                });
+                assert!(!task.is_null());
+            })
+            .join()
+            .unwrap();
+            assert!(
+                sender.send(Ok(OperationResult::Unit)).is_err(),
+                "thread exit left a task receiver alive (completed={completed})"
+            );
+        }
+    }
+}
