@@ -54,3 +54,29 @@ export function createFixture(t) {
       const data = libraryFixture(target);
       const manifest = {
         version: "1.2.3", revision: this.revision, target,
+        library: packages.libraryName(target), sha256: packages.sha256(data),
+      };
+      const filename = path.join(this.artifacts, packages.nativeFilename("1.2.3", target));
+      packages.writeArchive(filename, new Map([
+        [manifest.library, data], ["LICENSE", Buffer.from("License fixture\n")],
+        ["manifest.json", Buffer.from(JSON.stringify(manifest))],
+      ]));
+      return filename;
+    },
+    run(command, args = [], succeeds = true) {
+      const result = spawnSync(process.execPath, [path.join(scripts, "package-native.mjs"), command, ...args], {
+        cwd: this.root, encoding: "utf8",
+      });
+      if (result.error) throw result.error;
+      if (succeeds) assert.equal(result.status, 0, result.stdout + result.stderr);
+      else assert.notEqual(result.status, 0, result.stdout);
+      return result;
+    },
+    assemble() {
+      return this.run("go", ["--artifacts", this.artifacts, "--output", this.output]);
+    },
+  };
+  fs.mkdirSync(fixture.artifacts);
+  for (const target of Object.keys(targets)) fixture.writeNative(target);
+  return fixture;
+}

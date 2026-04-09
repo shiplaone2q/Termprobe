@@ -89,3 +89,183 @@ jobs:
             Linux) library=libtermprobe_ffi.so ;;
             macOS) library=libtermprobe_ffi.dylib ;;
             Windows) library=termprobe_ffi.dll ;;
+            *) echo "Unsupported runner: $RUNNER_OS" >&2; exit 1 ;;
+          esac
+          export TERMPROBE__NATIVE_LIBRARY="$GITHUB_WORKSPACE/target/debug/$library"
+          export CGO_ENABLED=0
+          cd bindings/go
+          unformatted="$(gofmt -l .)"
+          if [[ -n "$unformatted" ]]; then
+            printf 'Go files need formatting:\n%s\n' "$unformatted" >&2
+            exit 1
+          fi
+          go vet ./...
+          go test ./...
+          go run ./examples/smoke
+          CGO_ENABLED=1 go test -tags=termprobe_abi_check -run '^TestNativeLayoutMatchesCompiler$' -count=1 ./internal/native
+
+      - name: Test embedded Go consumer
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            Linux) library=libtermprobe_ffi.so ;;
+            macOS) library=libtermprobe_ffi.dylib ;;
+            Windows) library=termprobe_ffi.dll ;;
+            *) echo "Unsupported runner: $RUNNER_OS" >&2; exit 1 ;;
+          esac
+          target="$(rustc -vV | sed -n 's/^host: //p')"
+          node .github/scripts/release/package-native.mjs native \
+            --library "target/debug/$library" --target "$target" \
+            --output target/native-packages
+          node .github/scripts/release/package-native.mjs go \
+            --artifacts target/native-packages --target "$target" \
+            --output "$RUNNER_TEMP/go-package"
+          node .github/scripts/test-go-embedded.mjs "$RUNNER_TEMP/go-package"
+          cd "$RUNNER_TEMP/go-package"
+          unset TERMPROBE__NATIVE_LIBRARY
+          CGO_ENABLED=0 go test ./...
+          CGO_ENABLED=1 go test -race ./...
+
+      - uses: taiki-e/install-action@a4d3f3f761dcd95cce1b72cb61cb6d1963438177 # v2.87.30
+        if: runner.os == 'Linux'
+        with:
+          tool: cargo-zigbuild
+
+      - name: Test embedded Go compatibility on Linux
+        if: runner.os == 'Linux'
+        run: |
+          rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl
+          node bindings/js/scripts/build-native.mjs --debug --target x86_64-unknown-linux-gnu --zig
+          RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=-crt-static" cargo zigbuild --locked -p termprobe-ffi --target x86_64-unknown-linux-musl
+          for target in x86_64-unknown-linux-gnu x86_64-unknown-linux-musl; do
+            node .github/scripts/release/check-native-elf.mjs \
+              --library "target/$target/debug/libtermprobe_ffi.so" --target "$target"
+            node .github/scripts/release/package-native.mjs native \
+              --library "target/$target/debug/libtermprobe_ffi.so" --target "$target" \
+              --output target/native-packages
+          done
+          node .github/scripts/release/package-native.mjs go \
+            --artifacts target/native-packages --output "$RUNNER_TEMP/go-linux-package" \
+            --target x86_64-unknown-linux-gnu --target x86_64-unknown-linux-musl
+          (
+            cd "$RUNNER_TEMP/go-linux-package"
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+              -o "$GITHUB_WORKSPACE/target/go-gnu-smoke" ./examples/smoke
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+              -ldflags '-I /lib/ld-musl-x86_64.so.1' \
+              -o "$GITHUB_WORKSPACE/target/go-musl-smoke" ./examples/smoke
+          )
+          for image in almalinux:8 rockylinux:9 ubuntu:24.04; do
+            docker run --rm --network none --platform linux/amd64 \
+              -v "$PWD/target/go-gnu-smoke:/smoke:ro" "$image" /smoke
+          done
+          docker run --rm --network none --platform linux/amd64 \
+            -v "$PWD/target/go-musl-smoke:/smoke:ro" alpine:3.23 /smoke
+          docker run --rm --platform linux/amd64 \
+            -v "$RUNNER_TEMP/go-linux-package:/work:ro" \
+            -w /work golang:1.26-alpine \
+            sh -c 'go build -o /tmp/smoke ./examples/smoke && /tmp/smoke'
+
+      - name: Install Python binding
+        run: python -m pip install --disable-pip-version-check -e ./bindings/python
+
+      - name: Test Python binding
+        run: python -m unittest discover -s bindings/python/tests -v
+
+      - name: Install Node dependencies
+        run: npm ci --prefix bindings/js
+
+      - name: Install trace viewer development tools
+        run: npm ci --prefix trace-viewer
+
+      - name: Verify embedded trace viewer assets and types
+        run: |
+          npm run check --prefix trace-viewer
+          npm run test:unit --prefix trace-viewer
+
+      - name: Test standalone trace viewer offline
+        if: runner.os == 'Linux'
+        working-directory: trace-viewer
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test
+
+      - name: Test Node binding
+        run: npm run test:node --prefix bindings/js
+
+      - name: Verify generated Node declarations
+        shell: bash
+        run: |
+          cargo run --locked -p termprobe-bindgen -- --check
+          ! grep -Eq 'JsonValue|Promise<unknown>|\brequest\(|\bBuffer\b' bindings/js/native/index.d.ts
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        if: runner.os == 'Linux'
+        with:
+          bun-version: latest
+
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        if: runner.os == 'Linux'
+        with:
+          deno-version: v2.x
+
+      - name: Test Node binding with Bun
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        run: npm run test:bun --prefix bindings/js
+
+      - name: Test Node binding with Deno
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        run: npm run test:deno --prefix bindings/js
+
+  compatibility:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Python 3.8
+            runtime: python
+            version: "3.8"
+          - name: Python current
+            runtime: python
+            version: "3.14"
+          - name: Node 20
+            runtime: node
+            version: "20"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - run: |
+          rustup toolchain install stable --profile default
+          rustup default stable
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: "0.16.0"
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        if: matrix.runtime == 'python'
+        with:
+          python-version: ${{ matrix.version }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: matrix.runtime == 'node'
+        with:
+          node-version: ${{ matrix.version }}
+          cache: npm
+          cache-dependency-path: bindings/js/package-lock.json
+
+      - name: Test Python compatibility
+        if: matrix.runtime == 'python'
+        run: |
+          python -m pip install --disable-pip-version-check -e ./bindings/python
+          python -m unittest discover -s bindings/python/tests -v
+
+      - name: Test Node compatibility
+        if: matrix.runtime == 'node'
+        run: |
+          npm ci --prefix bindings/js
+          npm run test:node --prefix bindings/js
