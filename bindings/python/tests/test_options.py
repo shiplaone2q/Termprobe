@@ -282,3 +282,6 @@ class FailureDiagnosticsTests(unittest.TestCase):
         with self.assertRaises(ExpectationError) as raised:
             run(client._await_native(fail()))
         error = raised.exception
+        self.assertEqual(error.message, "structured message")
+        self.assertIs(error.__cause__, native_error)
+        self.assertIsInstance(error.details, FailureDetails)

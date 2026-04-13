@@ -142,3 +142,5 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
             emulator.color(ColorSlot::Indexed(index)),
         );
     }
+    write_osc_color(&mut output, "10", emulator.color(ColorSlot::Foreground));
+    write_osc_color(&mut output, "11", emulator.color(ColorSlot::Background));
