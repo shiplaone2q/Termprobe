@@ -39,3 +39,5 @@ from .types import (
     Timeouts,
 )
 
+__all__ = [
+    "TuiTest",
