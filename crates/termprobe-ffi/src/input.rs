@@ -72,3 +72,7 @@ pub(crate) unsafe fn session(value: TuiString) -> Result<(String, ExecutionConte
         .map_err(|error| TermprobeError::usage(format!("invalid native session context: {error}")))?;
     value.validate()
 }
+unsafe fn pairs(data: *const TuiPair, len: usize) -> Result<Vec<(String, String)>> {
+    unsafe { slice(data, len)? }
+        .iter()
+        .map(|p| Ok((unsafe { p.key.required()? }, unsafe { p.value.required()? })))

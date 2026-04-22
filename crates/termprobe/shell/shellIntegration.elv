@@ -40,3 +40,5 @@ fn __su_after_command {|cmd-info|
         set status = $cmd-info[error][reason][exit-status]
       }
     }
+  }
+  __su_osc "133;D;"$status

@@ -125,3 +125,7 @@ impl TrackerState {
                 self.last_exit = exit.and_then(|s| s.trim().parse::<i32>().ok());
                 self.finished_count += 1;
             }
+            _ => {}
+        }
+    }
+}

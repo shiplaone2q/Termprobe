@@ -56,3 +56,5 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
   go build -ldflags '-I /lib/ld-musl-x86_64.so.1' .
 ```
 
+For ARM64 musl, use `GOARCH=arm64` and `/lib/ld-musl-aarch64.so.1`.
+The interpreter must exist on the destination machine.
