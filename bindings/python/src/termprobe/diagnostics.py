@@ -66,3 +66,7 @@ class FailureCellMismatch:
 
 @dataclass(frozen=True)
 class FailureLocatorDetails:
+    selectors: Tuple[str, ...]
+    locations: Tuple[FailureLocation, ...]
+    mismatches: Tuple[FailureCellMismatch, ...]
+    reason: Optional[str] = None

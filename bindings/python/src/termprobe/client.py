@@ -264,3 +264,7 @@ class _LocatorQuery:
 def _append_node(
     query: Optional[_LocatorQuery],
     node: Dict[str, object],
+    *,
+    relative: bool = False,
+) -> _LocatorQuery:
+    result = copy.deepcopy(query) if query is not None else _LocatorQuery([], 0)

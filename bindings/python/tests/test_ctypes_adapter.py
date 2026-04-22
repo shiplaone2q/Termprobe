@@ -90,3 +90,4 @@ class OwnershipTests(unittest.TestCase):
         query = native._query(expression)
         self.assertEqual(expression["nodes"][0]["nth"], 2)
         self.assertEqual(expression["nodes"][0]["occurrence"], "nth")
+        self.assertEqual(json.loads(native._text(query.json))["nodes"][0]["occurrence"], {"nth": 2})
