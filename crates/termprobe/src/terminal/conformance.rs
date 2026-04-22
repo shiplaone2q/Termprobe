@@ -505,3 +505,5 @@ macro_rules! emulator_conformance_tests {
         fn conformance_underline_styles() {
             // Aliased, not glob-imported: `UnderlineStyle::None` would shadow
             // `Option::None` in this scope.
+            use $crate::terminal::cell::UnderlineStyle as U;
+            for (seq, want) in [
