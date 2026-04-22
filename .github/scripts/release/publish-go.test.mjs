@@ -42,3 +42,6 @@ function publicationFixture(t) {
       const workspace = fs.mkdtempSync(path.join(fixture.root, "publisher-"));
       git(["clone", "-q", "--no-checkout", remote, workspace]);
       git(["checkout", "-q", "--detach", version], workspace);
+      git(["config", "commit.gpgsign", "false"], workspace);
+      fs.cpSync(fixture.output, path.join(workspace, "target/go-package"), { recursive: true });
+      fs.symlinkSync(path.join(scripts, "../node_modules"), path.join(workspace, "node_modules"), "junction");

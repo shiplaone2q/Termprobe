@@ -59,3 +59,7 @@
       <ActionsTab {actions} selected={view.actionId} filter={view.filter} assertionsOnly={view.assertionsOnly}
         onselect={(id) => send({ type: "select-action", id })}
         onfilter={(value) => send({ type: "filter", value })}
+        onassertions={(value) => send({ type: "assertions-only", value })} />
+    {/snippet}
+    {#snippet metadataPanel()}
+      <MetadataTab metadata={model.metadata} />
