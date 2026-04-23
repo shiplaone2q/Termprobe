@@ -1135,3 +1135,6 @@ impl Engine {
                         primary.errors.extend(
                             artifact
                                 .errors
+                                .iter()
+                                .map(|message| format!("trace: {message}")),
+                        );

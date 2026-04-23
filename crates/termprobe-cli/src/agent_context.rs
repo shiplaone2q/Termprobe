@@ -76,3 +76,4 @@ fn command_json(cmd: &Command) -> Value {
     }
     Value::Object(obj)
 }
+
