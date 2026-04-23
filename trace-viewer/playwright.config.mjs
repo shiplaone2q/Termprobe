@@ -12,3 +12,4 @@ export default defineConfig({
     viewport: { width: 1280, height: 900 },
     colorScheme: "dark",
     offline: true,
+    trace: "retain-on-failure",
