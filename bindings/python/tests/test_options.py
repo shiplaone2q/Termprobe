@@ -285,3 +285,5 @@ class FailureDiagnosticsTests(unittest.TestCase):
         self.assertEqual(error.message, "structured message")
         self.assertIs(error.__cause__, native_error)
         self.assertIsInstance(error.details, FailureDetails)
+        self.assertEqual(error.details.reason, FailureReason.LOCATOR_NO_MATCH)
+        self.assertEqual(error.details.operation, "locator.location")

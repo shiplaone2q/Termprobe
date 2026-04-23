@@ -81,3 +81,4 @@ elif [ "$VERSION" = "beta" ]; then
         sub(/^    "tag_name": "/, "", tag)
         sub(/",?$/, "", tag)
         draft = ""
+      }
