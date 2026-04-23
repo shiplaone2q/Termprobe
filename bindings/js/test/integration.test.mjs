@@ -323,3 +323,4 @@ test("trace retention and recording directory are configurable", async () => {
   const root = mkdtempSync(join(tmpdir(), "termprobe-auto-recording-"));
   const disabled = new Termprobe(uniqueSession("recording-disabled"), {
     recording: { directory: root },
+    trace: { mode: "off", directory: join(root, "traces") },
