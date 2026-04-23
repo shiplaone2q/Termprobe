@@ -86,3 +86,7 @@ const (
 	Visible Visibility = "visible"
 	Hidden  Visibility = "hidden"
 )
+
+type ScrollDirection string
+
+const (
