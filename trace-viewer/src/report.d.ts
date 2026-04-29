@@ -136,3 +136,7 @@ export interface FailureLocatorStageDetails {
   readonly evaluations: number;
   readonly failure_reason?: LocatorFailureReason;
   readonly mode: "text" | "contiguous_style_runs" | "parent_style_filter" | "contiguous_link_runs" | "parent_link_filter" | "intersection" | "union" | "containment_filter";
+  readonly selector?: FailureLocatorSelector;
+  readonly direction: "within" | "after" | "before";
+  readonly requested_occurrence: FailureMatchOccurrence;
+  /** Action operations may require a unique match. */

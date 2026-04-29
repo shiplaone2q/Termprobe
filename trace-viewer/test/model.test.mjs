@@ -84,3 +84,6 @@ for (const [name, change, error] of [
   ["null optional object", (data) => { data.details.runtime = null; }, /report.details.runtime/],
 ]) {
   test(`malformed evidence fails explicitly: ${name}`, () => {
+    const data = JSON.parse(JSON.stringify(fixture()));
+    change(data);
+    assert.throws(() => parse(data), error);
