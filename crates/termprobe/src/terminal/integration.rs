@@ -129,3 +129,6 @@ impl TrackerState {
         }
     }
 }
+
+impl Perform for TrackerState {
+    fn print(&mut self, c: char) {

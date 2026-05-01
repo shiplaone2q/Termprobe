@@ -48,3 +48,7 @@ const formula = `class Termprobe < Formula
       sha256 "${linuxIntel}"
     end
   end
+
+  def install
+    bin.install "termprobe"
+  end

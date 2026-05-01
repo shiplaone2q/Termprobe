@@ -218,3 +218,6 @@ impl FrameRenderer for GridRenderer {
             panel_height as f32,
             scale,
             style,
+        );
+        fill_rounded_rect(
+            &mut self.pixmap,

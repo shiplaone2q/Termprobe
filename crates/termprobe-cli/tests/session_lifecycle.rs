@@ -567,3 +567,5 @@ fn monitor_frames_and_input_outlive_the_target() {
 /// have to reach the child while the agent is still waiting on it.
 #[test]
 fn monitor_input_is_delivered_while_a_long_operation_is_running() {
+    let sandbox = Sandbox::new("monitor-input-concurrent");
+    sandbox.ok(&["open"]);
