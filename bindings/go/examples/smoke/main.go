@@ -50,3 +50,7 @@ func smoke() error {
 }
 
 func exerciseTerminal(terminal *termprobe.Client) error {
+	timeout := 10 * time.Second
+	if err := terminal.GetByText("go-binding-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: &timeout}); err != nil {
+		return fmt.Errorf("wait for child readiness: %w", err)
+	}

@@ -322,3 +322,6 @@ impl Session {
             child_pid,
             timeouts,
             pty,
+            state,
+            viewport_input: Arc::new(Mutex::new(())),
+            cancelled,
