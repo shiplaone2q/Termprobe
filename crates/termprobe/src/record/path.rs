@@ -51,3 +51,4 @@ fn identity_at(path: &Path) -> io::Result<Option<(u64, u64)>> {
     use std::os::unix::fs::MetadataExt;
     let metadata = std::fs::metadata(path)?;
     Ok(Some((metadata.dev(), metadata.ino())))
+}

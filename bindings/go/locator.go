@@ -89,3 +89,5 @@ func newStyleLocator(client *Client, parent *locatorQuery, style TextStyle, opti
 		direction = Within
 	}
 	node := locatorNode{kind: "style", style: &style, full: Ptr(options.Full), direction: Ptr(direction), occurrence: "any"}
+	return &Locator{client: client, query: appendLocatorNode(parent, node)}
+}
