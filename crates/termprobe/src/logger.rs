@@ -73,3 +73,7 @@ impl Logger {
 
 /// UTC time-of-day as `HH:MM:SS.mmm`.
 fn timestamp() -> String {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    let secs = now.as_secs();

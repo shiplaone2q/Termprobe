@@ -51,3 +51,5 @@ export function update(model, state, event) {
     }
     case "select-tab":
       return event.tab === "actions" || event.tab === "metadata"
+        ? { ...state, sidebarTab: event.tab } : { ...state, detailsTab: event.tab };
+    case "filter": return { ...state, filter: event.value, playback: undefined };

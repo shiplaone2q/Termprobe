@@ -216,3 +216,5 @@ impl FrameRenderer for GridRenderer {
             origin_y,
             panel_width as f32,
             panel_height as f32,
+            scale,
+            style,
