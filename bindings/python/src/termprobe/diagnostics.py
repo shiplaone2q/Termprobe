@@ -70,3 +70,5 @@ class FailureLocatorDetails:
     locations: Tuple[FailureLocation, ...]
     mismatches: Tuple[FailureCellMismatch, ...]
     reason: Optional[str] = None
+    stage_index: Optional[int] = None
+

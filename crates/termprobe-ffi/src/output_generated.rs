@@ -77,3 +77,4 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
     }
 }
 #[allow(unused_variables)]
+fn terminal_colors(s: &mut Storage, v: termprobe::api::TerminalColors) -> TuiTerminalColors {

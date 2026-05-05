@@ -44,3 +44,5 @@ func TestCleanupAndParallelIsolation(t *testing.T) {
 	t.Cleanup(func() {
 		close(names)
 		verifyClosedSessions(t, names)
+	})
+	for _, name := range []string{"one", "two"} {
