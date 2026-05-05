@@ -89,3 +89,5 @@ pub struct TuiResult {
     pub strings_len: usize,
     pub snapshot: u32,
     pub private_data: *mut c_void,
+}
+#[repr(C)]

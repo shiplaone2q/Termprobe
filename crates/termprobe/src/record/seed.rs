@@ -115,3 +115,5 @@ impl State {
         }
         output.push_str(if modes.contains(TermMode::APP_KEYPAD) {
             "\x1b="
+        } else {
+            "\x1b>"
