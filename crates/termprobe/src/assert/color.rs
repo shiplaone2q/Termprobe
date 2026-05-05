@@ -140,3 +140,5 @@ mod tests {
 
     /// A real emulator, so these exercise the same resolution path a session
     /// uses rather than a stand-in that could drift from it.
+    fn emu_with(colors: Colors) -> AlacrittyEmu {
+        AlacrittyEmu::new(
