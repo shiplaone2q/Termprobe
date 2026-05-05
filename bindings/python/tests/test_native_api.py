@@ -110,3 +110,7 @@ class NativeSurfaceTests(unittest.TestCase):
             "mouse_drag",
             "mouse_scroll",
             "resize",
+            "signal",
+            "kill",
+            "wait_clipboard",
+            "wait_idle",

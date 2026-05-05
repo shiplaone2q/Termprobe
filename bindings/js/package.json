@@ -50,3 +50,5 @@
     "pty",
     "automation",
     "testing",
+    "tui",
+    "termprobe"

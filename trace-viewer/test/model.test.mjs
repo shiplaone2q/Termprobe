@@ -87,3 +87,7 @@ for (const [name, change, error] of [
     const data = JSON.parse(JSON.stringify(fixture()));
     change(data);
     assert.throws(() => parse(data), error);
+  });
+}
+
+test("attachment preview limits do not change original bytes or split a UTF-8 character", async () => {
