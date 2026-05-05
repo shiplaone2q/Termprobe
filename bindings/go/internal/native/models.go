@@ -90,3 +90,7 @@ type EffectiveTimeouts struct{ Text, Idle, Command, Exit, Ready time.Duration }
 type Colors struct {
 	Foreground, Background, Cursor                                                                        string
 	Black, Red, Green, Yellow, Blue, Magenta, Cyan, White                                                 string
+	BrightBlack, BrightRed, BrightGreen, BrightYellow, BrightBlue, BrightMagenta, BrightCyan, BrightWhite string
+}
+
+type Profile struct {

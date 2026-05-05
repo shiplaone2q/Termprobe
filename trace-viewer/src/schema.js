@@ -72,3 +72,5 @@ const expectation = tagged({
   locator: shape({ query: locator, outcome: choice(["matches", "visible", "hidden", "unique", "actionable"]) }),
   value: shape({ subject: text, expected: text }),
   unavailable: shape({ reason: text }),
+});
+const mouseOptions = shape({ button: choice(["left", "middle", "right"]), alt: bool, ctrl: bool, shift: bool });

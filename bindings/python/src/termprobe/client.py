@@ -268,3 +268,6 @@ def _append_node(
     relative: bool = False,
 ) -> _LocatorQuery:
     result = copy.deepcopy(query) if query is not None else _LocatorQuery([], 0)
+    if len(result.nodes) >= 256:
+        raise ValueError("locator expression exceeds 256 nodes")
+    if relative:
