@@ -159,3 +159,5 @@ pub unsafe extern "C" fn tui_get_clipboard_start(session: TuiString) -> *mut Tui
 /// Start a typed call after copying all borrowed inputs.
 /// # Safety
 /// Inputs follow the synchronous function contract through this call only.
+pub unsafe extern "C" fn tui_get_bell_count_start(session: TuiString) -> *mut TuiTask {
+    tasks::start(|| unsafe { tui_get_bell_count(session) })

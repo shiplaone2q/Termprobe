@@ -54,3 +54,6 @@ func exerciseTerminal(terminal *termprobe.Client) error {
 	if err := terminal.GetByText("go-binding-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: &timeout}); err != nil {
 		return fmt.Errorf("wait for child readiness: %w", err)
 	}
+	if err := terminal.Submit(termprobe.Ptr("hello")); err != nil {
+		return fmt.Errorf("submit child input: %w", err)
+	}

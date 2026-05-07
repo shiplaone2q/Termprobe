@@ -77,3 +77,5 @@ pub(super) fn worker_loop(
                     continue;
                 }
                 let request = *request;
+                let writer = (|| {
+                    let protected = protected
