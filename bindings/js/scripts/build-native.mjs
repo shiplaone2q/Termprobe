@@ -64,3 +64,4 @@ cp "target/manylinux/$1/$2/libtermprobe_ffi.so" "target/$1/$2/"
 
 const extension = target.includes("windows") ? "dll" : target.includes("apple") ? "dylib" : "so";
 const library = extension === "dll" ? "termprobe_ffi.dll" : `libtermprobe_ffi.${extension}`;
+const output = join(root, "target", ...(explicitTarget || zigbuild ? [target] : []), debug ? "debug" : "release", library);

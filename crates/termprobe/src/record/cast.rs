@@ -145,3 +145,6 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
     write_osc_color(&mut output, "10", emulator.color(ColorSlot::Foreground));
     write_osc_color(&mut output, "11", emulator.color(ColorSlot::Background));
     write_osc_color(&mut output, "12", emulator.color(ColorSlot::Cursor));
+    let _ = write!(
+        output,
+        "\x1b]2;{}\x1b\\",
