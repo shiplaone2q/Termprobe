@@ -58,3 +58,4 @@ pub(crate) fn close(
 }
 
 pub(crate) fn recording(name: &str) -> Result<OperationResult> {
+    global_registry()

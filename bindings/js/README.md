@@ -134,3 +134,5 @@ New output preserves the historical view until retained history expires.
 Keyboard input returns to the live screen.
 Mouse input and historical locator clicks fail while the viewport shows history.
 Call `scrollToBottom()` before mouse input. This API is separate from `mouse.scroll()`.
+
+`getCursor()` and `State.cursor` retain the application cursor coordinates.
