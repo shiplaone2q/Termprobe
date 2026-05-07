@@ -68,3 +68,4 @@ func verifyLaunchTimeouts(t *testing.T, launch string, testCase launchTimeoutCas
 	t.Helper()
 	terminal := newClient(t, termprobe.ClientOptions{Timeouts: clientLaunchTimeouts()})
 	options := termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false), Timeouts: testCase.options}
+	if launch == "run" {

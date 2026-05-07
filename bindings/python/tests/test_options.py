@@ -287,3 +287,6 @@ class FailureDiagnosticsTests(unittest.TestCase):
         self.assertIsInstance(error.details, FailureDetails)
         self.assertEqual(error.details.reason, FailureReason.LOCATOR_NO_MATCH)
         self.assertEqual(error.details.operation, "locator.location")
+        self.assertFalse(hasattr(error.details, "terminal"))
+        self.assertFalse(hasattr(error.details, "recent_operations"))
+        self.assertIsInstance(error.artifact, FailureArtifactRef)
