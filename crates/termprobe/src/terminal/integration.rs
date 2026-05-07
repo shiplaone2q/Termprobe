@@ -132,3 +132,5 @@ impl TrackerState {
 
 impl Perform for TrackerState {
     fn print(&mut self, c: char) {
+        match self.region {
+            Region::Command => self.command_buf.push(c),

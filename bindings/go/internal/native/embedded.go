@@ -72,3 +72,6 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 		return "", fmt.Errorf("open native engine cache: %w", err)
 	}
 	defer func() { resultErr = errors.Join(resultErr, root.Close()) }()
+	path = filepath.Join(directory, library.name)
+	if err := verifyCachedLibrary(root, library); err == nil {
+		return path, nil

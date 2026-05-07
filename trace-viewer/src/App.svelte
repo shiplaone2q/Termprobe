@@ -63,3 +63,6 @@
     {/snippet}
     {#snippet metadataPanel()}
       <MetadataTab metadata={model.metadata} />
+    {/snippet}
+  </SideNav>
+

@@ -163,3 +163,7 @@ TuiColor._fields_ = [
     ("kind", ctypes.c_uint32),
     ("index", ctypes.c_uint8),
     ("red", ctypes.c_uint8),
+    ("green", ctypes.c_uint8),
+    ("blue", ctypes.c_uint8),
+]
+
