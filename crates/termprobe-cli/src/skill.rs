@@ -102,3 +102,6 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
         .interact_opt()
         .map_err(|error| format!("could not read skills directory: {error}"))?
     {
+        Some(0) => AgentDirectory::Agents,
+        Some(1) => AgentDirectory::Claude,
+        Some(_) => unreachable!("directory picker returned an unknown item"),

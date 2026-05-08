@@ -60,3 +60,4 @@ function Global:Prompt() {
     if ($pwd.Provider.Name -eq 'FileSystem') {
         $path = $pwd.ProviderPath
         if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+            $path = $path.Replace('\', '/')

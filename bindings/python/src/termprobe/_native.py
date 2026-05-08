@@ -171,3 +171,5 @@ def _result(result, kind):
         return [_copy(values[index]) for index in range(getattr(result, kind + "_len"))]
     if kind == "snapshot":
         return ("passed", "written", "updated")[result.snapshot]
+    value = getattr(result, kind)
+    return _copy(value) if isinstance(value, C.Structure) else value
