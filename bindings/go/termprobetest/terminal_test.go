@@ -46,3 +46,6 @@ func TestCleanupAndParallelIsolation(t *testing.T) {
 		verifyClosedSessions(t, names)
 	})
 	for _, name := range []string{"one", "two"} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			terminal := termprobetest.New(t, helperOptions(t))

@@ -109,3 +109,7 @@ test("filters search locator and input text and drive action navigation", async 
   await expect(page.locator('#points [data-operation="3"]')).toHaveAttribute("aria-current", "true");
   await expect(page.locator("#next-point")).toBeDisabled();
   await page.locator("#action-filter").fill("DEPLOY staging");
+  await expect(page.locator("#points .point")).toHaveCount(1);
+  await page.locator("#assertions-only").check();
+  await expect(page.locator("#points")).toHaveText("No matching actions.");
+  await expect(page.locator("#previous-point")).toBeDisabled();
