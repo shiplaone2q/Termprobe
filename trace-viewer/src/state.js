@@ -53,3 +53,7 @@ export function update(model, state, event) {
       return event.tab === "actions" || event.tab === "metadata"
         ? { ...state, sidebarTab: event.tab } : { ...state, detailsTab: event.tab };
     case "filter": return { ...state, filter: event.value, playback: undefined };
+    case "assertions-only": return { ...state, assertionsOnly: event.value, playback: undefined };
+    case "coordinate": return { ...state, [event.axis]: event.value };
+    case "inspect": {
+      const frame = selection(model, state).frame;

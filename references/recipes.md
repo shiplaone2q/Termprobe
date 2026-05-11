@@ -77,3 +77,4 @@ await terminal.wait_clipboard("copied")
 await terminal.waitClipboard(/copied/i);
 ```
 
+## Keep failure artifacts

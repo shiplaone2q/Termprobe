@@ -52,3 +52,5 @@ fn identity_at(path: &Path) -> io::Result<Option<(u64, u64)>> {
     let metadata = std::fs::metadata(path)?;
     Ok(Some((metadata.dev(), metadata.ino())))
 }
+
+#[cfg(windows)]

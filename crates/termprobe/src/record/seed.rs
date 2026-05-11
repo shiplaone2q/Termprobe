@@ -117,3 +117,7 @@ impl State {
             "\x1b="
         } else {
             "\x1b>"
+        });
+        output.push_str(match self.controls.charset {
+            CharsetIndex::G0 => "\x0f",
+            CharsetIndex::G1 => "\x0e",
