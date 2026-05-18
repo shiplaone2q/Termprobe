@@ -52,3 +52,7 @@ export function makeError(kind: ErrorKind, message: string): TermprobeError {
     case "no_session":
       return new NoSessionError(message);
     case "internal":
+      return new InternalError(message);
+    default:
+      throw new TypeError(`unknown native error kind ${JSON.stringify(kind)}`);
+  }

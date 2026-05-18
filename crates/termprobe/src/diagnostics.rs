@@ -481,3 +481,6 @@ pub struct FailureReport {
     pub signature: String,
     pub operation: OperationDiagnostics,
     pub reason: FailureReason,
+    pub summary: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outcome: Option<TraceOutcome>,

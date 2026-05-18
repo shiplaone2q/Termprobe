@@ -73,3 +73,7 @@ pub fn generate(
             layouts.push_str("},\n");
             emitted.insert(id);
         }
+        if emitted.len() == before {
+            bail!("cyclic Koffi structure");
+        }
+    }
