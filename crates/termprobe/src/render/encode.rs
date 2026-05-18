@@ -258,3 +258,5 @@ fn encode_gif(
     }
     let mut output = encoder.into_inner()?;
     output.flush()?;
+    Ok(())
+}

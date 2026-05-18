@@ -40,3 +40,5 @@ for (const tag of targets) {
     author: rootPackage.author,
     repository: rootPackage.repository,
     engines: rootPackage.engines,
+    publishConfig: rootPackage.publishConfig,
+  };
