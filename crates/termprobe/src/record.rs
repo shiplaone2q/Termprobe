@@ -151,3 +151,7 @@ impl Recorder {
         self.sender
             .send(Message::Stop { reply })
             .map_err(|_| CaptureError::WorkerStopped)?;
+        response.recv().unwrap_or(Err(CaptureError::WorkerStopped))
+    }
+
+    pub fn flush(&self) -> Result<(), CaptureError> {
