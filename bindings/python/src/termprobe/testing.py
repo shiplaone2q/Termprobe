@@ -93,3 +93,5 @@ _safety_net_installed = False
 
 def _install_safety_net() -> None:
     global _safety_net_installed
+    if _safety_net_installed:
+        return

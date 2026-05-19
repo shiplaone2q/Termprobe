@@ -116,3 +116,5 @@ impl TestShell {
                 .unwrap()
                 .write_all(b"\nif (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {\nSet-PSReadLineOption -HistorySavePath (Join-Path $env:__SU_TEST_HOME 'history.txt')\n}\n")
                 .unwrap();
+        }
+        let launch = launch_with_scripts(shell, &scripts).unwrap();
