@@ -77,3 +77,5 @@ fn command_json(cmd: &Command) -> Value {
     Value::Object(obj)
 }
 
+fn arg_json(arg: &Arg) -> Value {
+    let positional = arg.is_positional();

@@ -46,3 +46,5 @@
   <div>
     <div id="cell-mismatches" class="cell-mismatches" hidden={!inspection?.mismatches.length}>
       {#each inspection?.mismatches ?? [] as entry}
+        <strong>{entry.property} / stage {entry.stage}</strong>
+        <p>Expected: {entry.operator} {entry.expected}</p><p>Observed: {entry.actual}{entry.resolved ? ` (${entry.resolved})` : ""}</p>
