@@ -41,3 +41,6 @@ from .types import (
 
 __all__ = [
     "TuiTest",
+    "Locator",
+    "sessions",
+    "close_all",
