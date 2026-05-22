@@ -167,3 +167,348 @@ globalThis.__boot = function (cols, rows, scrollback, base) {
         if (readingCode) {
           if (b >= 0x30 && b <= 0x39) { code = (code < 0 ? 0 : code) * 10 + (b - 0x30); }
           else { readingCode = false; }
+        }
+        continue;
+      }
+      if (sawEsc) {
+        sawEsc = false;
+        if (b === 0x5d) { inOsc = true; readingCode = true; code = -1; continue; }
+      }
+      if (b === 0x1b) { sawEsc = true; }
+    }
+  }
+
+  // Whether the sequence being handled ended in `BEL`. Defaults to `BEL`,
+  // which is what a query whose start this scan never saw is most likely to
+  // have used.
+  function tookBel(wanted) {
+    for (var i = 0; i < terminators.length; i++) {
+      if (terminators[i].code === wanted) { return terminators.splice(i, 1)[0].bel; }
+    }
+    return true;
+  }
+
+  // `parseInt` reads the leading digits of `1x` and calls it slot 1, which
+  // addresses a slot the sequence never named. A malformed index is not an
+  // index, so it names nothing.
+  function slotIndex(text) {
+    return /^[0-9]+$/.test(text) ? parseInt(text, 10) : -1;
+  }
+
+  // `rgb:RRRR/GGGG/BBBB`, the form xterm replies in: each component doubled
+  // to sixteen bits, which is what programs parse.
+  function spec(v) {
+    function pair(c) { var h = (c & 0xff).toString(16); if (h.length < 2) { h = '0' + h; } return h + h; }
+    return 'rgb:' + pair(v >> 16) + '/' + pair(v >> 8) + '/' + pair(v);
+  }
+
+  // A reply carries the terminator the query used: a program that reads until
+  // the one it sent would otherwise wait for a terminator that never comes.
+  function answer(prefix, value, bel) {
+    replies.push('\x1b]' + prefix + ';' + spec(value) + (bel ? '\x07' : '\x1b\\'));
+  }
+
+  // `#rrggbb`, `#rgb`, and `rgb:r/g/b` with one to four hex digits each, which
+  // is the range xterm accepts.
+  function parseColor(text) {
+    var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(text);
+    if (m) {
+      var h = m[1];
+      if (h.length === 3) { h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; }
+      return parseInt(h, 16);
+    }
+    m = /^rgb:([0-9a-f]{1,4})\/([0-9a-f]{1,4})\/([0-9a-f]{1,4})$/i.exec(text);
+    if (!m) { return null; }
+    var out = 0;
+    for (var i = 1; i <= 3; i++) {
+      var part = m[i];
+      // Scale whatever width was given down to eight bits, the way xterm
+      // does: `f` is full intensity just as `ffff` is.
+      var max = Math.pow(16, part.length) - 1;
+      out = (out << 8) | Math.round((parseInt(part, 16) / max) * 255);
+    }
+    return out;
+  }
+
+  // Setting and querying a dynamic color share one sequence, told apart by a
+  // payload of `?`. Returning false leaves the sequence unhandled so xterm.js
+  // still sees it, which matters for the ones it acts on itself.
+  //
+  // The dynamic colors are one list and `Ps` only says where in it to start,
+  // so `OSC 10;a;b` sets the foreground and then the background, and each `?`
+  // is answered separately under the code of the color it asked about. The
+  // list runs past the cursor into pointer, Tektronix, and highlight colors
+  // this terminal has no notion of; those positions are stepped over rather
+  // than folded onto the last slot, which would let a sequence write somewhere
+  // it never named.
+  var DYNAMIC = { 10: FG, 11: BG, 12: CURSOR };
+
+  function dynamic(prefix) {
+    term.parser.registerOscHandler(prefix, function (data) {
+      var parts = String(data).split(';');
+      var bel = tookBel(prefix);
+      for (var i = 0; i < parts.length; i++) {
+        var slot = DYNAMIC[prefix + i];
+        if (slot === undefined) { continue; }
+        if (parts[i] === '?') {
+          answer(prefix + i, resolved(slot), bel);
+        } else {
+          var v = parseColor(parts[i]);
+          if (v !== null) { overrides[slot] = v; }
+        }
+      }
+      return true;
+    });
+  }
+  dynamic(10);
+  dynamic(11);
+  dynamic(12);
+
+  // `OSC 4` addresses the palette, so each pair names its own slot.
+  term.parser.registerOscHandler(4, function (data) {
+    var parts = String(data).split(';');
+    var bel = tookBel(4);
+    for (var i = 0; i + 1 < parts.length; i += 2) {
+      var slot = slotIndex(parts[i]);
+      if (!(slot >= 0 && slot <= 255)) { continue; }
+      if (parts[i + 1] === '?') {
+        replies.push('\x1b]4;' + slot + ';' + spec(resolved(slot)) + (bel ? '\x07' : '\x1b\\'));
+      } else {
+        var v = parseColor(parts[i + 1]);
+        if (v !== null) { overrides[slot] = v; }
+      }
+    }
+    return true;
+  });
+
+  // Resets drop the runtime value so the configured one shows through again.
+  term.parser.registerOscHandler(104, function (data) {
+    tookBel(104);
+    var text = String(data);
+    if (text === '') {
+      for (var k = 0; k <= 255; k++) { delete overrides[k]; }
+      return true;
+    }
+    var parts = text.split(';');
+    for (var i = 0; i < parts.length; i++) {
+      var slot = slotIndex(parts[i]);
+      if (slot >= 0 && slot <= 255) { delete overrides[slot]; }
+    }
+    return true;
+  });
+  [[110, FG], [111, BG], [112, CURSOR]].forEach(function (pair) {
+    term.parser.registerOscHandler(pair[0], function () { tookBel(pair[0]); delete overrides[pair[1]]; return true; });
+  });
+
+  function drain() {
+    // `_timers` grows while draining, so re-check rather than snapshotting.
+    // The cap turns a hypothetical self-rescheduling timer into an error
+    // instead of a hung reader thread.
+    var guard = 0;
+    while (__timers.length) {
+      __timers.shift()();
+      if (++guard > 1000000) { throw new Error('xterm.js timer queue did not settle'); }
+    }
+  }
+
+  // One reused cell object across the whole grid walk. `getCell(x, cell)`
+  // fills it in place; the allocating form costs roughly twice as much.
+  var CELL = term.buffer.active.getNullCell();
+
+  return {
+    feed: function (bytes) {
+      bellCount = 0;
+      scanTerminators(bytes);
+      term.write(bytes);
+      drain();
+      return { bell_count: bellCount };
+    },
+
+    // Joined rather than returned as an array: one string crossing the
+    // boundary beats one call per pending reply.
+    takeReplies: function () { var s = replies.join(''); replies.length = 0; return s; },
+
+    resize: function (cols, rows) {
+      term.resize(cols, rows);
+      drain();
+      followLiveViewport();
+    },
+    cols: function () { return term.cols; },
+    rows: function () { return term.rows; },
+    cursorX: function () { return term.buffer.active.cursorX; },
+    cursorY: function () { return term.buffer.active.cursorY; },
+
+    title: function () { return title; },
+
+    // `DECTCEM`. xterm.js spells a hidden cursor as a flag on the core
+    // service rather than as a mode this shim can read back.
+    cursorVisible: function () { return !term._core.coreService.isCursorHidden; },
+
+    // `DECSCUSR`. The property is absent until a program sets one, and a
+    // terminal that has not been told otherwise draws a block.
+    cursorShape: function () {
+      var s = term._core.coreService.decPrivateModes.cursorStyle;
+      return s === undefined ? 'block' : String(s);
+    },
+    // Terminal modes, keyed by the neutral names the Rust side uses.
+    //
+    // `term.modes` is a fixed set rather than a "read mode N" call, which is
+    // why the Rust vocabulary is a closed enum: these are the ones every
+    // backend can answer. The alternate screen is the exception, absent from
+    // `modes` but readable from the active buffer, which reports `alternate`
+    // exactly while `?1049` or `?47` is in effect.
+    mode: function (name) {
+      var m = term.modes;
+      switch (name) {
+        case 'application_cursor_keys': return m.applicationCursorKeysMode ? 1 : 0;
+        case 'application_keypad': return m.applicationKeypadMode ? 1 : 0;
+        case 'origin': return m.originMode ? 1 : 0;
+        case 'wraparound': return m.wraparoundMode ? 1 : 0;
+        case 'insert': return m.insertMode ? 1 : 0;
+        case 'focus_events': return m.sendFocusMode ? 1 : 0;
+        case 'bracketed_paste': return m.bracketedPasteMode ? 1 : 0;
+        case 'alternate_screen': return term.buffer.active.type === 'alternate' ? 1 : 0;
+        default: return 0;
+      }
+    },
+
+    // A color a program set, or -1 when it has not touched this slot and the
+    // profile still decides. One call per slot, for reading a handful.
+    colorOverride: function (slot) {
+      var v = overrides[slot];
+      return v === undefined ? -1 : v;
+    },
+
+    // Every slot a program has changed, flattened as [slot, value, ...].
+    //
+    // Reading the whole table one slot at a time is 259 crossings; this is
+    // one, and it stays small because it carries only what was actually set.
+    colorOverrides: function () {
+      var out = [];
+      for (var slot in overrides) {
+        if (Object.prototype.hasOwnProperty.call(overrides, slot)) {
+          out.push(Number(slot), overrides[slot]);
+        }
+      }
+      return out;
+    },
+
+    scroll: function (lines) { term.scrollLines(-lines); },
+    scrollTop: function () { term.scrollToTop(); },
+    scrollBottom: function () { term.scrollToBottom(); },
+    history: function () { return term.buffer.active.baseY; },
+    offset: function () { return term.buffer.active.baseY - term.buffer.active.viewportY; },
+
+    // Full reads remain independent of the selected viewport.
+    start: function (full) { return full ? 0 : term.buffer.active.viewportY; },
+    end: function (full) {
+      var b = term.buffer.active;
+      return full ? b.length : b.viewportY + term.rows;
+    },
+
+    // The grid crosses the boundary as exactly two values: every cell's text
+    // in one NUL-joined string, and six ints per cell in one flat array. NUL
+    // is safe as a separator because xterm.js reports an empty string, never
+    // a NUL, for a cell holding nothing.
+    //
+    // Per-cell ints are `[width, fg, bg, ulColor, ulStyle, flags]`, with the
+    // color *modes* packed into `flags` alongside the SGR booleans: a raw
+    // color of 1 is palette slot 1 or the RGB triple #000001 depending on its
+    // mode, so the mode has to travel with it.
+    // DECCKM. xterm.js exposes the mode set on the public `modes` object.
+    cursorKeyApplication: function () {
+      return term.modes.applicationCursorKeysMode ? 1 : 0;
+    },
+
+    pack: function (start, end) {
+      var buf = term.buffer.active, cols = term.cols;
+      var chars = [], meta = [];
+      // OSC 8 links, sent once each per batch instead of once per cell: a
+      // link covers a run, and its URI is far larger than the id that stands
+      // in for it. `links[id]` is `id=` (empty when the sequence carried
+      // none) then NUL then the URI.
+      var links = [];
+      var seen = {};
+      for (var y = start; y < end; y++) {
+        var line = buf.getLine(y);
+        for (var x = 0; x < cols; x++) {
+          if (!line) { chars.push(' '); meta.push(1, -1, -1, -1, 0, 0, 0); continue; }
+          var c = line.getCell(x, CELL);
+          chars.push(c.getChars());
+
+          // `urlId` indexes xterm.js's own link table and is meaningless
+          // outside this process, so each one is resolved to the `id=` and
+          // URI the child actually sent before it crosses the boundary.
+          //
+          // `hasExtendedAttrs()` is not redundant. `getCell` reuses a single
+          // `CellData` and only overwrites `extended` for a cell that has
+          // any, so an unlinked cell read after a linked one still carries
+          // the previous cell's `urlId`. Reading it unguarded made a link
+          // run to the end of the row no matter where it was closed.
+          var urlId = (c.hasExtendedAttrs() && c.extended)
+            ? (c.extended.urlId || 0)
+            : 0;
+          if (urlId && seen[urlId] === undefined) {
+            var data = oscLinks.getLinkData(urlId);
+            seen[urlId] = links.length + 1;
+            links.push((data && data.id ? data.id : '') + '\0' + (data ? data.uri : ''));
+          }
+          var link = urlId ? seen[urlId] : 0;
+
+          // Reading a cell costs a JS call per getter, and a full-scrollback
+          // dump is hundreds of thousands of cells. Most of them are ordinary
+          // unstyled text, and for those one call answers all nineteen: -1 is
+          // the "no color" value every getter returns, and no attribute bit is
+          // set. Verified to produce byte-identical output to the long form
+          // across every SGR in the cell vocabulary.
+          if (c.isAttributeDefault()) { meta.push(c.getWidth(), -1, -1, -1, 0, 0, link); continue; }
+
+          var fg = c.getFgColor();
+          var fgMode = c.isFgPalette() ? 1 : (c.isFgRGB() ? 2 : 0);
+          var ulColor = c.getUnderlineColor();
+          var ulMode = c.isUnderlineColorPalette() ? 1 : (c.isUnderlineColorRGB() ? 2 : 0);
+
+          // xterm.js keeps the underline color in an extended-attribute
+          // record that it drops whenever the underline style is NONE, and
+          // both underline-color getters then fall back to reporting the
+          // foreground. Left alone that shows up as every colored cell
+          // claiming an underline color it was never given. Collapsing the
+          // case where the two are identical back to "unset" is exactly the
+          // vocabulary's own spelling for it: `underline_color: None` already
+          // means the underline takes the foreground. A cell that really did
+          // set SGR 58 to its own foreground color lands here too, and draws
+          // the same either way.
+          if (ulColor === fg && ulMode === fgMode) { ulMode = 0; }
+
+          var flags =
+            (c.isBold() ? 1 : 0) |
+            (c.isDim() ? 2 : 0) |
+            (c.isItalic() ? 4 : 0) |
+            (c.isInverse() ? 8 : 0) |
+            (c.isInvisible() ? 16 : 0) |
+            (c.isStrikethrough() ? 32 : 0) |
+            (c.isBlink() ? 64 : 0) |
+            (fgMode === 1 ? 256 : (fgMode === 2 ? 512 : 0)) |
+            (c.isBgPalette() ? 1024 : (c.isBgRGB() ? 2048 : 0)) |
+            (ulMode === 1 ? 4096 : (ulMode === 2 ? 8192 : 0));
+
+          // A cell that is both underlined and inside an OSC 8 link reports
+          // its underline as DASHED whatever SGR asked for: xterm.js draws
+          // links that way, and its `ExtendedAttrs.underlineStyle` getter
+          // returns 5 whenever a `urlId` is set. That is a rendering choice,
+          // not something the child sent, and the other backends report what
+          // SGR said. The raw bits still hold it, so read those instead.
+          // Only reached for a cell that is underlined *and* linked; a link
+          // on its own never sets the underline flag.
+          var ulStyle = c.getUnderlineStyle();
+          if (urlId && ulStyle === 5) {
+            ulStyle = (469762048 & c.extended._ext) >> 26;
+          }
+
+          meta.push(c.getWidth(), fg, c.getBgColor(), ulColor, ulStyle, flags, link);
+        }
+      }
+      return [chars.join('\0'), meta, links.join('\u0001')];
+    },
+  };
+};

@@ -91,3 +91,176 @@ pub struct TuiResult {
     pub private_data: *mut c_void,
 }
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiOpenResult {
+    pub shell_pid: TuiOptionalU64,
+    pub session: TuiString,
+    pub ready: bool,
+    pub recording: TuiString,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiCursor {
+    pub x: u16,
+    pub y: u16,
+    pub visible: bool,
+    pub shape: TuiString,
+    pub color: TuiString,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiSize {
+    pub cols: u16,
+    pub rows: u16,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiViewport {
+    pub offset: usize,
+    pub history: usize,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiBellEvent {
+    pub sequence: u64,
+    pub elapsed_ms: u64,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiState {
+    pub session_shell: TuiString,
+    pub cols: u16,
+    pub rows: u16,
+    pub cursor: TuiCursor,
+    pub title: TuiString,
+    pub cwd: TuiString,
+    pub last_command: TuiString,
+    pub last_exit: TuiOptionalI32,
+    pub exit_signal: TuiString,
+    pub exited: TuiOptionalI32,
+    pub ready: bool,
+    pub bell_count: u64,
+    pub modes: *const TuiMode,
+    pub modes_len: usize,
+    pub mouse_mode: TuiString,
+    pub colors: TuiTerminalColors,
+    pub timeouts: TuiTimeouts,
+    pub text: TuiString,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiTerminalColors {
+    pub foreground: TuiString,
+    pub background: TuiString,
+    pub cursor: TuiString,
+    pub palette: *const TuiPair,
+    pub palette_len: usize,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiCell {
+    pub x: u16,
+    pub y: u16,
+    pub character: TuiString,
+    pub fg: TuiColor,
+    pub bg: TuiColor,
+    pub bold: bool,
+    pub dim: bool,
+    pub italic: bool,
+    pub inverse: bool,
+    pub invisible: bool,
+    pub strike: bool,
+    pub blink: bool,
+    pub underline: bool,
+    pub underline_style: TuiString,
+    pub underline_color: TuiColor,
+    pub link: TuiString,
+    pub link_id: TuiString,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiPosition {
+    pub row: u32,
+    pub column: u16,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiSpan {
+    pub row: u32,
+    pub start: u16,
+    pub end: u16,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiMatch {
+    pub text: TuiString,
+    pub start: TuiPosition,
+    pub end: TuiPosition,
+    pub spans: *const TuiSpan,
+    pub spans_len: usize,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiTimeouts {
+    pub text: TuiOptionalU64,
+    pub idle: TuiOptionalU64,
+    pub command: TuiOptionalU64,
+    pub exit: TuiOptionalU64,
+    pub ready: TuiOptionalU64,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiOpenOptions {
+    pub backend: TuiString,
+    pub shell: TuiString,
+    pub cols: TuiOptionalU64,
+    pub rows: TuiOptionalU64,
+    pub cwd: TuiString,
+    pub env: *const TuiPair,
+    pub env_len: usize,
+    pub wait_ready: TuiOptionalBool,
+    pub restart: bool,
+    pub scrollback: TuiOptionalU64,
+    pub colors: *const TuiPair,
+    pub colors_len: usize,
+    pub timeouts: TuiTimeouts,
+    pub recording_mode: TuiString,
+    pub recording_directory: TuiString,
+}
+/// button: 0 left, 1 middle, 2 right.
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiMouseOptions {
+    pub button: u32,
+    pub alt: bool,
+    pub ctrl: bool,
+    pub shift: bool,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiWaitOptions {
+    pub timeout_ms: TuiOptionalU64,
+    pub regex: bool,
+    pub not_: bool,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiRecordingOptions {
+    pub path: TuiString,
+    pub format: TuiString,
+    pub fps: TuiOptionalU64,
+    pub speed: TuiOptionalF64,
+    pub idle_time_limit: TuiOptionalF64,
+    pub zoom: TuiOptionalF64,
+    pub background: TuiString,
+    pub transparent: bool,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct TuiScreenshotOptions {
+    pub full: bool,
+    pub path: TuiString,
+    pub zoom: TuiOptionalF64,
+    pub background: TuiString,
+    pub transparent: bool,
+}
