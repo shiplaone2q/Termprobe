@@ -71,3 +71,71 @@ Click options: `button`, `alt`, `ctrl`, `shift`, `clicks`, and `timeout`.
 | --- | --- |
 | `open(options?)` | Open a shell. |
 | `run(program, args?, options?)` | Run an app. |
+| `restart(options?)` | Restart the session. |
+| `submit(text?)` | Type and press Enter. |
+| `type(text)`, `write(data)` | Send text or bytes. |
+| `resize(cols, rows)` | Resize. |
+| `scroll(lines)` | Move through native history; positive values show older output. |
+| `scrollToTop()` / `scrollToBottom()` | Show the oldest output or the live screen. |
+| `getViewport()` | Return `{ offset, history }`, in rows. |
+| `signal(name)`, `kill()` | Stop the child. |
+| `state()`, `text()`, `cells()` | Read terminal state. |
+| `getCommand()`, `getOutput()`, `getExitCode()` | Read command state. |
+| `getCwd()`, `getCursor()`, `getSize()`, `getTitle()` | Read terminal fields. |
+| `getClipboard()` | Read the session clipboard. |
+| `getBellCount()`, `getBellEvents()` | Read bells. |
+| `waitCommand()`, `waitExit()`, `waitReady()`, `waitIdle()` | Wait for state. |
+| `waitTitle()`, `waitClipboard()`, `waitBell()` | Wait for events. |
+| `expectTitle()`, `expectOutput()`, `expectExitCode()` | Assert state. |
+| `expectBellCount()`, `expectSnapshot()` | Assert bells or snapshots. |
+| `screenshot()` | Read text or save SVG or PNG. |
+| `startRecording()`, `stopRecording()` | Record. |
+| `close()`, `closeQuiet()` | Close. |
+
+`write(data)` hands the bytes to the terminal, so on Windows they pass through ConPTY input
+translation before the app sees them: a written `\n` arrives as a Ctrl key down followed by
+`Ctrl+Enter`, and `\r\n` as Enter then `Ctrl+Enter`, while a written `\r` is the same as `press("Enter")`.
+To model a paste, send the line break the platform's terminal sends (`\r` on Windows, `\r\n`
+elsewhere).
+
+Capture options: `background` and `transparent` (SVG, APNG, and GIF).
+
+`restart({ gracefulTimeout: 5000 })` returns an `OpenResult`, preserving the last successful spawn's original working directory, options, and latest terminal size. The timeout is milliseconds after Ctrl-C before forced replacement; `0` skips the wait. Child exit preserves restart metadata; `close()` clears it. The terminal and automatic recording start fresh.
+
+Constructor options: `backend`, `timeouts`, `profile`, `artifacts`, `recording`, `trace`, and `screenHistoryLimit`.
+
+Use `trace: { mode: "on" | "off" | "on-failure", directory: "traces" }`.
+Traces default to `off`. Users can open `trace.html` or replay `session.cast`; agents should read `trace.md`, `trace.json`, and `timeline.json`.
+
+Failure artifact modes are `none`, `text`, `html`, and `all`. Use `includeRecording: true` to include the cast.
+
+## Input helpers
+
+```js
+await terminal.keyboard.press("Ctrl+C");
+await terminal.mouse.click(10, 5, { button: "right", ctrl: true });
+```
+
+Keyboard: `press`, `down`, `repeat`, and `up`.
+
+Named keys include arrows, Home, End, PageUp, PageDown, Insert, Delete, Backspace, Tab, Enter, Space, Escape, and F1 through F12. Join modifiers with `+`.
+
+Mouse: `click`, `move`, `down`, `up`, `drag`, and `scroll`.
+
+## Test helpers
+
+```js
+import { withTerminal } from "@microsoft/termprobe/test";
+
+await withTerminal({ program: ["my-app"] }, async (app) => {
+  await app.getByText("Ready").expect();
+});
+```
+
+Helpers: `createTerminal`, `withTerminal`, `closeAllTracked`, `setTerminalDefaults`, `resetTerminalDefaults`, and `terminalSnapshot`.
+
+## Errors
+
+`ExpectationError`, `UsageError`, `NoSessionError`, and `InternalError` extend `TermprobeError`.
+
+Full API: [bindings/js/README.md](https://github.com/microsoft/termprobe/blob/main/bindings/js/README.md)
