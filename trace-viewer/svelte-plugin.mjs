@@ -27,3 +27,4 @@ export function sveltePlugin(generate = "client") {
       build.onLoad({ filter: /.*/, namespace: "svelte-css" }, ({ path }) => ({ contents: styles.get(path), loader: "css" }));
     },
   };
+}
