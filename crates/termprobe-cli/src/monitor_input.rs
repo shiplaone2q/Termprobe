@@ -74,3 +74,237 @@ impl Perform for InputState {
                     x: *x,
                     y: *y,
                     release: action == 'm',
+                });
+            }
+        }
+    }
+}
+
+/// Use VTE for CSI input, preserving original bytes rather than reconstructing
+/// them from callbacks (which can normalize invalid UTF-8).
+#[derive(Default)]
+pub(crate) struct InputParser {
+    parser: Parser,
+    state: InputState,
+    pending: Vec<u8>,
+    passthrough: bool,
+}
+
+impl InputParser {
+    pub(crate) fn push(
+        &mut self,
+        bytes: &[u8],
+        mut filter: impl FnMut(InputEvent) -> InputAction,
+    ) -> (Vec<u8>, bool) {
+        let mut output = Vec::new();
+        for &byte in bytes {
+            if byte == 0x1b || (byte == CTRL_RIGHT_BRACKET && self.pending != b"\x1b") {
+                output.append(&mut self.pending);
+                self.passthrough = false;
+            }
+            self.pending.push(byte);
+            // VTE parses terminal output, where ESC ] starts an OSC. On input
+            // it is also the ordinary legacy Alt+] chord. Only defer CSI input.
+            if self.pending.first() == Some(&0x1b)
+                && self.pending.get(1).is_some_and(|byte| *byte != b'[')
+            {
+                output.append(&mut self.pending);
+                self.parser = Parser::new();
+                self.passthrough = false;
+                continue;
+            }
+            self.state.complete = false;
+            self.state.event = None;
+            self.parser.advance(&mut self.state, &[byte]);
+            if byte == 0x1b {
+                continue;
+            }
+            if self.state.complete {
+                let event = self.state.event.take().filter(|_| {
+                    !self.passthrough
+                        && (self.pending.starts_with(b"\x1b[")
+                            || self.pending == [CTRL_RIGHT_BRACKET])
+                });
+                match event.map(&mut filter).unwrap_or(InputAction::Forward) {
+                    InputAction::Forward => output.append(&mut self.pending),
+                    InputAction::Replace(bytes) => {
+                        output.extend(bytes);
+                        self.pending.clear();
+                    }
+                    InputAction::Detach => {
+                        self.pending.clear();
+                        return (output, true);
+                    }
+                }
+                self.passthrough = false;
+            } else if self.pending.len() >= MAX_PENDING {
+                output.append(&mut self.pending);
+                self.passthrough = true;
+            }
+        }
+        (output, false)
+    }
+
+    pub(crate) fn on_idle(&mut self) -> Vec<u8> {
+        // A lone legacy Escape is ambiguous. Incomplete CSI sequences, however,
+        // must survive idle polls so split keyboard/mouse reports stay intact.
+        if self.pending == b"\x1b" || self.pending == b"\x1b[" {
+            self.parser = Parser::new();
+            self.finish()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub(crate) fn finish(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self.pending)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn detach(parser: &mut InputParser, bytes: &[u8]) -> (Vec<u8>, bool) {
+        parser.push(bytes, |event| match event {
+            InputEvent::Detach => InputAction::Detach,
+            _ => InputAction::Forward,
+        })
+    }
+
+    #[test]
+    fn monitor_input_preserves_bytes_except_the_detach_chord() {
+        let raw = b"\x03text \xff\x1a\x1b[200~paste\n\x1b[201~";
+        let mut parser = InputParser::default();
+        assert_eq!(detach(&mut parser, raw), (raw.to_vec(), false));
+        assert_eq!(
+            detach(&mut parser, b"before\x1dafter"),
+            (b"before".to_vec(), true)
+        );
+    }
+
+    #[test]
+    fn monitor_unrecognized_escape_sequences_are_forwarded_unchanged() {
+        for input in [
+            b"\x1b]0;title\x07".as_slice(),
+            b"\x1bP1;2qpayload\x1b\\",
+            b"\x1b[38;2;1;2;3m",
+        ] {
+            let mut parser = InputParser::default();
+            let mut output = Vec::new();
+            for byte in input {
+                let (forwarded, detached) = detach(&mut parser, &[*byte]);
+                assert!(!detached);
+                output.extend(forwarded);
+            }
+            output.extend(parser.finish());
+            assert_eq!(output, input);
+        }
+    }
+    #[test]
+    fn monitor_detach_accepts_kitty_subparameters_across_every_split() {
+        for chord in [
+            b"\x1b[93;5u".as_slice(),
+            b"\x1b[93::93;5u",
+            b"\x1b[93;69:1u",
+            b"\x1b[93;197:2u",
+            b"\x1b[93;5:1;93u",
+        ] {
+            for split in 1..chord.len() {
+                let mut parser = InputParser::default();
+                assert_eq!(detach(&mut parser, &chord[..split]), (Vec::new(), false));
+                if split > 2 {
+                    assert!(parser.on_idle().is_empty());
+                }
+                assert_eq!(detach(&mut parser, &chord[split..]), (Vec::new(), true));
+            }
+        }
+    }
+
+    #[test]
+    fn monitor_detach_leaves_other_modifiers_and_releases_alone() {
+        for input in [
+            b"\x1b[93;6u".as_slice(),
+            b"\x1b[93;7u",
+            b"\x1b[93;5:3u",
+            b"\x1b[93u",
+            b"\x1b[93;0u",
+            b"\x1b[?93;5u",
+            b"\x1b[93;5~",
+            b"\x1b[93;5 u",
+        ] {
+            assert_eq!(
+                detach(&mut InputParser::default(), input),
+                (input.to_vec(), false)
+            );
+        }
+    }
+
+    #[test]
+    fn monitor_detach_does_not_interpret_bracketed_paste() {
+        for input in [
+            b"\x1b[200~\x1d\x1b[93::93;5u\x1b[<0;2;2M\x1b[201~".as_slice(),
+            b"\x1b[200~\x1b]paste\x1d\x1b[201~",
+        ] {
+            let mut parser = InputParser::default();
+            let mut forwarded = Vec::new();
+            for byte in input {
+                let (bytes, detached) = detach(&mut parser, &[*byte]);
+                assert!(!detached);
+                forwarded.extend(bytes);
+            }
+            forwarded.extend(parser.finish());
+            assert_eq!(forwarded, input);
+            assert_eq!(detach(&mut parser, b"\x1d"), (Vec::new(), true));
+        }
+    }
+
+    #[test]
+    fn monitor_legacy_alt_keys_are_forwarded_without_another_keystroke() {
+        for input in [
+            b"\x1b\x7f".as_slice(),
+            "\x1b\u{e9}".as_bytes(),
+            "\x1b\u{1f680}".as_bytes(),
+            b"\x1b]",
+            b"\x1bP",
+            b"\x1b[",
+        ] {
+            let mut parser = InputParser::default();
+            let (mut output, detached) = detach(&mut parser, input);
+            assert!(!detached);
+            output.extend(parser.on_idle());
+            assert_eq!(output, input);
+            assert_eq!(detach(&mut parser, b"\x1d"), (Vec::new(), true));
+        }
+    }
+
+    #[test]
+    fn monitor_legacy_alt_ctrl_right_bracket_does_not_detach() {
+        let mut parser = InputParser::default();
+        assert_eq!(
+            detach(&mut parser, b"\x1b\x1d"),
+            (b"\x1b\x1d".to_vec(), false)
+        );
+        assert_eq!(detach(&mut parser, b"\x1d"), (Vec::new(), true));
+
+        let mut parser = InputParser::default();
+        assert_eq!(detach(&mut parser, b"\x1b"), (Vec::new(), false));
+        assert_eq!(detach(&mut parser, b"\x1d"), (b"\x1b\x1d".to_vec(), false));
+        assert_eq!(detach(&mut parser, b"\x1d"), (Vec::new(), true));
+    }
+
+    #[test]
+    fn monitor_input_flushes_lone_escape_and_preserves_long_sequences() {
+        let mut parser = InputParser::default();
+        assert_eq!(detach(&mut parser, b"\x1b"), (Vec::new(), false));
+        assert_eq!(parser.on_idle(), b"\x1b");
+        assert_eq!(detach(&mut parser, b"[93;5u"), (b"[93;5u".to_vec(), false));
+        let mut long = b"\x1b[".to_vec();
+        long.extend(std::iter::repeat_n(b'9', MAX_PENDING * 2));
+        long.push(b'u');
+        let (mut output, detached) = detach(&mut parser, &long);
+        assert!(!detached);
+        output.extend(parser.finish());
+        assert_eq!(output, long);
+    }
+}
