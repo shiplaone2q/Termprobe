@@ -29,3 +29,4 @@ try {
   }
 } catch (error) {
   showError(error instanceof Error ? error.message : String(error));
+}
