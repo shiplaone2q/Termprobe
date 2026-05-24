@@ -569,3 +569,2445 @@ fn monitor_frames_and_input_outlive_the_target() {
 fn monitor_input_is_delivered_while_a_long_operation_is_running() {
     let sandbox = Sandbox::new("monitor-input-concurrent");
     sandbox.ok(&["open"]);
+    let marker = "monitor-input-concurrent-marker";
+    let session = sandbox.session.clone();
+    let home = sandbox.home.clone();
+    let waiter = std::thread::spawn(move || {
+        Command::new(BIN)
+            .args([
+                "--session",
+                &session,
+                "expect",
+                "text",
+                marker,
+                "--match",
+                "first",
+                "--timeout",
+                "5000",
+            ])
+            .env("TERMPROBE__HOME", home)
+            .output()
+            .expect("spawn long wait")
+    });
+    std::thread::sleep(Duration::from_millis(200));
+
+    let started = Instant::now();
+    let _input = monitor_stream(
+        &sandbox,
+        &format!(
+            "{{\"kind\":\"monitor_input_stream\",\"cols\":80,\"rows\":30}}\n{}\n",
+            serde_json::json!({ "kind": "write", "data": format!("echo {marker}\r").as_bytes() })
+        ),
+    );
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "monitor input waited behind the long operation"
+    );
+
+    let output = waiter.join().expect("join long wait");
+    assert!(
+        output.status.success(),
+        "long wait did not observe monitor input: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn get_recording_flushes_queued_output_before_reading() {
+    let sandbox = Sandbox::new("recording-flush");
+    let config = sandbox.home.join("trace.toml");
+    std::fs::write(&config, "[trace]\nmode = \"on\"\ndirectory = \"traces\"\n").unwrap();
+    sandbox.ok(&["open", "--config", config.to_str().unwrap()]);
+    sandbox.ok(&["submit", "echo recording-flush-marker"]);
+    sandbox.ok(&["wait", "command", "--timeout", "30000"]);
+
+    let recording = sandbox.ok(&["get-recording"]);
+    assert!(recording.contains("recording-flush-marker"));
+}
+
+#[test]
+fn relative_recording_path_uses_the_invoking_client_directory() {
+    let sandbox = Sandbox::new("recording-client-cwd");
+    let daemon_cwd = sandbox.home.join("daemon-cwd");
+    let client_cwd = sandbox.home.join("client-cwd");
+    std::fs::create_dir_all(&daemon_cwd).unwrap();
+    std::fs::create_dir_all(&client_cwd).unwrap();
+
+    sandbox.ok_in(Some(&daemon_cwd), &["open"]);
+    sandbox.ok_in(Some(&client_cwd), &["record", "start", "relative.cast"]);
+    let stopped = sandbox.ok_in(Some(&client_cwd), &["--json", "record", "stop"]);
+    let stopped: serde_json::Value = serde_json::from_str(&stopped).unwrap();
+
+    let expected = client_cwd.join("relative.cast");
+    assert!(
+        expected.is_file(),
+        "recording was not written to {expected:?}"
+    );
+    assert!(!daemon_cwd.join("relative.cast").exists());
+    let actual = std::path::PathBuf::from(stopped["data"]["path"].as_str().unwrap());
+    assert!(actual.is_absolute());
+    assert_eq!(
+        std::fs::canonicalize(actual).unwrap(),
+        std::fs::canonicalize(expected).unwrap()
+    );
+}
+
+#[test]
+fn relative_spawn_cwd_and_screenshot_use_the_invoking_client_directory() {
+    let sandbox = Sandbox::new("client-cwd");
+    let daemon_cwd = sandbox.home.join("daemon");
+    let client_cwd = sandbox.home.join("client");
+    let child_cwd = client_cwd.join("child");
+    std::fs::create_dir_all(&daemon_cwd).unwrap();
+    std::fs::create_dir_all(&child_cwd).unwrap();
+    sandbox.ok_in(Some(&daemon_cwd), &["daemon", "start"]);
+    sandbox.ok_in(Some(&client_cwd), &["open", "--cwd", "child"]);
+    let state: serde_json::Value = serde_json::from_str(&sandbox.ok(&["--json", "state"])).unwrap();
+    assert_eq!(
+        std::fs::canonicalize(state["data"]["cwd"].as_str().unwrap()).unwrap(),
+        std::fs::canonicalize(&child_cwd).unwrap(),
+    );
+    sandbox.ok_in(Some(&client_cwd), &["screenshot", "client.svg"]);
+    assert!(client_cwd.join("client.svg").is_file());
+    assert!(!daemon_cwd.join("client.svg").exists());
+
+    sandbox.ok_in(Some(&client_cwd), &["open", "--restart"]);
+    let state: serde_json::Value = serde_json::from_str(&sandbox.ok(&["--json", "state"])).unwrap();
+    assert_eq!(
+        std::fs::canonicalize(state["data"]["cwd"].as_str().unwrap()).unwrap(),
+        std::fs::canonicalize(&client_cwd).unwrap(),
+    );
+}
+
+#[test]
+fn identical_session_names_in_different_homes_are_independent() {
+    let first = Sandbox::new("home-first");
+    let mut second = Sandbox::new("home-second");
+    second.session.clone_from(&first.session);
+    let a: serde_json::Value = serde_json::from_str(&first.ok(&["--json", "open"])).unwrap();
+    let b: serde_json::Value = serde_json::from_str(&second.ok(&["--json", "open"])).unwrap();
+    assert_ne!(a["data"]["pid"], b["data"]["pid"]);
+    assert_ne!(a["data"]["shell_pid"], b["data"]["shell_pid"]);
+    first.ok(&["close"]);
+    second.ok(&["submit", "echo independent-home"]);
+    second.wait_for_text("independent-home", "5000");
+    second.ok(&["daemon", "status"]);
+}
+
+#[test]
+fn incomplete_requests_do_not_block_other_clients_and_expire() {
+    let sandbox = Sandbox::new("incomplete-request");
+    sandbox.ok(&["daemon", "start"]);
+    let mut incomplete = monitor_stream(&sandbox, "{\"kind\":");
+    let started = Instant::now();
+    sandbox.ok(&["daemon", "status"]);
+    assert!(
+        started.elapsed() < Duration::from_secs(1),
+        "status waited for an incomplete request"
+    );
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let reader = std::thread::spawn(move || {
+        let _ = sender.send(incomplete.read(&mut [0]));
+    });
+    assert!(receiver.recv_timeout(Duration::from_millis(300)).is_err());
+    let result = receiver
+        .recv_timeout(Duration::from_secs(4))
+        .expect("incomplete request never expired");
+    assert!(
+        matches!(&result, Ok(0))
+            || result.as_ref().is_err_and(|error| matches!(
+                error.kind(),
+                std::io::ErrorKind::BrokenPipe
+                    | std::io::ErrorKind::ConnectionReset
+                    | std::io::ErrorKind::NotConnected
+            )),
+        "unexpected incomplete-request result: {result:?}"
+    );
+    reader.join().unwrap();
+    sandbox.ok(&["daemon", "status"]);
+}
+
+#[test]
+fn lifecycle_requests_interrupt_long_waits() {
+    for action in ["kill", "close"] {
+        let sandbox = Sandbox::new("lifecycle-during-wait");
+        sandbox.ok(&["open"]);
+        let _waiter = monitor_stream(
+            &sandbox,
+            "{\"kind\":\"wait_title\",\"text\":\"never-set-title\",\"regex\":false,\
+             \"not\":false,\"timeout_ms\":30000}\n",
+        );
+        std::thread::sleep(Duration::from_millis(150));
+        let started = Instant::now();
+        sandbox.ok(&["daemon", "status"]);
+        sandbox.ok(&[action]);
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "{action} waited behind a long operation"
+        );
+    }
+}
+
+#[test]
+fn concurrent_expect_text_is_satisfied_by_another_client_submit() {
+    let sandbox = Sandbox::new("concurrent-expect");
+    sandbox.ok(&["--verbose", "open"]);
+    let mut waiter = sandbox.spawn(&[
+        "expect",
+        "text",
+        "concurrent-client-marker",
+        "--match",
+        "first",
+        "--timeout",
+        "5000",
+    ]);
+    sandbox.wait_for_logged_operation("concurrent-client-marker");
+    assert!(waiter.try_wait().unwrap().is_none());
+    let started = Instant::now();
+    sandbox.ok(&["submit", "echo concurrent-client-marker"]);
+    assert!(
+        started.elapsed() < Duration::from_secs(2),
+        "submit waited for the expectation it needed to satisfy"
+    );
+    let output = waiter.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "concurrent expect failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
+fn pending_wait_allows_input_mouse_resize_and_inspection() {
+    let sandbox = Sandbox::new("concurrent-controls");
+    sandbox.ok(&["--verbose", "open"]);
+    let mut waiter = sandbox.spawn(&["wait", "title", "never-set-title", "--timeout", "30000"]);
+    sandbox.wait_for_logged_operation("never-set-title");
+    assert!(waiter.try_wait().unwrap().is_none());
+    for args in [
+        vec!["type", "unused-input"],
+        vec!["key", "press", "Ctrl+C"],
+        vec!["mouse", "move", "1", "1"],
+        vec!["key", "press", "Ctrl+C"],
+        vec!["resize", "90", "26"],
+        vec!["state"],
+    ] {
+        let started = Instant::now();
+        sandbox.ok(&args);
+        assert!(
+            started.elapsed() < Duration::from_secs(2),
+            "{args:?} was serialized behind wait"
+        );
+        assert!(waiter.try_wait().unwrap().is_none());
+    }
+    let started = Instant::now();
+    sandbox.ok(&["close"]);
+    assert!(started.elapsed() < Duration::from_secs(3));
+    assert!(!waiter.wait_with_output().unwrap().status.success());
+}
+
+#[test]
+fn abandoned_waiters_release_capacity_without_cancelling_other_clients() {
+    let sandbox = Sandbox::new("abandoned-waits");
+    sandbox.ok(&["--verbose", "open"]);
+    let mut waiter = sandbox.spawn(&[
+        "expect",
+        "text",
+        "surviving-client-marker",
+        "--match",
+        "first",
+        "--timeout",
+        "10000",
+    ]);
+    sandbox.wait_for_logged_operation("surviving-client-marker");
+    for _ in 0..16 {
+        for _ in 0..8 {
+            drop(monitor_stream(
+                &sandbox,
+                "{\"kind\":\"wait_title\",\"text\":\"never-set-title\",\"regex\":false,\
+                 \"not\":false,\"timeout_ms\":30000}\n",
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert!(waiter.try_wait().unwrap().is_none());
+    let started = Instant::now();
+    sandbox.ok(&["submit", "echo surviving-client-marker"]);
+    sandbox.wait_for_text("surviving-client-marker", "2000");
+    assert!(started.elapsed() < Duration::from_secs(3));
+    let output = waiter.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "abandoned clients cancelled the surviving wait: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_exit_259_is_reported_and_allows_reopen() {
+    let sandbox = Sandbox::new("exit-259");
+    let first: serde_json::Value = serde_json::from_str(
+        &sandbox.ok(&["--json", "run", "--", "cmd.exe", "/d", "/c", "exit 259"]),
+    )
+    .unwrap();
+    sandbox.ok(&["wait", "exit", "--timeout", "2000"]);
+    let state: serde_json::Value = serde_json::from_str(&sandbox.ok(&["--json", "state"])).unwrap();
+    assert_eq!(state["data"]["exited"], 259);
+    let second: serde_json::Value = serde_json::from_str(&sandbox.ok(&["--json", "open"])).unwrap();
+    assert_ne!(first["data"]["shell_pid"], second["data"]["shell_pid"]);
+    sandbox.ok(&["submit", "echo after-exit-259"]);
+    sandbox.wait_for_text("after-exit-259", "2000");
+}
+
+#[cfg(unix)]
+#[test]
+fn close_is_bounded_when_a_descendant_keeps_the_pty_open() {
+    struct Descendant(String);
+    impl Drop for Descendant {
+        fn drop(&mut self) {
+            let _ = Command::new("kill").args(["-KILL", &self.0]).output();
+        }
+    }
+    let sandbox = Sandbox::new("descendant-pty");
+    let pid_file = sandbox.home.join("descendant.pid");
+    sandbox.ok(&[
+        "run",
+        "--",
+        "sh",
+        "-c",
+        "trap '' HUP; sleep 60 & printf '%s' \"$!\" > \"$1\"; wait",
+        "sh",
+        pid_file.to_str().unwrap(),
+    ]);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let child = loop {
+        if let Ok(pid) = std::fs::read_to_string(&pid_file) {
+            if !pid.is_empty() {
+                assert!(pid.parse::<u32>().is_ok_and(|pid| pid > 1));
+                break Descendant(pid);
+            }
+        }
+        assert!(Instant::now() < deadline, "descendant did not start");
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    let started = Instant::now();
+    let closed = sandbox.run(&["close"]);
+    assert!(
+        started.elapsed() < Duration::from_secs(8),
+        "shutdown waited for a descendant holding the PTY"
+    );
+    assert!(
+        closed.status.success(),
+        "unexpected close response: {closed:?}"
+    );
+    drop(child);
+}
+
+#[cfg(windows)]
+#[test]
+fn powershell_children_do_not_inherit_ctrl_c_ignore() {
+    let sandbox = Sandbox::new("powershell-ctrl-c");
+    sandbox.ok(&["open", "--shell", "powershell"]);
+    for (index, interrupt) in [vec!["signal", "INT"], vec!["key", "press", "Ctrl+C"]]
+        .into_iter()
+        .enumerate()
+    {
+        let marker = format!("interrupt-ready-{index}");
+        let command =
+            format!("Write-Output ('interrupt-'+'ready-{index}'); Start-Sleep -Seconds 30");
+        sandbox.ok(&["submit", &command]);
+        sandbox.wait_for_text(&marker, "5000");
+        sandbox.ok(&interrupt);
+        sandbox.ok(&["wait", "command", "--timeout", "5000"]);
+        sandbox.ok(&["submit", "echo interrupt-survived"]);
+        sandbox.ok(&["wait", "command", "--timeout", "5000"]);
+        sandbox.wait_for_text("interrupt-survived", "5000");
+    }
+}
+
+#[test]
+fn close_is_idempotent() {
+    let sandbox = Sandbox::new("idempotent");
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["close"]);
+    sandbox.ok(&["close"]);
+}
+
+#[test]
+fn open_reuses_a_live_child_unless_restart_is_requested() {
+    let sandbox = Sandbox::new("open-reuse");
+    let first = sandbox.ok(&["--json", "open"]);
+    let first: serde_json::Value = serde_json::from_str(&first).expect("first open json");
+    let first_pid = first["data"]["shell_pid"]
+        .as_u64()
+        .expect("first open reports a child pid");
+
+    let reused = sandbox.ok(&["--json", "open"]);
+    let reused: serde_json::Value = serde_json::from_str(&reused).expect("reused open json");
+    assert_eq!(
+        reused["data"]["shell_pid"].as_u64(),
+        Some(first_pid),
+        "a second open should attach to the live child"
+    );
+
+    let restarted = sandbox.ok(&["--json", "open", "--restart"]);
+    let restarted: serde_json::Value =
+        serde_json::from_str(&restarted).expect("restarted open json");
+    assert_ne!(
+        restarted["data"]["shell_pid"].as_u64(),
+        Some(first_pid),
+        "--restart should replace the live child"
+    );
+}
+
+#[test]
+fn run_restart_still_replaces_the_live_child_with_the_requested_program() {
+    let sandbox = Sandbox::new("run-restart");
+    let mut first_args = vec!["--json", "run"];
+    first_args.extend(sleeper());
+    let first: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&first_args)).expect("first run json");
+    let first_pid = first["data"]["shell_pid"]
+        .as_u64()
+        .expect("first child pid");
+
+    let mut restart_args = vec!["--json", "run", "--restart"];
+    restart_args.extend(sleeper());
+    let restarted: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&restart_args)).expect("restarted run json");
+    assert_ne!(restarted["data"]["shell_pid"].as_u64(), Some(first_pid));
+}
+
+#[test]
+fn restart_without_spawn_metadata_reports_a_specific_error() {
+    let sandbox = Sandbox::new("restart-no-metadata");
+    let out = sandbox.run(&["restart", "--graceful-timeout", "1"]);
+    assert_eq!(out.status.code(), Some(3));
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("no restart metadata"),
+        "unexpected restart error: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[test]
+fn restart_gracefully_recreates_a_run_with_its_metadata() {
+    let sandbox = Sandbox::new("restart-run");
+    let cwd = sandbox.home.join("restart-cwd");
+    std::fs::create_dir_all(&cwd).unwrap();
+    let marker = sandbox.home.join("graceful.txt");
+    let starts = sandbox.home.join("starts.txt");
+    let (program, script_args) = restart_helper(&sandbox.home);
+    let config = sandbox.home.join("restart.toml");
+    std::fs::write(
+        &config,
+        "[profiles.restart]\nscrollback = 432\n\
+         [profiles.restart.timeouts]\ntext = 1234\n\
+         [profiles.restart.colors]\nforeground = \"#123456\"\n\
+         [trace]\nmode = \"on\"\ndirectory = \"traces\"\n",
+    )
+    .unwrap();
+
+    let mut owned = vec![
+        "--json".to_string(),
+        "run".to_string(),
+        "--backend".to_string(),
+        "rio".to_string(),
+        "--cols".to_string(),
+        "93".to_string(),
+        "--rows".to_string(),
+        "26".to_string(),
+        "--cwd".to_string(),
+        cwd.to_string_lossy().into_owned(),
+        "--env".to_string(),
+        format!("TUI_RESTART_TOKEN={}", "metadata-preserved"),
+        "--env".to_string(),
+        format!("TUI_RESTART_MARKER={}", marker.to_string_lossy()),
+        "--env".to_string(),
+        format!("TUI_RESTART_STARTS={}", starts.to_string_lossy()),
+        "--config".to_string(),
+        config.to_string_lossy().into_owned(),
+        "--profile".to_string(),
+        "restart".to_string(),
+        program,
+    ];
+    owned.extend(script_args);
+    let refs: Vec<&str> = owned.iter().map(String::as_str).collect();
+    let first: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&refs)).expect("first run json");
+    let first_pid = first["data"]["shell_pid"]
+        .as_u64()
+        .expect("first child pid");
+    let recording = first["data"]["recording"]
+        .as_str()
+        .expect("first automatic recording")
+        .to_string();
+    assert!(!recording.is_empty());
+    sandbox.wait_for_text("restart-ready", "30000");
+    sandbox.ok(&[
+        "expect",
+        "text",
+        "restart-ready",
+        "--fg",
+        "#123456",
+        "--match",
+        "first",
+    ]);
+
+    let restarted: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&["--json", "restart", "--graceful-timeout", "5000"]))
+            .expect("restart json");
+    assert_ne!(
+        restarted["data"]["shell_pid"].as_u64(),
+        Some(first_pid),
+        "restart should replace the child"
+    );
+    assert_eq!(restarted["data"]["recording"], recording);
+    assert_eq!(
+        std::fs::read_to_string(&marker).unwrap().trim(),
+        "graceful",
+        "the old process should handle Ctrl-C before respawn"
+    );
+
+    sandbox.wait_for_text("restart-ready", "30000");
+    sandbox.ok(&[
+        "expect",
+        "text",
+        "restart-ready",
+        "--fg",
+        "#123456",
+        "--match",
+        "first",
+    ]);
+    let state: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&["--json", "state"])).expect("state json");
+    assert_eq!(state["data"]["cols"], 93);
+    assert_eq!(state["data"]["rows"], 26);
+    assert_eq!(state["data"]["timeouts"]["text"], 1234);
+
+    let starts = std::fs::read_to_string(&starts).unwrap();
+    let lines: Vec<&str> = starts.lines().collect();
+    assert_eq!(
+        lines.len(),
+        2,
+        "expected one metadata line per spawn: {starts}"
+    );
+    assert_eq!(lines[0], lines[1], "spawn metadata changed across restart");
+    assert!(lines[0].contains("arg=restart-argument"));
+    assert!(lines[0].contains("token=metadata-preserved"));
+    let recorded_cwd = lines[0]
+        .split(';')
+        .find_map(|field| field.strip_prefix("cwd="))
+        .expect("recorded working directory");
+    assert_eq!(
+        std::fs::canonicalize(recorded_cwd).unwrap(),
+        std::fs::canonicalize(&cwd).unwrap()
+    );
+}
+
+#[test]
+fn restart_forcibly_replaces_a_child_that_ignores_interrupts() {
+    let sandbox = Sandbox::new("restart-force");
+    let marker = sandbox.home.join("interrupt.txt");
+    let starts = sandbox.home.join("starts.txt");
+    let (program, args) = restart_helper(&sandbox.home);
+    let mut owned = vec![
+        "--json".to_string(),
+        "run".to_string(),
+        "--env".to_string(),
+        "TUI_RESTART_TOKEN=force".to_string(),
+        "--env".to_string(),
+        "TUI_RESTART_IGNORE_INT=1".to_string(),
+        "--env".to_string(),
+        format!("TUI_RESTART_MARKER={}", marker.display()),
+        "--env".to_string(),
+        format!("TUI_RESTART_STARTS={}", starts.display()),
+        program,
+    ];
+    owned.extend(args);
+    let refs: Vec<&str> = owned.iter().map(String::as_str).collect();
+    let first: serde_json::Value = serde_json::from_str(&sandbox.ok(&refs)).unwrap();
+    sandbox.wait_for_text("restart-ready", "30000");
+
+    let start = Instant::now();
+    let restarted: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&["--json", "restart", "--graceful-timeout", "1000"]))
+            .unwrap();
+    let elapsed = start.elapsed();
+    assert!(elapsed >= Duration::from_millis(1000), "{elapsed:?}");
+    assert!(elapsed < Duration::from_secs(10), "{elapsed:?}");
+    assert_ne!(restarted["data"]["shell_pid"], first["data"]["shell_pid"]);
+    assert_eq!(std::fs::read_to_string(marker).unwrap(), "graceful");
+    sandbox.wait_for_text("restart-ready", "30000");
+    assert_eq!(std::fs::read_to_string(starts).unwrap().lines().count(), 2);
+}
+
+#[test]
+fn wait_ready_succeeds_on_an_open_shell() {
+    let sandbox = Sandbox::new("ready");
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["wait", "ready", "--timeout", "30000"]);
+}
+
+/// A ready timeout is an assertion failure, not a crash.
+#[test]
+fn wait_ready_times_out_as_an_assertion() {
+    let sandbox = Sandbox::new("ready-timeout");
+    let mut args = vec!["run"];
+    args.extend(sleeper());
+    sandbox.ok(&args);
+
+    let out = sandbox.run(&["wait", "ready", "--timeout", "300"]);
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "expected an assertion exit code, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+}
+
+#[test]
+fn wait_ready_without_a_session_reports_no_session() {
+    let sandbox = Sandbox::new("ready-nosession");
+    let out = sandbox.run(&["wait", "ready", "--timeout", "1"]);
+    assert_eq!(
+        out.status.code(),
+        Some(3),
+        "expected exit 3, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+}
+
+#[test]
+fn bell_command_fixture() {
+    if std::env::var_os("TERMPROBE__CLI_BELL_FIXTURE").is_none() {
+        return;
+    }
+    let mut stdout = std::io::stdout().lock();
+    let prompt = b"\x1b]133;A\x1b\\bells> \x1b]133;B\x1b\\";
+    stdout.write_all(prompt).unwrap();
+    stdout.flush().unwrap();
+    for line in std::io::stdin().lock().lines() {
+        let count = match line.unwrap().trim() {
+            "two" => 2,
+            "one" => 1,
+            command => panic!("unexpected bell fixture command: {command}"),
+        };
+        stdout.write_all(b"\x1b]133;C\x1b\\").unwrap();
+        stdout.write_all(&b"\x07\x07"[..count]).unwrap();
+        stdout.write_all(b"\x1b]133;D;0\x1b\\").unwrap();
+        stdout.write_all(prompt).unwrap();
+        stdout.flush().unwrap();
+    }
+}
+
+#[test]
+fn bell_count_wait_and_expect_are_exposed_over_the_cli() {
+    let fixture = std::env::current_exe().unwrap();
+    for &backend in Backend::ALL {
+        let sandbox = Sandbox::new(backend.as_str());
+        // Drive bell output directly, without shell startup/history work or a
+        // timed producer racing the concurrent daemon's wait registration.
+        sandbox.ok(&[
+            "--verbose",
+            "run",
+            "--backend",
+            backend.as_str(),
+            "--wait-ready",
+            "--env",
+            "TERMPROBE__CLI_BELL_FIXTURE=1",
+            "--",
+            fixture.to_str().unwrap(),
+            "--exact",
+            "bell_command_fixture",
+            "--nocapture",
+            "--test-threads=1",
+        ]);
+
+        let mut expectation = sandbox.spawn(&["expect", "bell", "2", "--timeout", "5000"]);
+        sandbox.wait_for_logged_operation("operation ExpectBellCount { count: 2,");
+        assert!(expectation.try_wait().unwrap().is_none());
+        sandbox.ok(&["submit", "two"]);
+        let output = expectation.wait_with_output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}: {}",
+            backend.as_str(),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        sandbox.ok(&["wait", "command"]);
+
+        let state = sandbox.ok(&["state"]);
+        assert!(state.contains("bell_count: 2"), "{state}");
+        assert!(!state.contains("bell_events"), "{state}");
+
+        let response: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "get", "bell-events"]))
+                .expect("parse bell events response");
+        let events = response["data"]["value"]
+            .as_array()
+            .expect("bell events array");
+        assert_eq!(events.len(), 2, "{}", backend.as_str());
+        assert_eq!(events[0]["sequence"], 1, "{}", backend.as_str());
+        assert_eq!(events[1]["sequence"], 2, "{}", backend.as_str());
+        assert!(
+            events[1]["elapsed_ms"].as_u64().expect("second timestamp")
+                >= events[0]["elapsed_ms"].as_u64().expect("first timestamp")
+        );
+
+        for _ in 0..2 {
+            let response: serde_json::Value =
+                serde_json::from_str(&sandbox.ok(&["--json", "get", "bells"]))
+                    .expect("parse bell count response");
+            assert_eq!(response["data"]["value"], 2, "{}", backend.as_str());
+        }
+
+        let past_bells = sandbox.run(&["wait", "bell", "--timeout", "0"]);
+        assert_eq!(
+            past_bells.status.code(),
+            Some(1),
+            "{}: earlier bells must not satisfy a new wait",
+            backend.as_str()
+        );
+        let mut waiter = sandbox.spawn(&["wait", "bell", "--timeout", "5000"]);
+        sandbox.wait_for_logged_operation("operation WaitBell { timeout_ms: Some(5000) }");
+        assert!(
+            waiter.try_wait().unwrap().is_none(),
+            "{}: earlier bells must not satisfy a new wait",
+            backend.as_str()
+        );
+        sandbox.ok(&["submit", "one"]);
+        let output = waiter.wait_with_output().unwrap();
+        assert!(
+            output.status.success(),
+            "{}: {}",
+            backend.as_str(),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        sandbox.ok(&["expect", "bell", "3", "--timeout", "5000"]);
+        let response: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "get", "bells"]))
+                .expect("parse final bell count response");
+        assert_eq!(response["data"]["value"], 3, "{}", backend.as_str());
+    }
+}
+
+#[test]
+fn clipboard_getter_and_change_wait_are_exposed_over_the_cli() {
+    let sandbox = Sandbox::new("clipboard");
+    sandbox.ok(&["open"]);
+
+    let initial: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&["--json", "get", "clipboard"]))
+            .expect("parse initial clipboard response");
+    assert_eq!(initial["data"]["value"], "");
+
+    let timeout = sandbox.run(&["wait", "clipboard", "--timeout", "100"]);
+    assert_eq!(timeout.status.code(), Some(1));
+
+    sandbox.ok(&["submit", &clipboard_command("Y2hhbmdlZA==")]);
+    sandbox.ok(&["wait", "command"]);
+    sandbox.ok(&["wait", "clipboard", "--timeout", "5000"]);
+    let changed: serde_json::Value =
+        serde_json::from_str(&sandbox.ok(&["--json", "get", "clipboard"]))
+            .expect("parse changed clipboard response");
+    assert_eq!(changed["data"]["value"], "changed");
+
+    sandbox.ok(&["submit", &clipboard_command("cHJlZml4LXJlYWR5LTQy")]);
+    sandbox.ok(&["wait", "command"]);
+    sandbox.ok(&["wait", "clipboard", "ready", "--timeout", "5000"]);
+
+    sandbox.ok(&["submit", &clipboard_command("YnVpbGQtMTIz")]);
+    sandbox.ok(&["wait", "command"]);
+    sandbox.ok(&[
+        "wait",
+        "clipboard",
+        "^build-[0-9]+$",
+        "--regex",
+        "--timeout",
+        "5000",
+    ]);
+}
+
+/// A session timeout default must apply to later commands without `--timeout`.
+#[test]
+fn a_session_timeout_default_applies_to_later_commands() {
+    let sandbox = Sandbox::new("session-default");
+    sandbox.ok(&["open", "--timeout-text", "300"]);
+
+    let started = Instant::now();
+    let out = sandbox.run(&[
+        "expect",
+        "text",
+        "text-that-never-appears",
+        "--match",
+        "first",
+    ]);
+    let elapsed = started.elapsed();
+
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "expected an assertion failure, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let mut baseline = Duration::ZERO;
+    for _ in 0..3 {
+        let round_trip = Instant::now();
+        sandbox.ok(&["state"]);
+        baseline = baseline.max(round_trip.elapsed());
+    }
+    assert!(
+        elapsed < baseline + Duration::from_millis(2_500),
+        "the 300ms session default was ignored; the wait took {elapsed:?} \
+         against a {baseline:?} round-trip, which suggests it fell back to the \
+         5s built-in",
+    );
+}
+
+#[test]
+fn text_actions_share_one_selector_contract() {
+    let sandbox = Sandbox::new("text-actions");
+    sandbox.ok(&["open"]);
+    let command = if cfg!(windows) {
+        "[Console]::Write(([char]27+'[1mlocator    target'+[char]27+'[0m'+[Environment]::NewLine))"
+    } else {
+        "printf '\\033[1mlocator    target\\033[0m\\n'"
+    };
+    sandbox.ok(&["submit", command]);
+    sandbox.ok(&[
+        "expect",
+        "text",
+        "locator target",
+        "--whitespace",
+        "normalize",
+        "--bold",
+        "--match",
+        "first",
+        "--timeout",
+        "5000",
+    ]);
+    sandbox.ok(&["wait", "command", "--timeout", "30000"]);
+
+    let response: serde_json::Value = serde_json::from_str(&sandbox.ok(&[
+        "--json",
+        "find",
+        "text",
+        "locator target",
+        "--whitespace",
+        "normalize",
+        "--bold",
+    ]))
+    .expect("parse text locations");
+    assert!(
+        response["data"]["matches"]
+            .as_array()
+            .is_some_and(|matches| !matches.is_empty()),
+        "find text should return match locations: {response}"
+    );
+
+    let before = sandbox.home.join("before-highlight.svg");
+    let after = sandbox.home.join("after-highlight.svg");
+    sandbox.ok(&["screenshot", "--out", before.to_str().unwrap()]);
+    sandbox.ok(&[
+        "highlight",
+        "text",
+        "locator target",
+        "--whitespace",
+        "normalize",
+        "--bold",
+    ]);
+    sandbox.ok(&["screenshot", "--out", after.to_str().unwrap()]);
+    assert_ne!(
+        std::fs::read_to_string(before).unwrap(),
+        std::fs::read_to_string(after).unwrap(),
+        "highlight should be visible in screenshots"
+    );
+
+    sandbox.ok(&[
+        "click",
+        "text",
+        "locator target",
+        "--whitespace",
+        "normalize",
+        "--match",
+        "last",
+        "--bold",
+        "--timeout",
+        "5000",
+    ]);
+}
+
+#[test]
+fn config_timeouts_apply_below_command_line_overrides() {
+    let sandbox = Sandbox::new("config-timeouts");
+    let config = sandbox.home.join("timeouts.toml");
+    std::fs::write(
+        &config,
+        "[profiles.default.timeouts]\ntext = 1234\ncommand = 2345\n",
+    )
+    .expect("write config");
+
+    sandbox.ok(&[
+        "open",
+        "--config",
+        config.to_str().expect("utf-8 path"),
+        "--timeout-text",
+        "3456",
+    ]);
+    let raw = sandbox.ok(&["--json", "state"]);
+    let payload: serde_json::Value = serde_json::from_str(&raw).expect("state json");
+    assert_eq!(payload["data"]["timeouts"]["text"], 3456);
+    assert_eq!(payload["data"]["timeouts"]["command"], 2345);
+}
+
+/// The color a screenshot paints is the color an assertion matches.
+///
+/// These came from two separate hardcoded tables that disagreed on every ANSI
+/// slot, so `expect --fg "#800000"` passed on a cell the screenshot painted
+/// `#e88388`. Both now resolve through the session profile, and this drives the
+/// whole path — daemon, renderer, assertion — rather than the resolver alone.
+#[test]
+fn a_screenshot_and_an_assertion_agree_on_a_color() {
+    let sandbox = Sandbox::new("palette-agree");
+    let mut command = vec!["run", "--cols", "44", "--"];
+    command.extend(colored_text_program());
+    sandbox.ok(&command);
+    sandbox.wait_for_text("qrsx", FIXTURE_START_TIMEOUT);
+
+    // The default profile is the VGA palette, so slot 1 is #800000.
+    sandbox.ok(&["expect", "text", "qrsx", "--fg", "#800000"]);
+
+    let svg = sandbox.home.join("shot.svg");
+    let path = svg.to_str().expect("utf-8 path");
+    sandbox.ok(&["screenshot", "--out", path]);
+    let drawing = std::fs::read_to_string(&svg).expect("read screenshot");
+    assert!(
+        drawing.contains("fill=\"#800000\""),
+        "the screenshot must paint the color the assertion matched"
+    );
+}
+
+/// A profile's palette drives both, so recoloring a slot moves the screenshot
+/// and the assertion together.
+#[test]
+fn a_custom_profile_recolors_screenshots_and_assertions_together() {
+    let sandbox = Sandbox::new("palette-profile");
+    let config = sandbox.home.join("custom.toml");
+    std::fs::write(&config, "[profiles.neon.colors]\nred = \"#ff00ff\"\n").expect("write config");
+    let config_path = config.to_str().expect("utf-8 path");
+
+    let mut command = vec![
+        "run",
+        "--config",
+        config_path,
+        "--profile",
+        "neon",
+        "--cols",
+        "44",
+        "--",
+    ];
+    command.extend(colored_text_program());
+    sandbox.ok(&command);
+    sandbox.wait_for_text("qrsx", FIXTURE_START_TIMEOUT);
+
+    sandbox.ok(&["expect", "text", "qrsx", "--fg", "#ff00ff"]);
+    let out = sandbox.run(&["expect", "text", "qrsx", "--fg", "#800000"]);
+    assert!(
+        !out.status.success(),
+        "the profile replaced the default red, so the default must no longer match"
+    );
+
+    let svg = sandbox.home.join("neon.svg");
+    let path = svg.to_str().expect("utf-8 path");
+    sandbox.ok(&["screenshot", "--out", path]);
+    let drawing = std::fs::read_to_string(&svg).expect("read screenshot");
+    assert!(
+        drawing.contains("fill=\"#ff00ff\""),
+        "the screenshot follows the profile too"
+    );
+}
+
+const FIXTURE_START_TIMEOUT: &str = "15000";
+
+fn colored_text_program() -> Vec<&'static str> {
+    // Repaint on Windows so startup console redraws cannot erase the fixture.
+    // Construct lowercase text so the assertion cannot match an echoed command.
+    if cfg!(windows) {
+        vec![
+            "powershell.exe",
+            "-NoProfile",
+            "-Command",
+            "while ($true) { [Console]::Write(([char]27).ToString() + '[H' + ([char]27).ToString() + '[31m' + 'QRSX'.ToLowerInvariant() + ([char]27).ToString() + '[0m'); Start-Sleep -Milliseconds 100 }",
+        ]
+    } else {
+        vec![
+            "bash",
+            "--norc",
+            "-c",
+            r#"printf "\033[31m%s\033[0m\n" "$(echo QRSX | tr A-Z a-z)"; sleep 30"#,
+        ]
+    }
+}
+
+/// A profile that does not exist is an error naming the ones that do, rather
+/// than a session that silently ran with the defaults.
+#[test]
+fn an_unknown_profile_is_rejected() {
+    let sandbox = Sandbox::new("palette-unknown");
+    let config = sandbox.home.join("c.toml");
+    std::fs::write(&config, "[profiles.ci]\n").expect("write config");
+    let out = sandbox.run(&[
+        "open",
+        "--config",
+        config.to_str().expect("utf-8 path"),
+        "--profile",
+        "nope",
+    ]);
+    assert!(!out.status.success(), "an unknown profile must not open");
+    let msg = String::from_utf8_lossy(&out.stderr) + String::from_utf8_lossy(&out.stdout);
+    assert!(
+        msg.contains("ci"),
+        "the error should name the real profile: {msg}"
+    );
+}
+
+#[test]
+fn an_invalid_profile_color_is_a_usage_error_not_a_crash() {
+    let sandbox = Sandbox::new("palette-invalid");
+    let config = sandbox.home.join("invalid.toml");
+    std::fs::write(&config, "[profiles.default.colors]\nred = \"éa\"\n").expect("write config");
+    let out = sandbox.run(&["open", "--config", config.to_str().expect("utf-8 path")]);
+    assert_eq!(out.status.code(), Some(2));
+    let message = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        message.contains("invalid hex color"),
+        "the invalid color should be identified: {message}"
+    );
+    assert!(
+        !message.contains("panicked"),
+        "invalid config must not crash the cli: {message}"
+    );
+}
+
+#[test]
+fn a_missing_environment_config_is_rejected() {
+    let sandbox = Sandbox::new("palette-env-missing");
+    let missing = sandbox.home.join("missing.toml");
+    let out = Command::new(BIN)
+        .args(["--session", &sandbox.session, "open"])
+        .env("TERMPROBE__HOME", &sandbox.home)
+        .env("TERMPROBE__CONFIG", &missing)
+        .output()
+        .expect("spawn termprobe");
+
+    assert_eq!(
+        out.status.code(),
+        Some(2),
+        "explicit config is a usage error"
+    );
+    let message = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        message.contains("missing.toml"),
+        "the missing override should be named: {message}"
+    );
+}
+
+/// A program that asks the terminal what color it is gets an answer.
+///
+/// This is how tools decide whether they are on a light or a dark background.
+/// A terminal that stays silent leaves them blocked until they time out and
+/// guess, so this drives the whole path: daemon, emulator, and the reply on
+/// its way back up the PTY.
+///
+/// Unix only, because the probe has to put its own terminal in raw mode to
+/// read a reply that arrives without a newline and must not be echoed, and
+/// `termios` does not exist on Windows CPython. The reply itself is not
+/// platform specific: how it is formatted is covered by conformance cases
+/// that run against every backend, and the write that carries it to the child
+/// is the same `pty.write` every `type` and `submit` on Windows already uses.
+#[cfg(unix)]
+#[test]
+fn a_color_query_is_answered_over_the_pty() {
+    let sandbox = Sandbox::new("osc-query");
+    let probe = sandbox.home.join("probe.py");
+    std::fs::write(
+        &probe,
+        r#"
+import os, sys, termios, tty, select
+
+# Unbuffered reads: a buffered reader would take bytes off the fd that
+# select() then cannot see, and the reply would look truncated.
+def ask(fd, query):
+    os.write(1, query)
+    buf = b""
+    while select.select([fd], [], [], 2.0)[0]:
+        buf += os.read(fd, 64)
+        if buf.endswith(b"\x07"):
+            break
+    return buf.decode("utf8", "replace")
+
+fd = sys.stdin.fileno()
+old = termios.tcgetattr(fd)
+try:
+    tty.setraw(fd)
+    configured = ask(fd, b"\x1b]11;?\x07")
+    # Every dynamic colour, not just the background: a program that sets the
+    # foreground and cursor has to be answered about those too.
+    os.write(1, b"\x1b]10;#abcdef\x07\x1b]11;#654321\x07\x1b]12;#fedcba\x07")
+    fg = ask(fd, b"\x1b]10;?\x07")
+    overridden = ask(fd, b"\x1b]11;?\x07")
+    cursor = ask(fd, b"\x1b]12;?\x07")
+    os.write(1, b"\x1b]111\x07")
+    restored = ask(fd, b"\x1b]11;?\x07")
+finally:
+    termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+strip = lambda s: s.replace("\x1b", "").replace("\x07", "")
+print("\r\nRESULT %s %s %s %s %s\r" % (
+    strip(configured), strip(fg), strip(overridden), strip(cursor), strip(restored)))
+"#,
+    )
+    .expect("write probe");
+
+    // Wide enough that the report is one unwrapped line: `text` returns the
+    // grid, so a wrapped reply would be split across rows.
+    sandbox.ok(&["run", "--cols", "200", "--", "bash", "--norc"]);
+    sandbox.ok(&[
+        "submit",
+        &format!("python3 {}", probe.to_str().expect("utf-8 path")),
+    ]);
+    // Wait for the line this test reads, not for the command.
+    //
+    // The probe prints nothing until it is done: its queries go to the
+    // terminal, which answers them rather than echoing them, so the screen
+    // stays unchanged for as long as python takes to start. `bash --norc` has
+    // no shell integration, so `wait command` falls back to "the prompt came
+    // back and the screen is idle", and on a loaded machine an idle screen
+    // arrives long before the report does.
+    sandbox.wait_for_text("RESULT", "30000");
+    let text = sandbox.ok(&["text", "--full"]);
+
+    let line = text
+        .lines()
+        .find(|l| l.contains("RESULT"))
+        .unwrap_or_else(|| panic!("the probe never reported: {text}"));
+
+    // The default profile's background is black, so the terminal reports it,
+    // then the color the program set, then the configured one again.
+    assert!(
+        line.contains("]11;rgb:0000/0000/0000"),
+        "the configured background should be reported: {line}"
+    );
+    assert!(
+        line.contains("]11;rgb:6565/4343/2121"),
+        "a set background should be reported back: {line}"
+    );
+    assert!(
+        line.contains("]10;rgb:abab/cdcd/efef"),
+        "a set foreground should be reported back: {line}"
+    );
+    assert!(
+        line.contains("]12;rgb:fefe/dcdc/baba"),
+        "a set cursor color should be reported back: {line}"
+    );
+    assert_eq!(
+        line.matches("]11;rgb:0000/0000/0000").count(),
+        2,
+        "a reset should restore the configured background: {line}"
+    );
+}
+
+#[test]
+fn state_reports_effective_timeouts() {
+    let sandbox = Sandbox::new("state-timeouts");
+    sandbox.ok(&["open", "--timeout-text", "1234"]);
+
+    let json = sandbox.ok(&["--json", "state"]);
+    assert!(
+        json.contains("\"timeouts\"") && json.contains("1234"),
+        "expected the configured text timeout in --json state: {json}"
+    );
+
+    let human = sandbox.ok(&["state"]);
+    assert!(
+        human.contains("timeouts:") && human.contains("1234"),
+        "expected the configured text timeout in plain state: {human}"
+    );
+    assert!(
+        human.contains("cwd:"),
+        "plain state should report its other fields, not just the screen: {human}"
+    );
+}
+
+#[test]
+fn automatic_recording_mode_and_directory_come_from_config() {
+    let sandbox = Sandbox::new("recording-config");
+    let config = sandbox.home.join("recording.toml");
+    std::fs::write(
+        &config,
+        "[recording]\ndirectory = \"casts\"\n[trace]\nmode = \"off\"\n",
+    )
+    .unwrap();
+    let config = config.to_str().unwrap();
+    let raw = sandbox.ok(&["--json", "open", "--config", config, "--no-wait-ready"]);
+    let payload: serde_json::Value = serde_json::from_str(&raw).unwrap();
+    assert_eq!(payload["data"]["recording"], "");
+    sandbox.ok(&["close"]);
+}
+
+#[test]
+fn failed_open_recording_is_readable_before_close() {
+    let sandbox = Sandbox::new("recording-failed-open");
+    let config = sandbox.home.join("recording.toml");
+    std::fs::write(
+        &config,
+        "[recording]\ndirectory = \"casts\"\n[trace]\nmode = \"on-failure\"\ndirectory = \"traces\"\n",
+    )
+    .unwrap();
+    let config = config.to_str().unwrap();
+    let mut args = vec![
+        "run",
+        "--config",
+        config,
+        "--wait-ready",
+        "--timeout-ready",
+        "100",
+    ];
+    args.extend(sleeper());
+    assert_eq!(sandbox.run(&args).status.code(), Some(1));
+
+    let recording = sandbox.ok(&["get-recording", "--config", config]);
+    assert!(recording.contains("\"version\":2"));
+    sandbox.ok(&["close"]);
+}
+
+#[test]
+fn failed_spawn_does_not_expose_a_previous_custom_recording() {
+    let sandbox = Sandbox::new("recording-failed-spawn");
+    let config = sandbox.home.join("recording.toml");
+    std::fs::write(
+        &config,
+        "[recording]\ndirectory = \"casts\"\n[trace]\nmode = \"on\"\ndirectory = \"traces\"\n",
+    )
+    .unwrap();
+    let config = config.to_str().unwrap();
+    sandbox.ok(&["open", "--config", config, "--no-wait-ready"]);
+    sandbox.ok(&["close"]);
+
+    std::fs::write(
+        config,
+        "[recording]\ndirectory = \"casts\"\n[trace]\nmode = \"on-failure\"\ndirectory = \"traces\"\n",
+    )
+    .unwrap();
+    assert!(!sandbox
+        .run(&[
+            "run",
+            "--config",
+            config,
+            "termprobe-program-that-does-not-exist",
+        ])
+        .status
+        .success());
+    sandbox.ok(&["daemon", "stop"]);
+    assert_eq!(
+        sandbox
+            .run(&["get-recording", "--config", config])
+            .status
+            .code(),
+        Some(3)
+    );
+}
+
+#[test]
+fn open_reports_the_daemon_pid_the_child_and_readiness() {
+    let sandbox = Sandbox::new("open-payload");
+    let raw = sandbox.ok(&["--json", "open"]);
+    let payload: serde_json::Value = serde_json::from_str(&raw).expect("open json");
+    let data = &payload["data"];
+
+    let pid = data["pid"].as_u64().expect("a daemon pid");
+    let recorded = std::fs::read_to_string(sandbox.home.join(format!("{}.pid", sandbox.session)))
+        .expect("read pid file");
+    assert_eq!(
+        recorded.trim(),
+        pid.to_string(),
+        "`open` should report the daemon pid, matching `daemon status`: {payload}"
+    );
+    assert!(
+        data["shell_pid"].as_u64().is_some_and(|c| c != pid),
+        "the child pid belongs under shell_pid: {payload}"
+    );
+    assert_eq!(
+        data["ready"].as_bool(),
+        Some(true),
+        "a shell session should report a prompt: {payload}"
+    );
+}
+
+#[test]
+fn explicit_wait_ready_fails_when_no_prompt_is_reported() {
+    let sandbox = Sandbox::new("run-wait-ready");
+    let mut args = vec!["run", "--wait-ready", "--timeout-ready", "700"];
+    args.extend(sleeper());
+
+    let started = Instant::now();
+    let out = sandbox.run(&args);
+    let elapsed = started.elapsed();
+
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "a program with no shell integration never reports a prompt, so an \
+         explicit --wait-ready must fail; got {:?}\nstdout: {}\nstderr: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("no prompt"),
+        "the failure should say why: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !String::from_utf8_lossy(&out.stderr).contains("Terminal content:"),
+        "ordinary failures must not dump the terminal: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        elapsed < Duration::from_secs(8),
+        "--timeout-ready should cap the wait, but it took {elapsed:?}"
+    );
+
+    let after = sandbox.run(&["text"]);
+    assert_eq!(
+        after.status.code(),
+        Some(3),
+        "the failed open left a session behind: {}",
+        String::from_utf8_lossy(&after.stdout),
+    );
+}
+
+#[test]
+fn json_failure_writes_and_reports_a_diagnostic_bundle() {
+    let sandbox = Sandbox::new("failure-artifact");
+    sandbox.ok(&["open", "--no-wait-ready"]);
+    let plain = sandbox.run(&[
+        "--json",
+        "expect",
+        "text",
+        "never-present",
+        "--timeout",
+        "20",
+    ]);
+    assert_eq!(plain.status.code(), Some(1));
+    let plain: serde_json::Value =
+        serde_json::from_slice(&plain.stdout).expect("plain failure json response");
+    assert_eq!(plain["details"]["operation"], "locator.expect");
+    assert!(plain["details"].get("terminal").is_none());
+    assert!(plain["details"].get("recent_operations").is_none());
+
+    let artifacts = sandbox.home.join("failure-artifacts");
+    let artifacts = artifacts.to_str().unwrap();
+
+    let out = sandbox.run(&[
+        "--json",
+        "--failure-artifacts",
+        artifacts,
+        "--diagnostic-context",
+        "test=cli-bundle",
+        "expect",
+        "text",
+        "never-present",
+        "--timeout",
+        "20",
+    ]);
+    assert_eq!(out.status.code(), Some(1));
+    let payload: serde_json::Value =
+        serde_json::from_slice(&out.stdout).expect("failure json response");
+    assert_eq!(payload["details"]["schema_version"], 1);
+    assert_eq!(payload["details"]["operation"], "locator.expect");
+    assert!(payload["details"].get("context").is_none());
+    let manifest = payload["artifact"]["manifest"]
+        .as_str()
+        .expect("failure manifest path");
+    assert!(std::path::Path::new(manifest).is_file());
+    let report: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(manifest).unwrap()).unwrap();
+    assert_eq!(report["context"]["test"], "cli-bundle");
+    assert!(report["terminal"]["screen_history"]["screens"].is_array());
+    assert!(payload["artifact"]["report"]
+        .as_str()
+        .is_some_and(|path| std::path::Path::new(path).is_file()));
+    for (field, name) in [
+        ("report", "failure.md"),
+        ("report_html", "failure.html"),
+        ("timeline", "timeline.json"),
+    ] {
+        let path = std::path::Path::new(payload["artifact"][field].as_str().unwrap());
+        assert!(path.is_file());
+        assert_eq!(path.file_name().unwrap(), name);
+    }
+    let human = sandbox.run(&[
+        "--failure-artifacts",
+        artifacts,
+        "expect",
+        "text",
+        "never-present",
+        "--timeout",
+        "20",
+    ]);
+    assert_eq!(human.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&human.stderr);
+    assert!(stderr.contains("Failure report: "));
+    assert!(stderr.contains("failure.html"));
+    assert!(stderr.contains("Agent report: "));
+    assert!(stderr.contains("failure.md"));
+
+    sandbox.ok(&["close"]);
+}
+
+#[test]
+fn usage_errors_do_not_capture_terminal_artifacts() {
+    let sandbox = Sandbox::new("usage-no-artifact");
+    sandbox.ok(&["open", "--no-wait-ready"]);
+    let artifacts = sandbox.home.join("failure-artifacts");
+    let artifacts_arg = artifacts.to_str().unwrap();
+    let out = sandbox.run(&[
+        "--failure-artifacts",
+        artifacts_arg,
+        "expect",
+        "text",
+        "hello",
+        "--fg",
+        "not-a-color",
+        "--timeout",
+        "20",
+    ]);
+    assert_eq!(out.status.code(), Some(2));
+    assert!(!String::from_utf8_lossy(&out.stderr).contains("Terminal content:"));
+    assert!(!artifacts.exists());
+    sandbox.ok(&["close"]);
+}
+
+#[test]
+fn invalid_resize_preserves_diagnostic_state_and_daemon() {
+    let sandbox = Sandbox::new("invalid-resize-diagnostics");
+    let opened: serde_json::Value = serde_json::from_str(&sandbox.ok(&[
+        "--json",
+        "open",
+        "--no-wait-ready",
+        "--cols",
+        "80",
+        "--rows",
+        "30",
+    ]))
+    .unwrap();
+    // Zero sizes used to inject an emulator panic. Validation must reject them
+    // instead; actual diagnostic panics are injected in the engine unit tests.
+    for (cols, rows) in [("0", "30"), ("80", "0"), ("0", "0")] {
+        let resize = sandbox.run(&["resize", cols, rows]);
+        assert_eq!(
+            resize.status.code(),
+            Some(2),
+            "invalid resize must be a usage error: {}",
+            String::from_utf8_lossy(&resize.stderr)
+        );
+        assert!(String::from_utf8_lossy(&resize.stderr).contains("greater than zero"));
+        let state: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "state"])).unwrap();
+        assert_eq!(state["data"]["cols"], 80);
+        assert_eq!(state["data"]["rows"], 30);
+        let status: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "daemon", "status"])).unwrap();
+        assert_eq!(status["data"]["pid"], opened["data"]["pid"]);
+        assert_eq!(status["data"]["shell_pid"], opened["data"]["shell_pid"]);
+    }
+    sandbox.ok(&["resize", "90", "26"]);
+    let state: serde_json::Value = serde_json::from_str(&sandbox.ok(&["--json", "state"])).unwrap();
+    assert_eq!(state["data"]["cols"], 90);
+    assert_eq!(state["data"]["rows"], 26);
+    sandbox.ok(&["close"]);
+}
+
+#[test]
+fn run_without_wait_ready_returns_immediately() {
+    let sandbox = Sandbox::new("run-no-wait");
+    let mut args = vec!["--json", "run"];
+    args.extend(sleeper());
+
+    let started = Instant::now();
+    let raw = sandbox.ok(&args);
+    let elapsed = started.elapsed();
+
+    let payload: serde_json::Value = serde_json::from_str(&raw).expect("run json");
+    assert_eq!(
+        payload["data"]["ready"].as_bool(),
+        Some(false),
+        "a program with no shell integration is not ready: {payload}"
+    );
+    assert!(
+        elapsed < Duration::from_secs(5),
+        "`run` should not wait for a prompt, but it took {elapsed:?}"
+    );
+}
+
+fn exit_with(code: i32) -> String {
+    if cfg!(windows) {
+        format!("cmd /c exit {code}")
+    } else {
+        format!("(exit {code})")
+    }
+}
+
+/// Printed by [`slow_exit_with`] the moment the shell starts executing it.
+const RUN_MARKER: &str = "command-is-running";
+
+/// The marker is assembled from two literals so the joined text only reaches
+/// the screen when the shell *executes* the line, not when it echoes it back.
+/// Until then the session still looks like an idle prompt carrying the previous
+/// command's exit code, so an assertion issued too early settles against it.
+fn slow_exit_with(code: i32) -> String {
+    if cfg!(windows) {
+        format!("echo ('command-is-'+'running'); Start-Sleep -Seconds 6; cmd /c exit {code}")
+    } else {
+        format!("echo \"command-is-\"\"running\"; sleep 6; (exit {code})")
+    }
+}
+
+fn sleeper() -> Vec<&'static str> {
+    if cfg!(windows) {
+        vec!["cmd", "/c", "timeout /t 30 /nobreak >nul"]
+    } else {
+        vec!["sleep", "30"]
+    }
+}
+
+#[cfg(windows)]
+fn restart_helper(root: &std::path::Path) -> (String, Vec<String>) {
+    let script = root.join("restart-helper.ps1");
+    std::fs::write(
+        &script,
+        r#"param([string]$RestartArgument)
+$line = "arg=$RestartArgument;token=$env:TUI_RESTART_TOKEN;cwd=$((Get-Location).Path);size=$([Console]::WindowWidth)x$([Console]::WindowHeight)"
+[IO.File]::AppendAllText($env:TUI_RESTART_STARTS, $line + [Environment]::NewLine)
+[Console]::TreatControlCAsInput = $true
+[Console]::WriteLine("restart-ready")
+while ($true) {
+    $key = [Console]::ReadKey($true)
+    if ($key.Key -eq [ConsoleKey]::C -and
+        ($key.Modifiers -band [ConsoleModifiers]::Control)) {
+        [IO.File]::WriteAllText($env:TUI_RESTART_MARKER, "graceful")
+        if ($env:TUI_RESTART_IGNORE_INT -ne "1") { exit 0 }
+    }
+}
+"#,
+    )
+    .unwrap();
+    (
+        "powershell".to_string(),
+        vec![
+            "-NoLogo".to_string(),
+            "-NoProfile".to_string(),
+            "-File".to_string(),
+            script.to_string_lossy().into_owned(),
+            "restart-argument".to_string(),
+        ],
+    )
+}
+
+#[cfg(unix)]
+fn restart_helper(root: &std::path::Path) -> (String, Vec<String>) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let script = root.join("restart-helper.sh");
+    std::fs::write(
+        &script,
+        r#"#!/usr/bin/env bash
+set -eu
+size="$(stty size)"
+printf 'arg=%s;token=%s;cwd=%s;size=%s\n' "$1" "$TUI_RESTART_TOKEN" "$PWD" "$size" >> "$TUI_RESTART_STARTS"
+trap 'printf "graceful" > "$TUI_RESTART_MARKER"; if [ "${TUI_RESTART_IGNORE_INT:-0}" != 1 ]; then exit 0; fi' INT
+printf 'restart-ready\n'
+while :; do
+    IFS= read -r _ || :
+done
+"#,
+    )
+    .unwrap();
+    let mut permissions = std::fs::metadata(&script).unwrap().permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&script, permissions).unwrap();
+    (
+        "bash".to_string(),
+        vec![
+            script.to_string_lossy().into_owned(),
+            "restart-argument".to_string(),
+        ],
+    )
+}
+
+fn clipboard_command(base64: &str) -> String {
+    if cfg!(windows) {
+        format!(
+            "[Console]::Out.Write(([char]27).ToString() + ']52;c;{base64}' + \
+             ([char]7).ToString())"
+        )
+    } else {
+        format!("printf '\\033]52;c;{base64}\\a'")
+    }
+}
+
+fn blinking_program() -> Vec<&'static str> {
+    if cfg!(windows) {
+        vec![
+            "powershell.exe",
+            "-NoLogo",
+            "-NoProfile",
+            "-Command",
+            "while ($true) { [Console]::Write(([char]27).ToString() + '[H' + ([char]27).ToString() + '[5mX' + ([char]27).ToString() + '[0m'); Start-Sleep -Milliseconds 100 }",
+        ]
+    } else {
+        vec!["sh", "-c", "printf '\\033[5mX\\033[0m'; sleep 30"]
+    }
+}
+
+fn backend_parity_program() -> Vec<&'static str> {
+    if cfg!(windows) {
+        vec![
+            "pwsh",
+            "-NoLogo",
+            "-NoProfile",
+            "-Command",
+            r#"[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); $wide=[char]0x4F60; [Console]::Write("`e[2J`e[H`e]2;backend parity`a`e[1;3;4;31;44mRED`e[0m $wide`r`nline two`e[?25l"); Start-Sleep -Seconds 30"#,
+        ]
+    } else {
+        vec![
+            "sh",
+            "-c",
+            "printf '\\033[2J\\033[H\\033]2;backend parity\\007\\033[1;3;4;31;44mRED\\033[0m 你\\r\\nline two\\033[?25l'; sleep 30",
+        ]
+    }
+}
+
+#[test]
+fn ghostty_backend_is_used_end_to_end() {
+    let sandbox = Sandbox::new("ghostty-backend");
+    let mut args = vec![
+        "run",
+        "--backend",
+        "ghostty",
+        "--cols",
+        "10",
+        "--rows",
+        "2",
+        "--",
+    ];
+    args.extend(blinking_program());
+    sandbox.ok(&args);
+    sandbox.wait_for_text("X", FIXTURE_START_TIMEOUT);
+
+    let raw = sandbox.ok(&["--json", "cells", "0", "0"]);
+    let payload: serde_json::Value = serde_json::from_str(&raw).expect("cells json");
+    assert_eq!(
+        payload["data"]["cells"][0]["blink"],
+        serde_json::Value::Bool(true),
+        "Ghostty preserves SGR blink: {payload}"
+    );
+}
+
+fn interactive_reader() -> &'static str {
+    if cfg!(windows) {
+        "Write-Output ('reader-'+'ready'); $null = Read-Host"
+    } else {
+        "echo \"reader-\"\"ready\"; read answer"
+    }
+}
+
+fn start_command_with_stale_exit(sandbox: &Sandbox) {
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["submit", &exit_with(3)]);
+    sandbox.ok(&["wait", "command"]);
+    sandbox.ok(&["submit", &slow_exit_with(9)]);
+    sandbox.wait_for_text(RUN_MARKER, "15000");
+}
+
+/// Must wait for the current command instead of accepting a stale exit code.
+#[test]
+fn expect_exit_code_waits_for_the_current_command() {
+    let sandbox = Sandbox::new("exit-code-stale");
+    start_command_with_stale_exit(&sandbox);
+    let out = sandbox.run(&["expect", "exit-code", "3", "--timeout", "20000"]);
+
+    let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "the stale exit code 3 was accepted while the running command exits 9: {stderr}",
+    );
+    assert!(
+        stderr.contains("got 9"),
+        "expected the running command's code in the failure, got: {stderr}"
+    );
+}
+
+/// Timing out must not fall back to a stale exit code.
+#[test]
+fn expect_exit_code_timing_out_does_not_accept_a_stale_code() {
+    let sandbox = Sandbox::new("exit-code-timeout");
+    start_command_with_stale_exit(&sandbox);
+    let out = sandbox.run(&["expect", "exit-code", "3", "--timeout", "300"]);
+
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "the stale exit code 3 was accepted after the wait timed out: {}",
+        String::from_utf8_lossy(&out.stdout),
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("still running"),
+        "expected the failure to say the command had not finished, got: {stderr}"
+    );
+}
+
+#[test]
+fn unsubmitted_input_never_settles_as_a_finished_command() {
+    let sandbox = Sandbox::new("unsubmitted");
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["submit", &exit_with(3)]);
+    sandbox.ok(&["wait", "command", "--timeout", "20000"]);
+
+    sandbox.ok(&["type", "echo not-submitted"]);
+
+    let out = sandbox.run(&["expect", "exit-code", "3", "--timeout", "600"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "the previous command's exit code was accepted for input that never ran: {stderr}",
+    );
+    assert!(
+        stderr.contains("never started a command"),
+        "the failure should explain that nothing was submitted, got: {stderr}"
+    );
+
+    let out = sandbox.run(&["wait", "command", "--timeout", "600"]);
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "`wait command` has nothing to wait for: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+}
+
+#[test]
+fn input_consumed_by_a_running_command_does_not_stall_completion_waits() {
+    let sandbox = Sandbox::new("running-input");
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["submit", interactive_reader()]);
+    sandbox.wait_for_text("reader-ready", "15000");
+
+    sandbox.ok(&["submit", "typed-answer"]);
+    sandbox.ok(&["wait", "command", "--timeout", "5000"]);
+    sandbox.ok(&["expect", "exit-code", "0", "--timeout", "5000"]);
+}
+
+#[test]
+fn expect_exit_code_fails_promptly_when_nothing_ran() {
+    let sandbox = Sandbox::new("exit-code-idle");
+    sandbox.ok(&["open"]);
+
+    let started = Instant::now();
+    let out = sandbox.run(&["expect", "exit-code", "0", "--timeout", "20000"]);
+    let elapsed = started.elapsed();
+
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "expected an assertion failure, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    assert!(
+        elapsed < Duration::from_secs(10),
+        "no command had run, so the assertion should not wait for the full \
+         budget; it took {elapsed:?}",
+    );
+}
+
+#[test]
+fn expect_exit_code_is_immediate_once_the_command_has_finished() {
+    let sandbox = Sandbox::new("exit-code-fast");
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["submit", "echo settled-marker"]);
+    sandbox.ok(&["wait", "command"]);
+    sandbox.wait_for_text("settled-marker", "15000");
+
+    let mut baseline = Duration::ZERO;
+    for _ in 0..3 {
+        let started = Instant::now();
+        sandbox.ok(&["state"]);
+        baseline = baseline.max(started.elapsed());
+    }
+
+    let started = Instant::now();
+    sandbox.ok(&["expect", "exit-code", "0"]);
+    let elapsed = started.elapsed();
+
+    assert!(
+        elapsed < baseline + Duration::from_millis(250),
+        "the command had already finished, so this should settle on the \
+         completion marker rather than waiting out the 300ms quiet window; \
+         it took {elapsed:?} against a {baseline:?} round-trip",
+    );
+}
+
+#[test]
+fn a_repainting_prompt_neither_stalls_nor_short_circuits_exit_codes() {
+    if !has_nushell() {
+        eprintln!("skipping: nushell is not installed");
+        return;
+    }
+    let sandbox = Sandbox::new("nu-repaint");
+    sandbox.ok(&["open", "--shell", "nushell", "--timeout-ready", "20000"]);
+
+    sandbox.ok(&["submit", "print repaint-marker"]);
+    sandbox.ok(&["wait", "command", "--timeout", "20000"]);
+
+    let mut baseline = Duration::ZERO;
+    for _ in 0..3 {
+        let started = Instant::now();
+        sandbox.ok(&["state"]);
+        baseline = baseline.max(started.elapsed());
+    }
+    let started = Instant::now();
+    sandbox.ok(&["expect", "exit-code", "0"]);
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed < baseline + Duration::from_millis(500),
+        "a repainting prompt must not stall a settled exit code; it took \
+         {elapsed:?} against a {baseline:?} round-trip",
+    );
+
+    sandbox.ok(&["submit", "sleep 15sec; exit 7"]);
+    let out = sandbox.run(&["expect", "exit-code", "0", "--timeout", "1500"]);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "the prompt repaint after our input was mistaken for the command \
+         finishing, so the stale exit code 0 was accepted: {stderr}",
+    );
+    assert!(
+        stderr.contains("still running") || stderr.contains("never started a command"),
+        "expected the failure to say the command had not completed, got: {stderr}"
+    );
+}
+
+fn has_nushell() -> bool {
+    Command::new("nu")
+        .arg("--version")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .is_ok_and(|s| s.success())
+}
+
+// ---------------------------------------------------------------------------
+// `daemon stop` targeting
+// ---------------------------------------------------------------------------
+
+/// A bare `daemon stop` is a usage error and must not start or stop anything.
+#[test]
+fn daemon_stop_without_a_target_is_a_usage_error() {
+    let sandbox = Sandbox::new("stop-untargeted");
+    sandbox.ok(&["open"]);
+
+    let out = sandbox.run_untargeted(&["daemon", "stop"]);
+    assert_eq!(
+        out.status.code(),
+        Some(2),
+        "expected a usage error, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("--all") && stderr.contains("--session"),
+        "the error should name both ways to pick a target: {stderr}"
+    );
+
+    // The refusal must be inert: the running daemon is untouched.
+    assert!(
+        sandbox.ok(&["sessions"]).contains(&sandbox.session),
+        "a rejected `daemon stop` must not stop anything"
+    );
+
+    let empty = Sandbox::new("stop-inert");
+    let out = empty.run_untargeted(&["daemon", "stop"]);
+    assert_eq!(out.status.code(), Some(2));
+    assert_eq!(
+        empty.ok(&["sessions"]).trim(),
+        "no active sessions",
+        "refusing to stop must not spawn a daemon"
+    );
+}
+
+#[test]
+fn daemon_stop_all_stops_every_daemon() {
+    let sandbox = Sandbox::new("stop-all");
+    for name in ["one", "two", "three"] {
+        sandbox.ok_as(name, &["open"]);
+    }
+    let listed = sandbox.ok(&["sessions"]);
+    for name in ["one", "two", "three"] {
+        assert!(listed.contains(name), "expected {name} in: {listed}");
+    }
+
+    let out = sandbox.run_untargeted(&["daemon", "stop", "--all"]);
+    assert!(
+        out.status.success(),
+        "`daemon stop --all` failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        sandbox.ok(&["sessions"]).trim(),
+        "no active sessions",
+        "--all must stop every daemon"
+    );
+}
+
+#[test]
+fn daemon_stop_reports_a_session_with_no_daemon() {
+    let sandbox = Sandbox::new("stop-missing");
+    let out = sandbox.run(&["daemon", "stop"]);
+    assert_eq!(
+        out.status.code(),
+        Some(3),
+        "expected a no-session exit, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    assert_eq!(
+        sandbox.ok(&["sessions"]).trim(),
+        "no active sessions",
+        "stopping a missing daemon must not start one"
+    );
+}
+
+#[test]
+fn daemon_stop_targets_a_single_session() {
+    let sandbox = Sandbox::new("stop-one");
+    sandbox.ok_as("keep", &["open"]);
+    sandbox.ok_as("drop", &["open"]);
+
+    let out = sandbox.run_as("drop", &["daemon", "stop"]);
+    assert!(
+        out.status.success(),
+        "targeted stop failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    let listed = sandbox.ok(&["sessions"]);
+    assert!(
+        listed.contains("keep") && !listed.contains("drop"),
+        "expected only 'drop' to be stopped, got: {listed}"
+    );
+    sandbox.run_as("keep", &["close"]);
+}
+
+#[test]
+fn daemon_stop_all_is_fine_with_nothing_running() {
+    let sandbox = Sandbox::new("stop-all-empty");
+    let out = sandbox.run_untargeted(&["daemon", "stop", "--all"]);
+    assert!(out.status.success(), "expected exit 0 with nothing running");
+    assert!(
+        String::from_utf8_lossy(&out.stdout).contains("no daemons running"),
+        "expected an explicit note that nothing was running"
+    );
+}
+
+/// `daemon status` must not auto-start a daemon just to answer.
+#[test]
+fn daemon_status_does_not_start_a_daemon() {
+    let sandbox = Sandbox::new("status-inert");
+    let out = sandbox.run(&["daemon", "status"]);
+    assert_eq!(
+        out.status.code(),
+        Some(3),
+        "expected a no-session exit, got {:?}: {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    assert_eq!(
+        sandbox.ok(&["sessions"]).trim(),
+        "no active sessions",
+        "`daemon status` must not spawn a daemon"
+    );
+}
+
+#[test]
+fn daemon_status_reports_not_running_as_json() {
+    let sandbox = Sandbox::new("status-json");
+    let out = sandbox.run(&["--json", "daemon", "status"]);
+    assert_eq!(out.status.code(), Some(3));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("\"running\"") && stdout.contains("false"),
+        "expected a machine-readable payload, got: {stdout}"
+    );
+}
+
+/// `daemon start` is the client spawn path and is idempotent.
+#[test]
+fn daemon_start_is_idempotent_and_makes_status_answer() {
+    let sandbox = Sandbox::new("start");
+    sandbox.ok(&["daemon", "start"]);
+    let status = sandbox.ok(&["--json", "daemon", "status"]);
+    let status: serde_json::Value = serde_json::from_str(&status).expect("daemon status json");
+    assert!(
+        status["data"]["version"].is_string(),
+        "a started daemon should answer status: {status}"
+    );
+
+    let again = sandbox.ok(&["daemon", "start"]);
+    assert!(
+        again.contains("already running"),
+        "a second start should report the daemon was already up: {again}"
+    );
+    sandbox.ok(&["daemon", "stop"]);
+}
+
+#[test]
+fn concurrent_daemon_starts_are_serialized() {
+    let sandbox = Sandbox::new("start-race");
+    let barrier = Arc::new(Barrier::new(3));
+    let workers: Vec<_> = (0..2)
+        .map(|_| {
+            let barrier = Arc::clone(&barrier);
+            let home = sandbox.home.clone();
+            let session = sandbox.session.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                Command::new(BIN)
+                    .args(["--session", &session, "--json", "daemon", "start"])
+                    .env("TERMPROBE__HOME", home)
+                    .output()
+                    .expect("spawn concurrent daemon start")
+            })
+        })
+        .collect();
+    barrier.wait();
+
+    let mut started = 0;
+    for worker in workers {
+        let output = worker.join().unwrap();
+        assert!(
+            output.status.success(),
+            "concurrent start failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let payload: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("daemon start json");
+        started += usize::from(payload["started"].as_bool() == Some(true));
+    }
+    assert_eq!(started, 1, "exactly one client should spawn the daemon");
+}
+
+#[test]
+fn daemon_start_leaves_the_socket_ready() {
+    let sandbox = Sandbox::new("start-ready");
+    sandbox.ok(&["daemon", "start"]);
+    // No `open` in between: this is exactly what a client does after spawning.
+    sandbox.ok(&["open"]);
+    sandbox.ok(&["submit", "echo started-ok"]);
+    sandbox.ok(&["wait", "command"]);
+    sandbox.wait_for_text("started-ok", "5000");
+}
+
+/// Status `pid` is the daemon, not the child, so idle daemons are not `pid: null`.
+#[test]
+fn status_reports_the_daemon_pid_not_the_child() {
+    let sandbox = Sandbox::new("status-pid");
+
+    // No daemon: null, and explicitly flagged as not running.
+    let down = sandbox.run(&["--json", "daemon", "status"]);
+    assert_eq!(down.status.code(), Some(3));
+    let down = String::from_utf8_lossy(&down.stdout);
+    assert!(
+        down.contains("\"pid\":null") && down.contains("\"running\":false"),
+        "expected a null pid while nothing is running: {down}"
+    );
+
+    // Daemon up but no session yet: the daemon's own pid, and no child.
+    sandbox.ok(&["daemon", "start"]);
+    let idle = sandbox.ok(&["--json", "daemon", "status"]);
+    let idle: serde_json::Value = serde_json::from_str(&idle).expect("status json");
+    let pid = idle["data"]["pid"].as_u64().unwrap_or_else(|| {
+        panic!("a running daemon must report its own pid, got: {idle}");
+    });
+    assert!(
+        idle["data"]["shell_pid"].is_null(),
+        "no session is open, so there is no child: {idle}"
+    );
+
+    // The reported pid is really the daemon: it matches the pid file.
+    let recorded = std::fs::read_to_string(sandbox.home.join(format!("{}.pid", sandbox.session)))
+        .expect("read pid file");
+    assert_eq!(
+        recorded.trim(),
+        pid.to_string(),
+        "the reported pid should be the daemon process"
+    );
+
+    // Once a session exists the child shows up separately, and `pid` is
+    // unchanged — the daemon did not restart.
+    sandbox.ok(&["open"]);
+    let live = sandbox.ok(&["--json", "daemon", "status"]);
+    let live: serde_json::Value = serde_json::from_str(&live).expect("status json");
+    assert_eq!(live["data"]["pid"].as_u64(), Some(pid));
+    assert!(
+        live["data"]["shell_pid"].as_u64().is_some_and(|c| c != pid),
+        "the child pid should be reported separately: {live}"
+    );
+}
+
+/// A program that sets the window title is tracked, asserted on, and drawn.
+///
+/// This drives the whole path in one session: the emulator picking `OSC 2` out
+/// of the PTY stream, the getter, the assertion, the screenshot, and the reset
+/// that an empty title performs. Each of those is unit tested on its own; what
+/// only an end-to-end run proves is that a title set by a real program in a
+/// real shell arrives intact.
+///
+/// It deliberately does not assert what the title is *before* the program sets
+/// one. A session does not necessarily start without a title: Windows ConPTY
+/// supplies the program's path (`C:\Program Files\Git\bin\bash.EXE`) as soon as
+/// the session opens. That a fresh emulator reports no title, and that an empty
+/// one resets rather than storing a blank, are claims about the emulator rather
+/// than about the platform, so they are pinned in the conformance suite where
+/// no PTY is involved and every backend is covered.
+#[test]
+fn a_window_title_is_tracked_asserted_and_drawn() {
+    for backend in Backend::ALL {
+        let sandbox = Sandbox::new("title");
+        let mut args = vec!["run", "--backend", backend.as_str(), "--cols", "40", "--"];
+        if cfg!(windows) {
+            args.extend([
+                "powershell.exe",
+                "-NoLogo",
+                "-NoProfile",
+                "-Command",
+                "$e=[char]27; [Console]::Write('TITLE_READY'); while (($value=[Console]::ReadLine()) -ne $null) { [Console]::Write($e.ToString() + ']2;' + $value + [char]7) }",
+            ]);
+        } else {
+            args.extend(["bash", "--norc"]);
+        }
+        sandbox.ok(&args);
+        if cfg!(windows) {
+            sandbox.wait_for_text("TITLE_READY", "10000");
+        }
+        let before = sandbox.ok(&["get", "title"]);
+
+        let set_title = if cfg!(windows) {
+            "vim: notes.md"
+        } else {
+            r#"printf '\033]2;vim: notes.md\007'"#
+        };
+        sandbox.ok(&["submit", set_title]);
+        sandbox.ok(&["expect", "title", "vim", "--timeout", "5000"]);
+        sandbox.ok(&["expect", "title", "notes\\.\\w+", "--regex"]);
+        sandbox.ok(&["expect", "title", "emacs", "--not"]);
+        assert_ne!(
+            sandbox.ok(&["get", "title"]),
+            before,
+            "{} did not replace the session's initial title",
+            backend.as_str()
+        );
+
+        // The title is drawn in the window chrome, not in the grid.
+        let svg = sandbox.home.join("titled.svg");
+        sandbox.ok(&[
+            "screenshot",
+            "--out",
+            svg.to_str().expect("utf-8 path"),
+            "--zoom",
+            "0.5",
+        ]);
+        let image = std::fs::read_to_string(&svg).expect("read svg");
+        assert!(
+            image.contains(">vim: notes.md - 40x30</text>")
+                && image.contains(r#"text-anchor="middle""#),
+            "{} did not draw the title centred in the title bar: {image}",
+            backend.as_str()
+        );
+        assert!(
+            // The default style at zoom 0.5; update deliberately if a
+            // default gap moves.
+            image.contains(r#"width="239" height="367" viewBox="0 0 478 734""#),
+            "{} changed the SVG dimensions at zoom 0.5: {image}",
+            backend.as_str()
+        );
+
+        // An empty title clears it, which is how programs tidy up on exit.
+        let clear_title = if cfg!(windows) {
+            ""
+        } else {
+            r#"printf '\033]2;\007'"#
+        };
+        sandbox.ok(&["submit", clear_title]);
+        sandbox.ok(&["wait", "title", "vim", "--not", "--timeout", "5000"]);
+    }
+}
+
+/// A snapshot leaves the window title out unless it is asked for.
+///
+/// A shell prompt routinely sets the title to a username, hostname, and
+/// absolute path, so recording it by default would pin every stored baseline
+/// to one machine and make it change on `cd` while the screen stayed the same.
+#[test]
+fn a_snapshot_records_the_title_only_when_asked() {
+    for backend in Backend::ALL {
+        let sandbox = Sandbox::new("snap-title");
+        // Wide enough that the title is not truncated, so the assertion is
+        // about whether it was recorded at all rather than how it was shortened.
+        let mut args = vec!["run", "--backend", backend.as_str(), "--cols", "40", "--"];
+        if cfg!(windows) {
+            args.extend([
+                "powershell.exe",
+                "-NoLogo",
+                "-NoProfile",
+                "-Command",
+                r#"$e=[char]27; [Console]::Write("$e[2J$e[H$e]2;termprobe-user@host: /some/path$([char]7)"); Start-Sleep -Seconds 30"#,
+            ]);
+        } else {
+            args.extend([
+                "bash",
+                "--norc",
+                "-c",
+                r#"clear; printf '\033]2;termprobe-user@host: /some/path\007'; sleep 30"#,
+            ]);
+        }
+        sandbox.ok(&args);
+        sandbox.ok(&["expect", "title", "termprobe-user@host", "--timeout", "5000"]);
+
+        let plain = sandbox.ok_in(Some(&sandbox.home), &["expect", "snapshot", "plain", "-u"]);
+        assert!(
+            !plain.contains("termprobe-user@host"),
+            "{} included a title by default",
+            backend.as_str()
+        );
+        let stored = std::fs::read_to_string(sandbox.home.join("__snapshots__/plain.snap"))
+            .expect("read snapshot");
+        assert!(
+            stored.starts_with("╭────") && !stored.contains("termprobe-user@host"),
+            "{} tied a default snapshot to the session title: {stored}",
+            backend.as_str()
+        );
+
+        sandbox.ok_in(
+            Some(&sandbox.home),
+            &["expect", "snapshot", "titled", "-u", "--include-title"],
+        );
+        let titled = std::fs::read_to_string(sandbox.home.join("__snapshots__/titled.snap"))
+            .expect("read snapshot");
+        assert!(
+            titled.contains("termprobe-user@host: /some/path"),
+            "{} left the requested title out of the snapshot: {titled}",
+            backend.as_str()
+        );
+    }
+}
+
+#[test]
+fn terminal_backends_match_end_to_end_for_cells_state_and_snapshots() {
+    let mut expected_cells = None;
+    let mut expected_state = None;
+    let mut expected_snapshot = None;
+
+    for backend in Backend::ALL {
+        let sandbox = Sandbox::new("backend-parity");
+        let mut args = vec![
+            "run",
+            "--backend",
+            backend.as_str(),
+            "--cols",
+            "12",
+            "--rows",
+            "3",
+            "--",
+        ];
+        args.extend(backend_parity_program());
+        sandbox.ok(&args);
+        sandbox.wait_for_text("line two", "10000");
+        sandbox.ok(&["expect", "title", "backend parity", "--timeout", "5000"]);
+
+        let cells: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "cells", "0", "0", "6", "1"]))
+                .expect("cells json");
+        let cells = cells["data"]["cells"].clone();
+        let row = cells.as_array().expect("cell array");
+        assert_eq!(row[0]["char"], "R", "{} first cell", backend.as_str());
+        assert_eq!(row[0]["fg"], 1, "{} named foreground", backend.as_str());
+        assert_eq!(row[0]["bg"], 4, "{} named background", backend.as_str());
+        assert_eq!(row[0]["bold"], true, "{} bold", backend.as_str());
+        assert_eq!(row[0]["italic"], true, "{} italic", backend.as_str());
+        assert_eq!(
+            row[0]["underline_style"],
+            "single",
+            "{} underline",
+            backend.as_str()
+        );
+        assert_eq!(row[4]["char"], "你", "{} wide cell", backend.as_str());
+        assert_eq!(row[5]["char"], "", "{} wide continuation", backend.as_str());
+        if let Some(expected) = &expected_cells {
+            assert_eq!(
+                &cells,
+                expected,
+                "{} produced different cells",
+                backend.as_str()
+            );
+        } else {
+            expected_cells = Some(cells);
+        }
+
+        let state: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "state"])).expect("state json");
+        let data = &state["data"];
+        assert_eq!(
+            data["title"],
+            "backend parity",
+            "{} title",
+            backend.as_str()
+        );
+        assert_eq!(data["bell_count"], 0, "{} OSC terminator", backend.as_str());
+        let state = serde_json::json!({
+            "cols": data["cols"],
+            "rows": data["rows"],
+            "cursor": data["cursor"],
+            "title": data["title"],
+            "bell_count": data["bell_count"],
+            "text": data["text"],
+        });
+        if let Some(expected) = &expected_state {
+            assert_eq!(
+                &state,
+                expected,
+                "{} produced different state",
+                backend.as_str()
+            );
+        } else {
+            expected_state = Some(state);
+        }
+
+        sandbox.ok_in(
+            Some(&sandbox.home),
+            &[
+                "expect",
+                "snapshot",
+                "backend-parity",
+                "-u",
+                "--include-style",
+                "--include-title",
+            ],
+        );
+        let snapshot =
+            std::fs::read_to_string(sandbox.home.join("__snapshots__/backend-parity.snap"))
+                .expect("read parity snapshot");
+        if let Some(expected) = &expected_snapshot {
+            assert_eq!(
+                &snapshot,
+                expected,
+                "{} produced a different snapshot",
+                backend.as_str()
+            );
+        } else {
+            expected_snapshot = Some(snapshot);
+        }
+
+        // Growing the viewport is backend-specific: Ghostty anchors existing
+        // rows at the bottom, while Alacritty and Rio keep them at the top.
+        // Exercise snapshot round-tripping, but compare its visual content
+        // instead of reusing one backend's row layout as the shared baseline.
+        sandbox.ok(&["resize", "16", "4"]);
+        // ConPTY asynchronously redraws its screen after a resize. Wait for
+        // that redraw so both halves of the snapshot round-trip see one frame.
+        sandbox.ok(&["wait", "idle", "--timeout", "5000"]);
+        sandbox.ok_in(
+            Some(&sandbox.home),
+            &[
+                "expect",
+                "snapshot",
+                "backend-parity-resized",
+                "-u",
+                "--include-style",
+                "--include-title",
+            ],
+        );
+        sandbox.ok_in(
+            Some(&sandbox.home),
+            &[
+                "expect",
+                "snapshot",
+                "backend-parity-resized",
+                "--include-style",
+                "--include-title",
+            ],
+        );
+        let resized = std::fs::read_to_string(
+            sandbox
+                .home
+                .join("__snapshots__/backend-parity-resized.snap"),
+        )
+        .expect("read resized parity snapshot");
+        let state: serde_json::Value =
+            serde_json::from_str(&sandbox.ok(&["--json", "state"])).expect("resized state json");
+        let data = &state["data"];
+        assert_eq!(data["cols"], 16, "{} resized columns", backend.as_str());
+        assert_eq!(data["rows"], 4, "{} resized rows", backend.as_str());
+        assert_eq!(
+            data["title"],
+            "backend parity",
+            "{} resized title",
+            backend.as_str()
+        );
+        let text = data["text"].as_str().expect("resized state text");
+        assert!(
+            text.contains("RED 你") && text.contains("line two"),
+            "{} lost content during resize: {text:?}",
+            backend.as_str()
+        );
+        assert!(
+            resized.contains("backend parity")
+                && resized.contains("RED 你")
+                && resized.contains("line two")
+                && resized.contains("\"fg\": 1")
+                && resized.contains("\"bg\": 4"),
+            "{} lost visual state in the resized snapshot: {resized}",
+            backend.as_str()
+        );
+    }
+}
+
+#[test]
+fn shell_integration_is_identical_across_terminal_backends() {
+    for backend in Backend::ALL {
+        let sandbox = Sandbox::new("backend-shell-integration");
+        sandbox.ok(&["open", "--backend", backend.as_str()]);
+        let command = if cfg!(windows) {
+            "Write-Output ('backend-'+'shell-ok')"
+        } else {
+            "printf '%s\\n' backend-shell-ok"
+        };
+        sandbox.ok(&["submit", command]);
+        sandbox.wait_for_text("backend-shell-ok", "10000");
+        sandbox.ok(&["wait", "command"]);
+        sandbox.ok(&["expect", "exit-code", "0"]);
+        sandbox.ok(&["expect", "output", "backend-shell-ok"]);
+    }
+}

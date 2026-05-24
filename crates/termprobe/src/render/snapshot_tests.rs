@@ -125,3 +125,262 @@ fn regular_grid() -> Vec<Vec<EmuCell>> {
     );
     grid
 }
+
+fn styles_grid() -> Vec<Vec<EmuCell>> {
+    let mut grid = blank_grid();
+    write_text(&mut grid, 0, 0, "Regular", CellStyle::default());
+    write_text(
+        &mut grid,
+        1,
+        0,
+        "Bold",
+        CellStyle {
+            attrs: Attrs::BOLD,
+            fg: Some(Color::Named(NamedColor::BrightYellow)),
+            ..CellStyle::default()
+        },
+    );
+    write_text(
+        &mut grid,
+        2,
+        0,
+        "Italic",
+        CellStyle {
+            attrs: Attrs::ITALIC,
+            fg: Some(Color::Named(NamedColor::BrightGreen)),
+            ..CellStyle::default()
+        },
+    );
+    write_text(
+        &mut grid,
+        3,
+        0,
+        "Bold Italic",
+        CellStyle {
+            attrs: Attrs::BOLD | Attrs::ITALIC,
+            fg: Some(Color::Named(NamedColor::BrightMagenta)),
+            ..CellStyle::default()
+        },
+    );
+    write_text(
+        &mut grid,
+        4,
+        0,
+        "Underline Strike",
+        CellStyle {
+            attrs: Attrs::STRIKE,
+            fg: Some(Color::Rgb(220, 220, 220)),
+            underline: UnderlineStyle::Single,
+            underline_color: Some(Color::Rgb(90, 180, 255)),
+            ..CellStyle::default()
+        },
+    );
+    grid
+}
+
+fn nerd_font_grid() -> Vec<Vec<EmuCell>> {
+    let mut grid = blank_grid();
+    write_text(
+        &mut grid,
+        0,
+        0,
+        "Nerd Font:",
+        CellStyle {
+            fg: Some(Color::Named(NamedColor::BrightBlue)),
+            ..CellStyle::default()
+        },
+    );
+    set_cell(
+        &mut grid,
+        0,
+        11,
+        "\u{f115}",
+        CellStyle {
+            fg: Some(Color::Named(NamedColor::BrightYellow)),
+            ..CellStyle::default()
+        },
+    );
+    set_cell(
+        &mut grid,
+        0,
+        13,
+        "\u{e0b0}",
+        CellStyle {
+            fg: Some(Color::Rgb(80, 160, 255)),
+            bg: Some(Color::Rgb(30, 60, 100)),
+            ..CellStyle::default()
+        },
+    );
+    write_text(
+        &mut grid,
+        1,
+        0,
+        "\u{250c}\u{2500}\u{2500}\u{2500}\u{2510}  \u{2190} \u{2192}  \u{2588}\u{2593}\u{2592}\u{2591}",
+        CellStyle::default(),
+    );
+    write_text(
+        &mut grid,
+        2,
+        0,
+        "private-use vector paths",
+        CellStyle {
+            attrs: Attrs::ITALIC,
+            ..CellStyle::default()
+        },
+    );
+    write_text(
+        &mut grid,
+        3,
+        0,
+        "Powerline cell fill",
+        CellStyle {
+            attrs: Attrs::BOLD,
+            fg: Some(Color::Rgb(180, 210, 255)),
+            bg: Some(Color::Rgb(35, 45, 65)),
+            ..CellStyle::default()
+        },
+    );
+    write_text(
+        &mut grid,
+        4,
+        0,
+        "deterministic raster output",
+        CellStyle::default(),
+    );
+    grid
+}
+
+fn pixel_alignment_grid() -> Vec<Vec<EmuCell>> {
+    let mut grid = blank_grid();
+    write_text(
+        &mut grid,
+        0,
+        0,
+        "fractional color runs",
+        CellStyle::default(),
+    );
+    fill_background(&mut grid, 1, 0, 9, Color::Rgb(236, 106, 94));
+    fill_background(&mut grid, 1, 9, 18, Color::Rgb(244, 191, 79));
+    fill_background(&mut grid, 1, 18, 27, Color::Rgb(97, 197, 84));
+    fill_background(&mut grid, 2, 0, usize::from(COLS), Color::Rgb(125, 86, 244));
+    write_text(
+        &mut grid,
+        3,
+        0,
+        "cursor touches final run",
+        CellStyle::default(),
+    );
+    grid
+}
+
+fn fill_background(
+    grid: &mut [Vec<EmuCell>],
+    row: usize,
+    start: usize,
+    end: usize,
+    background: Color,
+) {
+    for column in start..end {
+        set_cell(
+            grid,
+            row,
+            column,
+            " ",
+            CellStyle {
+                bg: Some(background),
+                ..CellStyle::default()
+            },
+        );
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+struct CellStyle {
+    fg: Option<Color>,
+    bg: Option<Color>,
+    attrs: Attrs,
+    underline: UnderlineStyle,
+    underline_color: Option<Color>,
+}
+
+fn blank_grid() -> Vec<Vec<EmuCell>> {
+    vec![vec![EmuCell::blank(); usize::from(COLS)]; ROWS]
+}
+
+fn write_text(grid: &mut [Vec<EmuCell>], row: usize, column: usize, text: &str, style: CellStyle) {
+    for (offset, character) in text.chars().enumerate() {
+        set_cell(grid, row, column + offset, &character.to_string(), style);
+    }
+}
+
+fn set_cell(
+    grid: &mut [Vec<EmuCell>],
+    row: usize,
+    column: usize,
+    character: &str,
+    style: CellStyle,
+) {
+    let cell = grid
+        .get_mut(row)
+        .and_then(|row| row.get_mut(column))
+        .unwrap_or_else(|| panic!("snapshot cell {column},{row} exceeds {COLS}x{ROWS}"));
+    *cell = EmuCell {
+        ch: character.into(),
+        fg: style.fg,
+        bg: style.bg,
+        attrs: style.attrs,
+        underline: style.underline,
+        underline_color: style.underline_color,
+        ..EmuCell::blank()
+    };
+}
+
+fn assert_snapshot(name: &str, extension: &str, actual: &[u8]) {
+    let expected_path = snapshot_dir().join(format!("{name}.{extension}"));
+    if std::env::var(UPDATE_ENV).as_deref() == Ok("1") {
+        std::fs::create_dir_all(snapshot_dir()).unwrap();
+        std::fs::write(expected_path, actual).unwrap();
+        return;
+    }
+
+    let expected = std::fs::read(&expected_path).unwrap_or_else(|error| {
+        panic!(
+            "could not read render snapshot {}: {error}; set {UPDATE_ENV}=1 to create it",
+            expected_path.display()
+        )
+    });
+    if expected != actual {
+        let actual_path = failure_dir().join(format!("{name}.actual.{extension}"));
+        std::fs::create_dir_all(failure_dir()).unwrap();
+        std::fs::write(&actual_path, actual).unwrap();
+        panic!(
+            "render snapshot {} changed (expected {} bytes, got {}); actual output: {}; \
+             set {UPDATE_ENV}=1 to accept it",
+            expected_path.display(),
+            expected.len(),
+            actual.len(),
+            actual_path.display()
+        );
+    }
+}
+
+fn snapshot_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("render-snapshots")
+}
+
+fn failure_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("target")
+        .join("render-snapshot-failures")
+}
+
+fn temporary_output(name: &str, extension: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "termprobe-render-snapshot-{}-{name}.{extension}",
+        std::process::id()
+    ))
+}
