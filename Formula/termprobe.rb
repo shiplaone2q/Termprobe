@@ -35,3 +35,4 @@ class TuiTest < Formula
   test do
     system bin/"tui-test", "--version"
   end
+end
