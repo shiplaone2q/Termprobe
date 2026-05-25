@@ -89,3 +89,7 @@ export async function readArchive(data) {
     });
     parser.on("error", reject);
     parser.on("end", () => resolve(entries));
+    parser.end(decoded);
+  });
+}
+

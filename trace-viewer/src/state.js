@@ -57,3 +57,4 @@ export function update(model, state, event) {
     case "coordinate": return { ...state, [event.axis]: event.value };
     case "inspect": {
       const frame = selection(model, state).frame;
+      const cell = cellAt(frame, event.x, event.y);

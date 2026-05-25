@@ -114,3 +114,4 @@ class NativeSurfaceTests(unittest.TestCase):
             "kill",
             "wait_clipboard",
             "wait_idle",
+            "wait_command",

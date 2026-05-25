@@ -52,3 +52,7 @@
     "testing",
     "tui",
     "termprobe"
+  ],
+  "license": "MIT",
+  "author": "Microsoft",
+  "repository": {
