@@ -79,3 +79,7 @@ pub(super) fn worker_loop(
                 let request = *request;
                 let writer = (|| {
                     let protected = protected
+                        .as_ref()
+                        .map_err(|error| std::io::Error::other(error.to_string()))?
+                        .as_ref();
+                    if let Some(protected) = protected {
