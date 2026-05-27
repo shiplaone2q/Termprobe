@@ -45,3 +45,5 @@ export function fixture() {
     location: { column: 0, row: 7 }, grapheme: "A", property: "foreground", operator: "equals",
     expected: "2", actual: "1", resolved: "#112233", reason: "color mismatch",
   };
+  const stage = {
+    stage_index: 1, expression_path: "root", evaluations: 1, mode: "parent_style_filter", direction: "within",

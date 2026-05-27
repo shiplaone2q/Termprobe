@@ -134,3 +134,6 @@ fn validate_options(options: &TimelineOptions) -> anyhow::Result<()> {
     }
     if !options.speed.is_finite() || options.speed <= 0.0 {
         anyhow::bail!("recording speed must be finite and greater than zero");
+    }
+    Ok(())
+}

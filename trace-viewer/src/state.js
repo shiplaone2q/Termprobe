@@ -58,3 +58,6 @@ export function update(model, state, event) {
     case "inspect": {
       const frame = selection(model, state).frame;
       const cell = cellAt(frame, event.x, event.y);
+      return { ...state, playback: undefined, cell: cell ? { x: event.x, y: event.y } : undefined,
+        column: Number.isFinite(event.x) ? String(event.x) : "",
+        row: Number.isFinite(event.y) ? String(event.y) : "",
