@@ -57,3 +57,6 @@ func exerciseTerminal(terminal *termprobe.Client) error {
 	if err := terminal.Submit(termprobe.Ptr("hello")); err != nil {
 		return fmt.Errorf("submit child input: %w", err)
 	}
+	if err := terminal.GetByText("echo:hello", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: &timeout}); err != nil {
+		return fmt.Errorf("expect child response: %w", err)
+	}
