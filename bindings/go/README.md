@@ -58,3 +58,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 
 For ARM64 musl, use `GOARCH=arm64` and `/lib/ld-musl-aarch64.so.1`.
 The interpreter must exist on the destination machine.
+A missing interpreter prevents startup before the binding can select an engine.
+
+### Existing native installation
+

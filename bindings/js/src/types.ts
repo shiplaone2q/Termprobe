@@ -105,3 +105,6 @@ export interface SpawnOptions {
   rows?: number;
   cwd?: string;
   env?: Record<string, string | number | boolean> | [string, string][];
+  waitReady?: boolean;
+  restart?: boolean;
+  retries?: number;
