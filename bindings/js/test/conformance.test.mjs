@@ -57,3 +57,7 @@ const MAPPING = {
   expect: [["client", "getByText"], ["client", "expectTitle"], ["client", "expectExitCode"], ["client", "expectOutput"], ["client", "expectBellCount"], ["client", "expectSnapshot"]],
   find: [["client", "getByText"]],
   click: [["client", "getByText"]],
+  highlight: [["client", "getByText"]],
+  "get-recording": [["module", "getRecording"]],
+};
+

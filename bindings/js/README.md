@@ -136,3 +136,7 @@ Mouse input and historical locator clicks fail while the viewport shows history.
 Call `scrollToBottom()` before mouse input. This API is separate from `mouse.scroll()`.
 
 `getCursor()` and `State.cursor` retain the application cursor coordinates.
+Captures project that cursor into the viewport and hide it outside the view.
+Raster recordings capture viewport changes. Asciicast remains a PTY stream.
+
+After a source build, run `node examples/scrollback.mjs` from this directory.
