@@ -59,3 +59,5 @@ fn demonstrate(backend: Backend) -> Result<()> {
         })?;
         ensure!(!text(&session, false)?.contains("row00"));
         session.execute(Operation::Submit {
+            data: Some("hello".into()),
+        })?;
