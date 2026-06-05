@@ -118,3 +118,6 @@ impl TestShell {
                 .unwrap();
         }
         let launch = launch_with_scripts(shell, &scripts).unwrap();
+        let pair = portable_pty::native_pty_system()
+            .openpty(PtySize {
+                rows: 30,
