@@ -82,3 +82,6 @@ elif [ "$VERSION" = "beta" ]; then
         sub(/",?$/, "", tag)
         draft = ""
       }
+      /^    "draft": false,?$/ { draft = "false" }
+      /^    "draft": true,?$/ { draft = "true" }
+      /^    "prerelease": true,?$/ &&
