@@ -262,3 +262,6 @@ impl Request {
             }
             let request_retention = request.diagnostic_retention();
             if context.trace.is_none() {
+                if let Request::Open { trace, .. } = request.as_ref() {
+                    context.trace = Some(trace.clone());
+                }

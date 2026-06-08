@@ -94,3 +94,6 @@ type Colors struct {
 }
 
 type Profile struct {
+	Scrollback *uint32
+	Colors     Colors
+}
