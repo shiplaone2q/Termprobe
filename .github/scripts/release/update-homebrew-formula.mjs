@@ -52,3 +52,5 @@ const formula = `class Termprobe < Formula
   def install
     bin.install "termprobe"
   end
+
+  test do

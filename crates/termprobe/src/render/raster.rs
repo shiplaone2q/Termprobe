@@ -221,3 +221,6 @@ impl FrameRenderer for GridRenderer {
         );
         fill_rounded_rect(
             &mut self.pixmap,
+            origin_x,
+            origin_y,
+            panel_width as f32,

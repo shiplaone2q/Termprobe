@@ -193,3 +193,5 @@ impl Pty {
         }
         let pty_system = native_pty_system();
         let pair = pty_system.openpty(PtySize {
+            rows: opts.rows,
+            cols: opts.cols,
