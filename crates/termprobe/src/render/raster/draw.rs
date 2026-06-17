@@ -106,3 +106,7 @@ pub(super) fn fill_circle(pixmap: &mut Pixmap, x: f32, y: f32, radius: f32, colo
     };
     let mut paint = Paint::default();
     paint.set_color_rgba8(color.r, color.g, color.b, 255);
+    pixmap.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,

@@ -83,3 +83,6 @@ pub(super) fn worker_loop(
                         .map_err(|error| std::io::Error::other(error.to_string()))?
                         .as_ref();
                     if let Some(protected) = protected {
+                        protected.check_path(&request.target_path)?;
+                    }
+                    cast::CastWriter::create_guarded(
