@@ -265,3 +265,4 @@ impl Request {
                 if let Request::Open { trace, .. } = request.as_ref() {
                     context.trace = Some(trace.clone());
                 }
+            }

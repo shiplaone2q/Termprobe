@@ -60,3 +60,5 @@ if (process.platform === "win32") {
 // Keep the library handle alive with its functions. Bun cannot safely finalize
 // Koffi's handle during garbage collection, even while native functions remain.
 const functions = { ...bind(library), library, platformLibrary };
+const version = functions.tui_abi_version();
+if (version !== abiVersion) {
