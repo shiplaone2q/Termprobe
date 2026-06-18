@@ -271,3 +271,7 @@ def _append_node(
     if len(result.nodes) >= 256:
         raise ValueError("locator expression exceeds 256 nodes")
     if relative:
+        if query is None and node.get("direction", "within") != "within":
+            raise ValueError("locator direction requires a parent locator")
+        if query is not None:
+            node["within"] = result.root

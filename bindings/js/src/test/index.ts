@@ -56,3 +56,6 @@ function installSafetyNet(): void {
   }
   safetyNetInstalled = true;
   const proc: NodeJS.Process | undefined =
+    typeof process !== "undefined" ? process : undefined;
+  proc?.once?.("beforeExit", () => {
+    void closeAllTracked();
