@@ -34,3 +34,4 @@ __su_precmd() {
 	if [[ -n $__su_started ]]; then
 		__su_osc "D;$ec"
 	fi
+	__su_cwd
