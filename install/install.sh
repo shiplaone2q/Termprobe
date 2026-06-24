@@ -85,3 +85,7 @@ elif [ "$VERSION" = "beta" ]; then
       /^    "draft": false,?$/ { draft = "false" }
       /^    "draft": true,?$/ { draft = "true" }
       /^    "prerelease": true,?$/ &&
+        draft == "false" &&
+        tag ~ /^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$/ {
+        print tag
+        exit
