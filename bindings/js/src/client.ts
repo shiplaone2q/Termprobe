@@ -259,3 +259,7 @@ function occurrenceOptions(occurrence?: TextOccurrence): {
     return {};
   }
   if (typeof occurrence === "string") {
+    if (!["any", "unique", "first", "last"].includes(occurrence)) {
+      throw new TypeError(
+        "occurrence must be any, unique, first, last, or { nth: index }",
+      );

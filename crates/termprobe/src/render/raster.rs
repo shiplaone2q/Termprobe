@@ -224,3 +224,6 @@ impl FrameRenderer for GridRenderer {
             origin_x,
             origin_y,
             panel_width as f32,
+            panel_height as f32,
+            style.border.radius * scale,
+            colors.resolve(None, false),
