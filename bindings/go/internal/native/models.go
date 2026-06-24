@@ -97,3 +97,7 @@ type Profile struct {
 	Scrollback *uint32
 	Colors     Colors
 }
+
+type AutomaticRecording struct {
+	Mode      RecordingMode
+	Directory string

@@ -177,3 +177,4 @@ impl ColorState {
     fn get(&self, index: usize) -> Rgb {
         self.overrides
             .lock()
+            .unwrap_or_else(PoisonError::into_inner)[index]

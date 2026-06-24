@@ -44,3 +44,6 @@ __all__ = [
     "Locator",
     "sessions",
     "close_all",
+    "get_recording",
+    "unique_session",
+    "TuiTestError",
