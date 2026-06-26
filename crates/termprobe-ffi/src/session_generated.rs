@@ -47,3 +47,15 @@ impl SessionInput {
                 .screen_history_limit
                 .unwrap_or(defaults.screen_history_limit),
         };
+        retention.validate().map_err(TermprobeError::usage)?;
+        Ok((
+            self.name,
+            ExecutionContext {
+                artifact,
+                trace,
+                retention,
+                ..ExecutionContext::default()
+            },
+        ))
+    }
+}
