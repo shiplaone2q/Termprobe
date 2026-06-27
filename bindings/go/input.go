@@ -23,3 +23,5 @@ func (mouse *Mouse) Drag(x1, y1, x2, y2 uint16, options MouseButtonOptions) erro
 	return mouse.runtime.mouseDrag(x1, y1, x2, y2, options)
 }
 func (mouse *Mouse) Scroll(direction ScrollDirection, amount uint32) error {
+	return mouse.runtime.mouseScroll(direction, amount)
+}

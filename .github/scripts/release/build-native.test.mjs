@@ -48,3 +48,44 @@ syncBuiltinESMExports();
     invocation: JSON.parse(fs.readFileSync(path.join(directory, "invocation.json"), "utf8")),
     files: fs.readdirSync(path.join(bindings, "native")),
   };
+}
+
+test("GNU builds use manylinux 2.28 and the original output target", (t) => {
+  const { invocation, files } = build(t, ["--target", "aarch64-unknown-linux-gnu", "-x"]);
+  assert.equal(invocation.command, "docker");
+  assert.ok(invocation.args.includes("quay.io/pypa/manylinux_2_28_aarch64"));
+  assert.ok(invocation.args.includes("linux/arm64"));
+  assert.deepEqual(invocation.args.slice(-2), ["aarch64-unknown-linux-gnu", "release"]);
+  const script = invocation.args[invocation.args.indexOf("-euc") + 1];
+  assert.match(script, /--target "\$1\.2\.28"/);
+  assert.match(script, /CARGO_TARGET_DIR=\/io\/target\/manylinux/);
+  assert.deepEqual(files, ["termprobe.linux-arm64-gnu.so"]);
+  assert.equal(invocation.targetDir, undefined);
+  assert.equal(invocation.rustflags, "-C debuginfo=1");
+  assert.ok(invocation.args.includes("RUSTFLAGS"));
+});
+
+test("implicit debug GNU builds also use the baseline container", (t) => {
+  const { invocation, files } = build(t, ["--zig", "--debug"]);
+  assert.equal(invocation.command, "docker");
+  assert.ok(invocation.args.includes("quay.io/pypa/manylinux_2_28_x86_64"));
+  assert.ok(invocation.args.includes("linux/amd64"));
+  assert.deepEqual(invocation.args.slice(-2), ["x86_64-unknown-linux-gnu", "debug"]);
+  assert.deepEqual(files, ["termprobe.linux-x64-gnu.so"]);
+});
+
+test("musl remains dynamic and retains caller Rust flags", (t) => {
+  const { invocation } = build(t, ["--target", "x86_64-unknown-linux-musl", "-x"]);
+  assert.equal(invocation.command, "cargo");
+  assert.equal(invocation.args.at(-1), "x86_64-unknown-linux-musl");
+  assert.equal(invocation.rustflags, "-C debuginfo=1 -C target-feature=-crt-static");
+});
+
+test("ordinary native and explicit target builds stay unchanged", (t) => {
+  const native = build(t, ["--debug"]);
+  assert.deepEqual(native.invocation.args, ["build", "--locked", "-p", "termprobe-ffi"]);
+  const explicit = build(t, ["--target", "x86_64-unknown-linux-gnu"]);
+  assert.equal(explicit.invocation.args[0], "build");
+  assert.equal(explicit.invocation.args.at(-1), "x86_64-unknown-linux-gnu");
+  assert.equal(explicit.invocation.rustflags, "-C debuginfo=1");
+});
