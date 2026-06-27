@@ -54,3 +54,62 @@ fn identity_at(path: &Path) -> io::Result<Option<(u64, u64)>> {
 }
 
 #[cfg(windows)]
+fn identity(file: &File) -> io::Result<Option<(u64, u64)>> {
+    use std::os::windows::io::AsRawHandle;
+
+    #[repr(C)]
+    #[derive(Default)]
+    struct FileInformation {
+        attributes: u32,
+        creation_time: [u32; 2],
+        last_access_time: [u32; 2],
+        last_write_time: [u32; 2],
+        volume_serial_number: u32,
+        size_high: u32,
+        size_low: u32,
+        links: u32,
+        index_high: u32,
+        index_low: u32,
+    }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFileInformationByHandle(
+            file: *mut std::ffi::c_void,
+            information: *mut FileInformation,
+        ) -> i32;
+    }
+
+    let mut information = FileInformation::default();
+    // The repr(C) buffer matches BY_HANDLE_FILE_INFORMATION and remains live
+    // for the call; the borrowed File keeps its handle open.
+    if unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut information) } == 0 {
+        let error = io::Error::last_os_error();
+        return match error.raw_os_error() {
+            Some(1 | 50) => Ok(None),
+            _ => Err(error),
+        };
+    }
+    Ok(Some((
+        u64::from(information.volume_serial_number),
+        u64::from(information.index_high) << 32 | u64::from(information.index_low),
+    )))
+}
+
+#[cfg(windows)]
+fn identity_at(path: &Path) -> io::Result<Option<(u64, u64)>> {
+    use std::os::windows::fs::OpenOptionsExt;
+
+    let file = File::options().read(true).access_mode(0).open(path)?;
+    identity(&file)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn identity(_: &File) -> io::Result<Option<(u64, u64)>> {
+    Ok(None)
+}
+
+#[cfg(not(any(unix, windows)))]
+fn identity_at(_: &Path) -> io::Result<Option<(u64, u64)>> {
+    Ok(None)
+}
