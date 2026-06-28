@@ -63,3 +63,57 @@ impl FontSystem {
                         path,
                         bounds,
                         advance: face
+                            .glyph_hor_advance(glyph_id)
+                            .unwrap_or(face.units_per_em()),
+                        units_per_em: face.units_per_em(),
+                        synthetic_bold,
+                        synthetic_italic,
+                        powerline: nerd_font::is_powerline_separator(key.character),
+                    })
+                })
+                .flatten();
+            if glyph.is_some() {
+                return glyph;
+            }
+        }
+        None
+    }
+}
+
+fn is_bold_face(face: &fontdb::FaceInfo) -> bool {
+    face.weight.0 >= fontdb::Weight::SEMIBOLD.0
+        || face.post_script_name.to_ascii_lowercase().contains("bold")
+}
+
+#[derive(Default)]
+struct TinyPathBuilder {
+    inner: PathBuilder,
+}
+
+impl TinyPathBuilder {
+    fn finish(self) -> Option<Path> {
+        self.inner.finish()
+    }
+}
+
+impl OutlineBuilder for TinyPathBuilder {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.inner.move_to(x, y);
+    }
+
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.inner.line_to(x, y);
+    }
+
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        self.inner.quad_to(x1, y1, x, y);
+    }
+
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        self.inner.cubic_to(x1, y1, x2, y2, x, y);
+    }
+
+    fn close(&mut self) {
+        self.inner.close();
+    }
+}

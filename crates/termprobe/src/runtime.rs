@@ -305,3 +305,1182 @@ impl Locator {
 
     pub fn click_with(&self, options: LocatorClickOptions) -> Result<(), TermprobeError> {
         self.target
+            .execute(
+                "locator.click",
+                Operation::ClickLocator {
+                    query: self.query.clone(),
+                    options: options.mouse,
+                    clicks: options.clicks,
+                    timeout_ms: options.timeout_ms,
+                },
+            )
+            .map(|_| ())
+    }
+
+    pub fn highlight(&self) -> Result<(), TermprobeError> {
+        self.highlight_with_timeout(None)
+    }
+
+    pub fn highlight_with_timeout(&self, timeout_ms: Option<u64>) -> Result<(), TermprobeError> {
+        self.target
+            .execute(
+                "locator.highlight",
+                Operation::HighlightLocator {
+                    query: self.query.clone(),
+                    timeout_ms,
+                },
+            )
+            .map(|_| ())
+    }
+
+    pub fn expect(&self) -> Result<(), TermprobeError> {
+        self.expect_with(LocatorExpectOptions::default())
+    }
+
+    pub fn expect_with(&self, options: LocatorExpectOptions) -> Result<(), TermprobeError> {
+        self.target
+            .execute(
+                "locator.expect",
+                Operation::WaitLocator {
+                    query: self.query.clone(),
+                    not: options.not,
+                    timeout_ms: options.timeout_ms,
+                },
+            )
+            .map(|_| ())
+    }
+}
+
+impl Session {
+    pub fn get_by_link(&self, selector: impl Into<LinkSelector>) -> Locator {
+        Locator::new(
+            LocatorTarget::Session(self.clone()),
+            LocatorQuery::link(selector),
+        )
+    }
+    pub fn new(name: impl Into<String>) -> Self {
+        let name = name.into();
+        let recording_path = native_recording_path(&name);
+        Self {
+            name: Arc::from(name.as_str()),
+            engine: Arc::new(Engine::new(
+                name,
+                Arc::new(Logger::disabled()),
+                recording_path,
+            )),
+            context: ExecutionContext::default(),
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn get_by_text(&self, selector: impl Into<TextSelector>) -> Locator {
+        Locator::new(
+            LocatorTarget::Session(self.clone()),
+            LocatorQuery::text(selector),
+        )
+    }
+
+    pub fn get_by_style(&self, selector: impl Into<StyleSelector>) -> Locator {
+        Locator::new(
+            LocatorTarget::Session(self.clone()),
+            LocatorQuery::style(selector),
+        )
+    }
+
+    pub fn execute(&self, operation: Operation) -> Result<OperationResult, TermprobeError> {
+        self.engine
+            .execute_with_context(operation, self.context.clone())
+    }
+
+    pub fn execute_with_context(
+        &self,
+        operation: Operation,
+        context: ExecutionContext,
+    ) -> Result<OperationResult, TermprobeError> {
+        self.engine.execute_with_context(operation, context)
+    }
+
+    pub fn with_execution_context(&self, context: ExecutionContext) -> Self {
+        Self {
+            name: self.name.clone(),
+            engine: self.engine.clone(),
+            context,
+        }
+    }
+
+    fn execute_named(
+        &self,
+        operation_name: &'static str,
+        operation: Operation,
+    ) -> Result<OperationResult, TermprobeError> {
+        let context = self.context.clone().with_operation(operation_name);
+        self.engine.execute_with_context(operation, context)
+    }
+
+    /// Open or reuse a shell. The working directory must exist and be a directory;
+    /// terminal dimensions must be nonzero and supported by the platform.
+    pub fn open(&self, options: OpenOptions) -> Result<OpenResult, TermprobeError> {
+        match self.execute(Operation::Open(options))? {
+            OperationResult::Open(result) => Ok(result),
+            _ => Err(TermprobeError::internal(
+                "open returned an unexpected result type",
+            )),
+        }
+    }
+
+    /// Run a program with the same directory and size validation as [`Self::open`].
+    pub fn run(&self, options: RunOptions) -> Result<OpenResult, TermprobeError> {
+        match self.execute(Operation::Run(options))? {
+            OperationResult::Open(result) => Ok(result),
+            _ => Err(TermprobeError::internal(
+                "run returned an unexpected result type",
+            )),
+        }
+    }
+
+    /// Cancel pending operations, terminate the child, and release the terminal.
+    pub fn close(&self) -> Result<(), TermprobeError> {
+        self.execute(Operation::Close).map(|_| ())
+    }
+
+    /// Cancel pending operations, including startup readiness, and terminate the
+    /// child without waiting for the operation queue or PTY input writer.
+    pub fn interrupt(&self) {
+        self.engine.interrupt();
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.engine.is_open()
+    }
+
+    pub fn recording_path(&self) -> Option<PathBuf> {
+        self.engine.recording_path()
+    }
+
+    pub fn recording(&self) -> std::io::Result<String> {
+        let path = self.recording_path().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "automatic recording is disabled",
+            )
+        })?;
+        self.engine
+            .flush_recording()
+            .map_err(termprobe_error_to_io_error)?;
+        std::fs::read_to_string(path)
+    }
+
+    fn retained_recording_path(&self) -> Option<PathBuf> {
+        self.engine.retained_recording_path()
+    }
+}
+
+#[derive(Clone)]
+pub struct SessionHandle {
+    name: Arc<str>,
+    registry: SessionRegistry,
+    context: ExecutionContext,
+}
+
+impl SessionHandle {
+    pub fn get_by_link(&self, selector: impl Into<LinkSelector>) -> Locator {
+        Locator::new(
+            LocatorTarget::Handle(self.clone()),
+            LocatorQuery::link(selector),
+        )
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn get_by_text(&self, selector: impl Into<TextSelector>) -> Locator {
+        Locator::new(
+            LocatorTarget::Handle(self.clone()),
+            LocatorQuery::text(selector),
+        )
+    }
+
+    pub fn get_by_style(&self, selector: impl Into<StyleSelector>) -> Locator {
+        Locator::new(
+            LocatorTarget::Handle(self.clone()),
+            LocatorQuery::style(selector),
+        )
+    }
+
+    pub fn execute(&self, operation: Operation) -> Result<OperationResult, TermprobeError> {
+        self.registry
+            .execute_with_context(&self.name, operation, self.context.clone())
+    }
+
+    pub fn execute_with_context(
+        &self,
+        operation: Operation,
+        context: ExecutionContext,
+    ) -> Result<OperationResult, TermprobeError> {
+        self.registry
+            .execute_with_context(&self.name, operation, context)
+    }
+
+    pub fn with_execution_context(&self, context: ExecutionContext) -> Self {
+        Self {
+            name: self.name.clone(),
+            registry: self.registry.clone(),
+            context,
+        }
+    }
+
+    fn execute_named(
+        &self,
+        operation_name: &'static str,
+        operation: Operation,
+    ) -> Result<OperationResult, TermprobeError> {
+        let context = self.context.clone().with_operation(operation_name);
+        self.registry
+            .execute_with_context(&self.name, operation, context)
+    }
+
+    pub fn open(&self, options: OpenOptions) -> Result<OpenResult, TermprobeError> {
+        match self.execute(Operation::Open(options))? {
+            OperationResult::Open(result) => Ok(result),
+            _ => Err(TermprobeError::internal(
+                "open returned an unexpected result type",
+            )),
+        }
+    }
+
+    pub fn run(&self, options: RunOptions) -> Result<OpenResult, TermprobeError> {
+        match self.execute(Operation::Run(options))? {
+            OperationResult::Open(result) => Ok(result),
+            _ => Err(TermprobeError::internal(
+                "run returned an unexpected result type",
+            )),
+        }
+    }
+
+    pub fn close(&self) -> Result<(), TermprobeError> {
+        self.execute(Operation::Close).map(|_| ())
+    }
+
+    pub fn recording(&self) -> std::io::Result<String> {
+        self.registry.recording(&self.name)
+    }
+}
+
+#[derive(Clone)]
+pub struct SessionRegistry {
+    inner: Arc<RegistryInner>,
+}
+
+struct RegistryInner {
+    sessions: Mutex<HashMap<String, Session>>,
+    recordings: Mutex<CompletedRecordings>,
+    generations: Mutex<HashMap<String, Weak<Generation>>>,
+    lifecycle: RwLock<()>,
+}
+
+struct Generation {
+    state: Mutex<GenerationState>,
+    changed: Condvar,
+}
+
+#[derive(Default)]
+struct GenerationState {
+    shared: usize,
+    exclusive: bool,
+    waiting_exclusive: usize,
+    closing: bool,
+    publishing: bool,
+}
+
+struct GenerationOperation {
+    generation: Arc<Generation>,
+    exclusive: bool,
+    publishing: bool,
+}
+
+struct GenerationClose {
+    generation: Arc<Generation>,
+}
+
+impl Generation {
+    fn new() -> Self {
+        Self {
+            state: Mutex::new(GenerationState::default()),
+            changed: Condvar::new(),
+        }
+    }
+
+    fn start_operation(self: &Arc<Self>, exclusive: bool, publishing: bool) -> GenerationOperation {
+        debug_assert!(!publishing || exclusive);
+        let mut state = self.lock_state();
+        if exclusive {
+            state.waiting_exclusive += 1;
+            while state.closing || state.exclusive || state.shared != 0 {
+                state = self
+                    .changed
+                    .wait(state)
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+            }
+            state.waiting_exclusive -= 1;
+            state.exclusive = true;
+            state.publishing = publishing;
+        } else {
+            while state.closing || state.exclusive || state.waiting_exclusive != 0 {
+                state = self
+                    .changed
+                    .wait(state)
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+            }
+            state.shared += 1;
+        }
+        GenerationOperation {
+            generation: Arc::clone(self),
+            exclusive,
+            publishing,
+        }
+    }
+
+    fn start_close(self: &Arc<Self>) -> GenerationClose {
+        let mut state = self.lock_state();
+        while state.closing {
+            state = self
+                .changed
+                .wait(state)
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+        }
+        state.closing = true;
+        while state.publishing {
+            state = self
+                .changed
+                .wait(state)
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+        }
+        GenerationClose {
+            generation: Arc::clone(self),
+        }
+    }
+
+    fn lock_state(&self) -> MutexGuard<'_, GenerationState> {
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+}
+
+impl GenerationOperation {
+    fn published(&mut self) {
+        if !self.publishing {
+            return;
+        }
+        let mut state = self.generation.lock_state();
+        debug_assert!(state.publishing, "generation publication was not active");
+        state.publishing = false;
+        self.publishing = false;
+        self.generation.changed.notify_all();
+    }
+}
+
+impl Drop for GenerationOperation {
+    fn drop(&mut self) {
+        let mut state = self.generation.lock_state();
+        if self.exclusive {
+            debug_assert!(state.exclusive, "exclusive operation was not active");
+            state.exclusive = false;
+            if self.publishing {
+                debug_assert!(state.publishing, "generation publication was not active");
+                state.publishing = false;
+            }
+        } else {
+            debug_assert!(state.shared != 0, "shared operation was not active");
+            state.shared = state.shared.saturating_sub(1);
+        }
+        self.generation.changed.notify_all();
+    }
+}
+
+impl GenerationClose {
+    fn wait_until_idle(&self) {
+        let mut state = self.generation.lock_state();
+        while state.exclusive || state.shared != 0 {
+            state = self
+                .generation
+                .changed
+                .wait(state)
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+        }
+        debug_assert!(state.closing);
+    }
+}
+
+impl Drop for GenerationClose {
+    fn drop(&mut self) {
+        let mut state = self.generation.lock_state();
+        debug_assert!(state.closing, "close operation was not active");
+        state.closing = false;
+        self.generation.changed.notify_all();
+    }
+}
+
+#[derive(Default)]
+struct CompletedRecordings {
+    paths: HashMap<String, PathBuf>,
+    order: VecDeque<String>,
+}
+
+impl Default for SessionRegistry {
+    fn default() -> Self {
+        Self {
+            inner: Arc::new(RegistryInner {
+                sessions: Mutex::new(HashMap::new()),
+                recordings: Mutex::new(CompletedRecordings::default()),
+                generations: Mutex::new(HashMap::new()),
+                lifecycle: RwLock::new(()),
+            }),
+        }
+    }
+}
+
+impl SessionRegistry {
+    pub fn session(&self, name: impl Into<String>) -> SessionHandle {
+        let name = name.into();
+        SessionHandle {
+            name: Arc::from(name),
+            registry: self.clone(),
+            context: ExecutionContext::default(),
+        }
+    }
+
+    fn get_or_create_locked(&self, name: String) -> Session {
+        let mut sessions = self.lock_sessions();
+        sessions
+            .entry(name.clone())
+            .or_insert_with(|| Session::new(name))
+            .clone()
+    }
+
+    pub fn execute(
+        &self,
+        name: &str,
+        operation: Operation,
+    ) -> Result<OperationResult, TermprobeError> {
+        self.execute_with_context(name, operation, ExecutionContext::default())
+    }
+
+    pub fn execute_with_context(
+        &self,
+        name: &str,
+        operation: Operation,
+        context: ExecutionContext,
+    ) -> Result<OperationResult, TermprobeError> {
+        if matches!(&operation, Operation::Close | Operation::Signal { .. }) {
+            if let Some(artifact) = &context.artifact {
+                artifact.validate().map_err(TermprobeError::usage)?;
+            }
+            if let Some(trace) = &context.trace {
+                trace.validate().map_err(TermprobeError::usage)?;
+            }
+            let session = self.lock_sessions().get(name).cloned();
+            if let Some(session) = session {
+                session.engine.interrupt_for_operation(&operation);
+            }
+        }
+        if matches!(&operation, Operation::Close) {
+            return self
+                .close_with_context(name, context)
+                .map(|_| OperationResult::Unit);
+        }
+        let generation = self.generation(name);
+        match operation {
+            Operation::Open(_) | Operation::Run(_) => {
+                let existing = self.lock_sessions().get(name).cloned();
+                let _pending = existing
+                    .as_ref()
+                    .map(|session| session.engine.lifecycle_request());
+                let mut generation_operation = generation.start_operation(true, true);
+                let _lifecycle = self
+                    .inner
+                    .lifecycle
+                    .read()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let session = self.get_or_create_locked(name.to_string());
+                generation_operation.published();
+                session.execute_with_context(operation, context)
+            }
+            Operation::Restart { .. } => {
+                let session = self
+                    .lock_sessions()
+                    .get(name)
+                    .cloned()
+                    .ok_or_else(TermprobeError::no_restart_metadata)?;
+                let _pending = session.engine.lifecycle_request();
+                let _generation_operation = generation.start_operation(true, false);
+                let _lifecycle = self
+                    .inner
+                    .lifecycle
+                    .read()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                session.execute_with_context(operation, context)
+            }
+            Operation::Close => {
+                unreachable!("close operations are dispatched before generation locking")
+            }
+            other => {
+                let _generation_operation = generation.start_operation(false, false);
+                let session = {
+                    let _lifecycle = self
+                        .inner
+                        .lifecycle
+                        .read()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    self.lock_sessions().get(name).cloned()
+                };
+                session
+                    .ok_or_else(TermprobeError::no_session)?
+                    .execute_with_context(other, context)
+            }
+        }
+    }
+
+    pub fn sessions(&self) -> Vec<String> {
+        let sessions = self
+            .lock_sessions()
+            .iter()
+            .map(|(name, session)| (name.clone(), session.clone()))
+            .collect::<Vec<_>>();
+        let mut names = sessions
+            .into_iter()
+            .filter_map(|(name, session)| session.is_open().then_some(name))
+            .collect::<Vec<_>>();
+        names.sort();
+        names
+    }
+
+    pub fn close(&self, name: &str) -> Result<(), TermprobeError> {
+        self.close_with_context(name, ExecutionContext::default())
+    }
+
+    fn close_with_context(
+        &self,
+        name: &str,
+        context: ExecutionContext,
+    ) -> Result<(), TermprobeError> {
+        let generation = self.generation(name);
+        let close = generation.start_close();
+        let session = { self.lock_sessions().get(name).cloned() };
+        if let Some(session) = session {
+            session.interrupt();
+        }
+        close.wait_until_idle();
+        let (result, removed) = {
+            let _lifecycle = self
+                .inner
+                .lifecycle
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let Some(session) = self.lock_sessions().remove(name) else {
+                return Ok(());
+            };
+            let result = session
+                .execute_with_context(Operation::Close, context)
+                .map(|_| ());
+            let removed = Self::replace_recording(
+                &mut self.lock_recordings(),
+                name.to_string(),
+                session.retained_recording_path(),
+            );
+            (result, removed)
+        };
+        Self::remove_recording_files(removed);
+        result
+    }
+
+    pub fn close_all(&self) {
+        let opening = self.lock_sessions().values().cloned().collect::<Vec<_>>();
+        for session in opening {
+            session.interrupt();
+        }
+        let mut removed = Vec::new();
+        {
+            let _lifecycle = self
+                .inner
+                .lifecycle
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let sessions = std::mem::take(&mut *self.lock_sessions());
+            for session in sessions.values() {
+                session.interrupt();
+            }
+            let mut recordings = self.lock_recordings();
+            for (name, session) in sessions {
+                let _ = session.close();
+                removed.extend(Self::replace_recording(
+                    &mut recordings,
+                    name,
+                    session.retained_recording_path(),
+                ));
+            }
+        }
+        Self::remove_recording_files(removed);
+    }
+
+    pub fn recording(&self, name: &str) -> std::io::Result<String> {
+        let generation = self.generation(name);
+        let _operation = generation.start_operation(true, false);
+        let (session, completed) = {
+            let _lifecycle = self
+                .inner
+                .lifecycle
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let recordings = self.lock_recordings();
+            let session = self.lock_sessions().get(name).cloned();
+            let completed = recordings.paths.get(name).cloned();
+            (session, completed)
+        };
+        if let Some(session) = session {
+            return session.recording();
+        }
+        let path = completed.ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotFound, "unknown native session")
+        })?;
+        std::fs::read_to_string(path)
+    }
+
+    fn lock_sessions(&self) -> MutexGuard<'_, HashMap<String, Session>> {
+        self.inner
+            .sessions
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn lock_recordings(&self) -> MutexGuard<'_, CompletedRecordings> {
+        self.inner
+            .recordings
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn generation(&self, name: &str) -> Arc<Generation> {
+        let mut generations = self
+            .inner
+            .generations
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        generations.retain(|_, generation| generation.strong_count() > 0);
+        if let Some(generation) = generations.get(name).and_then(Weak::upgrade) {
+            return generation;
+        }
+        let generation = Arc::new(Generation::new());
+        generations.insert(name.to_string(), Arc::downgrade(&generation));
+        generation
+    }
+
+    #[cfg(test)]
+    fn remember_recording(&self, name: String, path: PathBuf) {
+        let removed = Self::cache_recording(&mut self.lock_recordings(), name, path);
+        Self::remove_recording_files(removed);
+    }
+
+    fn cache_recording(
+        recordings: &mut CompletedRecordings,
+        name: String,
+        path: PathBuf,
+    ) -> Vec<PathBuf> {
+        let mut removed = Vec::new();
+        if let Some(previous) = recordings.paths.insert(name.clone(), path.clone()) {
+            if previous != path {
+                removed.push(previous);
+            }
+            recordings.order.retain(|entry| entry != &name);
+        }
+        recordings.order.push_back(name);
+        while recordings.paths.len() > MAX_COMPLETED_RECORDINGS {
+            let Some(oldest) = recordings.order.pop_front() else {
+                break;
+            };
+            if let Some(path) = recordings.paths.remove(&oldest) {
+                removed.push(path);
+            }
+        }
+        removed
+    }
+
+    fn replace_recording(
+        recordings: &mut CompletedRecordings,
+        name: String,
+        path: Option<PathBuf>,
+    ) -> Vec<PathBuf> {
+        match path {
+            Some(path) => Self::cache_recording(recordings, name, path),
+            None => {
+                recordings.order.retain(|entry| entry != &name);
+                recordings.paths.remove(&name).into_iter().collect()
+            }
+        }
+    }
+
+    fn remove_recording_files(paths: Vec<PathBuf>) {
+        for path in paths {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
+pub fn global_registry() -> &'static SessionRegistry {
+    static REGISTRY: OnceLock<SessionRegistry> = OnceLock::new();
+    REGISTRY.get_or_init(SessionRegistry::default)
+}
+
+fn native_recording_path(name: &str) -> PathBuf {
+    static RECORDING_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+    let digest = format!("{:x}", Sha256::digest(name.as_bytes()));
+    let sequence = RECORDING_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    dirs::cache_dir()
+        .unwrap_or_else(std::env::temp_dir)
+        .join("termprobe")
+        .join("native")
+        .join(std::process::id().to_string())
+        .join(format!(
+            "{}-{}-{sequence}.cast",
+            &digest[..16],
+            std::process::id()
+        ))
+}
+
+fn termprobe_error_to_io_error(error: TermprobeError) -> std::io::Error {
+    let kind = if error.kind == crate::api::ErrorKind::NoSession {
+        std::io::ErrorKind::NotFound
+    } else {
+        std::io::ErrorKind::Other
+    };
+    std::io::Error::new(kind, error)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::api::{AutomaticRecording, AutomaticRecordingMode, ErrorKind, Operation};
+    use std::sync::mpsc;
+    use std::time::{Duration, Instant};
+
+    #[derive(Clone, Copy)]
+    enum NamedCloseEntry {
+        Close,
+        Execute,
+        ExecuteWithContext,
+    }
+
+    fn assert_named_close_interrupts_wait(entry: NamedCloseEntry) {
+        let registry = Arc::new(SessionRegistry::default());
+        let name = match entry {
+            NamedCloseEntry::Close => "close-interrupts-wait",
+            NamedCloseEntry::Execute => "execute-close-interrupts-wait",
+            NamedCloseEntry::ExecuteWithContext => "execute-with-context-close-interrupts-wait",
+        };
+        let log_path =
+            std::env::temp_dir().join(format!("termprobe-{name}-{}.log", std::process::id()));
+        let _ = std::fs::remove_file(&log_path);
+        let session = Session {
+            name: Arc::from(name),
+            engine: Arc::new(Engine::new(
+                name.to_string(),
+                Arc::new(Logger::to_file(&log_path).expect("create operation log")),
+                native_recording_path(name),
+            )),
+            context: ExecutionContext::default(),
+        };
+        session
+            .open(OpenOptions {
+                wait_ready: Some(false),
+                recording: AutomaticRecording {
+                    mode: AutomaticRecordingMode::Always,
+                    ..AutomaticRecording::default()
+                },
+                ..OpenOptions::default()
+            })
+            .expect("open target session");
+        registry
+            .lock_sessions()
+            .insert(name.to_string(), session.clone());
+        let existing_handle = registry.session(name);
+
+        let other = registry.session(format!("{name}-other"));
+        other
+            .open(OpenOptions {
+                wait_ready: Some(false),
+                ..OpenOptions::default()
+            })
+            .expect("open unrelated session");
+
+        let waiting_registry = Arc::clone(&registry);
+        let (wait_sent, wait_received) = mpsc::sync_channel(1);
+        std::thread::spawn(move || {
+            let result = waiting_registry.execute(
+                name,
+                Operation::WaitLocator {
+                    query: LocatorQuery::text("text-that-will-never-appear"),
+                    not: false,
+                    timeout_ms: Some(30_000),
+                },
+            );
+            let _ = wait_sent.send(result);
+        });
+
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            if std::fs::read_to_string(&log_path)
+                .is_ok_and(|log| log.contains("operation WaitLocator"))
+            {
+                break;
+            }
+            assert!(Instant::now() < deadline, "wait operation did not start");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+
+        let start = Instant::now();
+        assert!(matches!(
+            registry.execute(other.name(), Operation::State),
+            Ok(OperationResult::State(_))
+        ));
+        assert!(start.elapsed() < Duration::from_secs(2));
+
+        let recording_registry = Arc::clone(&registry);
+        let (recording_started, recording_entered) = mpsc::sync_channel(1);
+        let (recording_sent, recording_received) = mpsc::sync_channel(1);
+        std::thread::spawn(move || {
+            recording_started.send(()).expect("signal recording read");
+            let result = recording_registry.recording(name);
+            let _ = recording_sent.send(result);
+        });
+        recording_entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("recording read thread started");
+        assert!(matches!(
+            recording_received.recv_timeout(Duration::from_millis(100)),
+            Err(mpsc::RecvTimeoutError::Timeout)
+        ));
+
+        let lifecycle_registry = Arc::clone(&registry);
+        let (lifecycle_held, lifecycle_entered) = mpsc::sync_channel(1);
+        let (lifecycle_release, lifecycle_released) = mpsc::sync_channel(1);
+        let (lifecycle_done, lifecycle_finished) = mpsc::sync_channel(1);
+        std::thread::spawn(move || {
+            let unrelated_operation = lifecycle_registry
+                .inner
+                .lifecycle
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            lifecycle_held.send(()).expect("signal lifecycle reader");
+            lifecycle_released.recv().expect("release lifecycle reader");
+            drop(unrelated_operation);
+            let _ = lifecycle_done.send(());
+        });
+        lifecycle_entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("unrelated lifecycle reader entered");
+
+        let close_registry = Arc::clone(&registry);
+        let (close_sent, close_received) = mpsc::sync_channel(1);
+        std::thread::spawn(move || {
+            let result = match entry {
+                NamedCloseEntry::Close => close_registry.close(name),
+                NamedCloseEntry::Execute => {
+                    close_registry.execute(name, Operation::Close).map(|_| ())
+                }
+                NamedCloseEntry::ExecuteWithContext => close_registry
+                    .execute_with_context(name, Operation::Close, ExecutionContext::default())
+                    .map(|_| ()),
+            };
+            let _ = close_sent.send(result);
+        });
+
+        let close_result = match close_received.recv_timeout(Duration::from_secs(2)) {
+            Ok(result) => result,
+            Err(error) => {
+                let _ = lifecycle_release.send(());
+                session.interrupt();
+                let _ = close_received.recv_timeout(Duration::from_secs(2));
+                let _ = wait_received.recv_timeout(Duration::from_secs(2));
+                let _ = recording_received.recv_timeout(Duration::from_secs(2));
+                panic!("named close did not interrupt the wait: {error}");
+            }
+        };
+        close_result.expect("close target session");
+        lifecycle_release
+            .send(())
+            .expect("release unrelated lifecycle reader");
+        lifecycle_finished
+            .recv_timeout(Duration::from_secs(2))
+            .expect("unrelated lifecycle reader released");
+        assert_eq!(
+            wait_received
+                .recv_timeout(Duration::from_secs(2))
+                .expect("wait completed after close")
+                .unwrap_err()
+                .kind,
+            ErrorKind::Assertion
+        );
+        let recording = recording_received
+            .recv_timeout(Duration::from_secs(2))
+            .expect("recording read completed after close")
+            .expect("read retained recording");
+        assert!(!recording.is_empty());
+        assert!(!registry.lock_sessions().contains_key(name));
+        assert!(matches!(
+            registry.execute(other.name(), Operation::State),
+            Ok(OperationResult::State(_))
+        ));
+
+        existing_handle
+            .open(OpenOptions {
+                wait_ready: Some(false),
+                ..OpenOptions::default()
+            })
+            .expect("reopen through existing named handle");
+        existing_handle.close().expect("close replacement session");
+        other.close().expect("close unrelated session");
+        let _ = std::fs::remove_file(log_path);
+    }
+
+    #[test]
+    fn close_interrupts_in_flight_wait_and_publishes_recording() {
+        assert_named_close_interrupts_wait(NamedCloseEntry::Close);
+    }
+
+    #[test]
+    fn execute_close_interrupts_in_flight_wait_and_publishes_recording() {
+        assert_named_close_interrupts_wait(NamedCloseEntry::Execute);
+    }
+
+    #[test]
+    fn execute_with_context_close_interrupts_in_flight_wait_and_publishes_recording() {
+        assert_named_close_interrupts_wait(NamedCloseEntry::ExecuteWithContext);
+    }
+
+    #[test]
+    fn queued_exclusive_operation_blocks_later_shared_operations() {
+        let generation = Arc::new(Generation::new());
+        let initial_shared = generation.start_operation(false, false);
+
+        let exclusive_generation = Arc::clone(&generation);
+        let (exclusive_acquired, exclusive_entered) = mpsc::sync_channel(1);
+        let (exclusive_release, exclusive_released) = mpsc::sync_channel(1);
+        let exclusive = std::thread::spawn(move || {
+            let _operation = exclusive_generation.start_operation(true, false);
+            exclusive_acquired.send(()).expect("signal exclusive entry");
+            exclusive_released
+                .recv()
+                .expect("release exclusive operation");
+        });
+
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            if generation.lock_state().waiting_exclusive != 0 {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "exclusive operation did not queue"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+
+        let shared_generation = Arc::clone(&generation);
+        let (shared_acquired, shared_entered) = mpsc::sync_channel(1);
+        let shared = std::thread::spawn(move || {
+            let _operation = shared_generation.start_operation(false, false);
+            shared_acquired.send(()).expect("signal shared entry");
+        });
+        assert!(matches!(
+            shared_entered.recv_timeout(Duration::from_millis(100)),
+            Err(mpsc::RecvTimeoutError::Timeout)
+        ));
+
+        drop(initial_shared);
+        exclusive_entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("exclusive operation entered");
+        assert!(matches!(
+            shared_entered.recv_timeout(Duration::from_millis(100)),
+            Err(mpsc::RecvTimeoutError::Timeout)
+        ));
+
+        exclusive_release
+            .send(())
+            .expect("release exclusive operation");
+        exclusive.join().expect("join exclusive operation");
+        shared_entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("shared operation entered after exclusive");
+        shared.join().expect("join shared operation");
+    }
+
+    #[test]
+    fn close_waits_until_an_opening_session_is_published() {
+        let generation = Arc::new(Generation::new());
+        let mut opening = generation.start_operation(true, true);
+
+        let closing_generation = Arc::clone(&generation);
+        let (close_started, close_entered) = mpsc::sync_channel(1);
+        let (close_finished, close_done) = mpsc::sync_channel(1);
+        let close = std::thread::spawn(move || {
+            let close = closing_generation.start_close();
+            close_started.send(()).expect("signal close start");
+            close.wait_until_idle();
+            close_finished.send(()).expect("signal close completion");
+        });
+
+        assert!(matches!(
+            close_entered.recv_timeout(Duration::from_millis(100)),
+            Err(mpsc::RecvTimeoutError::Timeout)
+        ));
+        opening.published();
+        close_entered
+            .recv_timeout(Duration::from_secs(2))
+            .expect("close started after publication");
+        assert!(matches!(
+            close_done.recv_timeout(Duration::from_millis(100)),
+            Err(mpsc::RecvTimeoutError::Timeout)
+        ));
+        drop(opening);
+        close_done
+            .recv_timeout(Duration::from_secs(2))
+            .expect("close completed after opening operation");
+        close.join().expect("join close operation");
+    }
+
+    #[test]
+    fn registry_reuses_names_and_lists_only_open_sessions() {
+        let registry = SessionRegistry::default();
+        let first = registry.get_or_create_locked("same".to_string());
+        let second = registry.get_or_create_locked("same".to_string());
+        assert!(Arc::ptr_eq(&first.engine, &second.engine));
+        assert!(registry.sessions().is_empty());
+    }
+
+    #[test]
+    fn closed_session_operations_report_no_session() {
+        let registry = SessionRegistry::default();
+        let error = registry.execute("missing", Operation::State).unwrap_err();
+        assert_eq!(error.kind, ErrorKind::NoSession);
+    }
+
+    #[test]
+    fn completed_recordings_are_bounded() {
+        let registry = SessionRegistry::default();
+        let root =
+            std::env::temp_dir().join(format!("termprobe-recording-cache-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+
+        for index in 0..=MAX_COMPLETED_RECORDINGS {
+            let name = format!("session-{index}");
+            let path = root.join(format!("{index}.cast"));
+            std::fs::write(&path, index.to_string()).unwrap();
+            registry.remember_recording(name, path);
+        }
+
+        assert_eq!(
+            registry.lock_recordings().paths.len(),
+            MAX_COMPLETED_RECORDINGS
+        );
+        assert!(registry.recording("session-0").is_err());
+        assert_eq!(
+            registry
+                .recording(&format!("session-{MAX_COMPLETED_RECORDINGS}"))
+                .unwrap(),
+            MAX_COMPLETED_RECORDINGS.to_string()
+        );
+        assert!(!root.join("0.cast").exists());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn missing_operations_do_not_hide_completed_recordings() {
+        let registry = SessionRegistry::default();
+        let path = std::env::temp_dir().join(format!(
+            "termprobe-retained-recording-{}.cast",
+            std::process::id()
+        ));
+        std::fs::write(&path, "retained").unwrap();
+        registry.remember_recording("retained".to_string(), path.clone());
+
+        assert_eq!(
+            registry
+                .execute("retained", Operation::State)
+                .unwrap_err()
+                .kind,
+            ErrorKind::NoSession
+        );
+        assert_eq!(registry.recording("retained").unwrap(), "retained");
+        assert!(registry.sessions().is_empty());
+
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn missing_restarts_do_not_create_sessions_or_hide_completed_recordings() {
+        let registry = SessionRegistry::default();
+        let path = std::env::temp_dir().join(format!(
+            "termprobe-restart-retained-recording-{}.cast",
+            std::process::id()
+        ));
+        std::fs::write(&path, "retained").unwrap();
+        registry.remember_recording("retained".to_string(), path.clone());
+
+        for _ in 0..3 {
+            let error = registry
+                .execute(
+                    "retained",
+                    Operation::Restart {
+                        graceful_timeout_ms: 10,
+                    },
+                )
+                .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::NoSession);
+            assert!(error.message.contains("no restart metadata"));
+            assert!(!registry.lock_sessions().contains_key("retained"));
+            assert_eq!(registry.recording("retained").unwrap(), "retained");
+            assert!(path.exists());
+        }
+
+        assert!(registry.lock_sessions().is_empty());
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn closing_never_opened_names_does_not_evict_recordings() {
+        let registry = SessionRegistry::default();
+        let path = std::env::temp_dir().join(format!(
+            "termprobe-valid-recording-{}.cast",
+            std::process::id()
+        ));
+        std::fs::write(&path, "valid").unwrap();
+        registry.remember_recording("valid".to_string(), path.clone());
+
+        for index in 0..=MAX_COMPLETED_RECORDINGS {
+            registry.close(&format!("empty-{index}")).unwrap();
+        }
+
+        assert_eq!(registry.recording("valid").unwrap(), "valid");
+        assert_eq!(registry.lock_recordings().paths.len(), 1);
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn active_session_does_not_fall_back_to_prior_recording() {
+        let registry = SessionRegistry::default();
+        let path = std::env::temp_dir().join(format!(
+            "termprobe-prior-recording-{}.cast",
+            std::process::id()
+        ));
+        std::fs::write(&path, "prior").unwrap();
+        registry.remember_recording("same".to_string(), path.clone());
+        registry.get_or_create_locked("same".to_string());
+
+        assert!(registry.recording("same").is_err());
+        let _ = std::fs::remove_file(path);
+    }
+}
