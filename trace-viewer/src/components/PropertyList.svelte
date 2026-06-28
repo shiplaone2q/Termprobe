@@ -15,3 +15,4 @@
   dt { color: var(--muted); }
   dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: Consolas, monospace; }
   .swatch { display: inline-block; width: 11px; height: 11px; border: 1px solid var(--border); margin-right: 5px; vertical-align: middle; }
+</style>
