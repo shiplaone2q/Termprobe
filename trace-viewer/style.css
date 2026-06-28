@@ -15,3 +15,10 @@ h1 { font-size: 17px; margin: 0; }
 h2 { font-size: 12px; margin: 12px 0 7px; }
 p { margin: 8px 0; }
 pre { font: 12px/1.5 Consolas, "Liberation Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; margin: 6px 0; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+details pre { padding: 8px; border: 1px solid var(--border); background: var(--panel); }
+.muted { color: var(--muted); font-size: 12px; }
+.toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.notice { border-left: 3px solid #ba8a2c; padding: 7px 10px; font-size: 12px; margin: 0; background: var(--panel); overflow-wrap: anywhere; flex-shrink: 0; }
+.notice.error { border-color: var(--red); color: var(--red); }
