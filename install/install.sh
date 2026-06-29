@@ -89,3 +89,4 @@ elif [ "$VERSION" = "beta" ]; then
         tag ~ /^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$/ {
         print tag
         exit
+      }

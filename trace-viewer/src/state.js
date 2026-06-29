@@ -61,3 +61,6 @@ export function update(model, state, event) {
       return { ...state, playback: undefined, cell: cell ? { x: event.x, y: event.y } : undefined,
         column: Number.isFinite(event.x) ? String(event.x) : "",
         row: Number.isFinite(event.y) ? String(event.y) : "",
+        detailsTab: event.activate ? "cell" : state.detailsTab };
+    }
+    case "move-cell": {

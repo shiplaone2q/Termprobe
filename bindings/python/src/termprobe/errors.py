@@ -44,3 +44,6 @@ class InternalError(TuiTestError):
 
 _BY_KIND = {
     "assertion": ExpectationError,
+    "usage": UsageError,
+    "no_session": NoSessionError,
+    "internal": InternalError,
