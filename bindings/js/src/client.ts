@@ -263,3 +263,5 @@ function occurrenceOptions(occurrence?: TextOccurrence): {
       throw new TypeError(
         "occurrence must be any, unique, first, last, or { nth: index }",
       );
+    }
+    return { occurrence };

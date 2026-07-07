@@ -307,3 +307,7 @@ struct TuiResult *tui_open(struct TuiString session, struct TuiOpenOptions optio
 /**
  * Pointer form for foreign callers with limited by-value argument space.
  *
+ * # Safety
+ * options must be NULL or point to a valid TuiOpenOptions for this call.
+ * Its borrowed buffers follow the same contract as tui_open.
+ */

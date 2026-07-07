@@ -39,3 +39,5 @@ Locator methods: `get_by_text`, `get_by_style`, `any`, `unique`, `first`, `last`
 
 Add `recording-raster` for APNG, GIF, and MP4. Add `ghostty`, `rio`, or `xtermjs` for another backend.
 
+Raster output uses installed fonts. Add a `recording-font-jetbrains-mono*` feature to bundle one.
+

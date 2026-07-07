@@ -92,3 +92,4 @@ type abiCursor struct {
 	x       uint16
 	y       uint16
 	visible bool
+	shape   abiString
