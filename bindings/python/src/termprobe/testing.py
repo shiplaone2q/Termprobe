@@ -95,3 +95,6 @@ def _install_safety_net() -> None:
     global _safety_net_installed
     if _safety_net_installed:
         return
+    _safety_net_installed = True
+    atexit.register(_close_all_tracked_blocking)
+

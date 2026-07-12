@@ -209,3 +209,5 @@ pub extern "C" fn tui_close_all() -> *mut TuiResult {
 }
 #[no_mangle]
 /// # Safety
+/// Borrowed input buffers must be valid and readable for their stated lengths
+/// throughout this call; see TuiString and the input structure contracts.

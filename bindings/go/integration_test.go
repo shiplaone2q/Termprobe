@@ -146,3 +146,6 @@ func TestLocatorsPreserveSelection(t *testing.T) {
 	requireKind(t, err, termprobe.AssertionError)
 	first, err := items.First().Location()
 	requireNoError(t, err)
+	last, err := items.Last().Location()
+	requireNoError(t, err)
+	if first.Start.Column >= last.Start.Column {
