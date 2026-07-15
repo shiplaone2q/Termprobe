@@ -155,3 +155,4 @@ impl Recorder {
     }
 
     pub fn flush(&self) -> Result<(), CaptureError> {
+        let (reply, response) = mpsc::sync_channel(0);
