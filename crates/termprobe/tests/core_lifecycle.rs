@@ -265,3 +265,7 @@ fn pending_wait_cannot_observe_a_replacement_session() {
     run.wait_ready = Some(true);
     let started = Instant::now();
     session.run(run).unwrap();
+    assert!(started.elapsed() < Duration::from_secs(2));
+    let error = finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap()

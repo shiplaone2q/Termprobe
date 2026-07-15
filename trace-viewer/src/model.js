@@ -59,3 +59,4 @@ export function parseReport(source) {
   const failureAction = hasFailure ? actions.findLast((action, index) => action.failed &&
     action.screen === timeline.failure_screen_sequence && operations[index].name === details.operation.name) : undefined;
   const mismatches = (details.locator?.stages ?? [])
+    .filter((stage) => stage.stage_index === details.locator?.failure_stage)

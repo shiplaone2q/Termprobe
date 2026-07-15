@@ -48,3 +48,6 @@
       {#each inspection?.mismatches ?? [] as entry}
         <strong>{entry.property} / stage {entry.stage}</strong>
         <p>Expected: {entry.operator} {entry.expected}</p><p>Observed: {entry.actual}{entry.resolved ? ` (${entry.resolved})` : ""}</p>
+      {/each}
+    </div>
+    <details><summary>Raw cell metadata</summary><pre id="cell-json">{display.evidence}</pre></details>
