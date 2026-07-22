@@ -167,3 +167,7 @@ TuiColor._fields_ = [
     ("blue", ctypes.c_uint8),
 ]
 
+
+TuiOpenResult._fields_ = [
+    ("shell_pid", TuiOptionalU64),
+    ("session", TuiString),
