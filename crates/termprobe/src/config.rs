@@ -46,3 +46,6 @@ impl TimeoutClass {
         env_timeout_ms(self.env_var())
     }
 
+    /// Resolve this class's default without a session.
+    pub fn default_ms(self) -> u64 {
+        self.env_ms().unwrap_or_else(|| self.built_in_ms())

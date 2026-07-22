@@ -122,3 +122,7 @@ OpenOptions: {
 "rows": ["rows", "Option<u16>"],
 "cwd": ["cwd", "Option<String>"],
 "env": ["env", "Option<Vec<(String,String)>>"],
+"waitReady": ["wait_ready", "Option<bool>"],
+"restart": ["restart", "Option<bool>"],
+"profileScrollback": ["profile_scrollback", "Option<u64>"],
+"profileColors": ["profile_colors", "Option<Vec<(String,String)>>"],
