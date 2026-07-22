@@ -247,3 +247,6 @@ fn split_font_stack(stack: &str) -> Vec<String> {
     let mut quote: Option<char> = None;
     for character in stack.chars() {
         match character {
+            '\'' | '"' if quote == Some(character) => quote = None,
+            '\'' | '"' if quote.is_none() => quote = Some(character),
+            ',' if quote.is_none() => families.push(std::mem::take(&mut current)),

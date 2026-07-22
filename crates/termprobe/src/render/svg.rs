@@ -423,3 +423,5 @@ fn write_cursor(
 ///
 /// Its row is a `usize` because it indexes `rows`, which for a full-history
 /// render is as long as the scrollback and so is not bounded by the screen.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_svg(

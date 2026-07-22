@@ -101,3 +101,4 @@ type Profile struct {
 type AutomaticRecording struct {
 	Mode      RecordingMode
 	Directory string
+}

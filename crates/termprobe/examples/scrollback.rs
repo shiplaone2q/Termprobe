@@ -61,3 +61,7 @@ fn demonstrate(backend: Backend) -> Result<()> {
         session.execute(Operation::Submit {
             data: Some("hello".into()),
         })?;
+        // The child receives only this line, not input from any scroll operation.
+        session
+            .get_by_text("received: hello")
+            .wait_with_timeout(Some(5_000))?;
