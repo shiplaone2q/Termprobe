@@ -189,3 +189,4 @@ func (runtime *Session) GetViewport() (Viewport, error) {
 	result := nativeFunctions.GetViewport(memory.text(runtime.name))
 	defer nativeFunctions.ResultFree(result)
 	if err := nativeError(result); err != nil {
+		return Viewport{}, err
