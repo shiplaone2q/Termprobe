@@ -82,3 +82,6 @@ func nativeFloat(value *float64) abiOptionalF64 {
 	if value == nil {
 		return abiOptionalF64{}
 	}
+	return abiOptionalF64{present: true, value: float64(*value)}
+}
+
