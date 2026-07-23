@@ -25,3 +25,5 @@
   strong { font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
   [data-outcome="failed"] { background: var(--error-bg); border-color: var(--red); }
   [data-outcome="failed"] strong { color: var(--red); }
+  [data-outcome="passed"] { border-color: var(--green); }
+  [data-outcome="passed"] strong { color: var(--green); }

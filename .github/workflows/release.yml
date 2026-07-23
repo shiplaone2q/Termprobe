@@ -226,3 +226,6 @@ jobs:
             *windows*) library=termprobe_ffi.dll ;;
             *apple*) library=libtermprobe_ffi.dylib ;;
             *) library=libtermprobe_ffi.so ;;
+          esac
+          node .github/scripts/release/package-native.mjs native \
+            --library "target/${{ matrix.target }}/release/$library" \
