@@ -42,3 +42,17 @@ fn mouse_input(value: TuiMouseOptions, button: MouseButton) -> MouseOptions {
     }
 }
 unsafe fn recording_input(
+    value: TuiRecordingOptions,
+    format: Option<RecordingFormat>,
+    fps: Option<u8>,
+) -> Result<Operation> {
+    Ok(Operation::StartRecording {
+        path: unsafe { value.path.required()? },
+        format,
+        fps,
+        speed: value.speed.option(),
+        idle_time_limit: value.idle_time_limit.option(),
+        zoom: value.zoom.option(),
+        background: unsafe { capture_background(value.background, value.transparent)? },
+    })
+}
