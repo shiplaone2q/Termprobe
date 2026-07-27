@@ -42,3 +42,36 @@ for (const tag of targets) {
     engines: rootPackage.engines,
     publishConfig: rootPackage.publishConfig,
   };
+  const artifact = path.join(bindingsDirectory, "artifacts", filename);
+  if (!fs.existsSync(artifact)) {
+    throw new Error(`Missing shared library for ${manifest.name}: ${artifact}`);
+  }
+  fs.mkdirSync(nativePackage, { recursive: true });
+  fs.copyFileSync(artifact, path.join(nativePackage, filename));
+  rootPackage.optionalDependencies[manifest.name] = rootPackage.version;
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  fs.writeFileSync(path.join(nativePackage, "README.md"), `# ${manifest.name}\n\nThis package contains the termprobe shared library for ${tag}.\n`);
+  runNpm([
+    "pack",
+    nativePackage,
+    "--ignore-scripts",
+    "--pack-destination",
+    outputDirectory,
+  ]);
+}
+
+try {
+  fs.writeFileSync(
+    packagePath,
+    `${JSON.stringify(rootPackage, null, 2)}\n`,
+  );
+  runNpm([
+    "pack",
+    bindingsDirectory,
+    "--ignore-scripts",
+    "--pack-destination",
+    outputDirectory,
+  ]);
+} finally {
+  fs.writeFileSync(packagePath, originalPackage);
+}

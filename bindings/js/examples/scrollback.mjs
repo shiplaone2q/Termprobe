@@ -18,3 +18,4 @@ try {
   console.log("Live viewport:", await terminal.getViewport());
 } finally {
   await terminal.closeQuiet();
+}

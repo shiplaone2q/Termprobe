@@ -26,3 +26,4 @@ func (handle *nativeLibraryHandle) close() error {
 		return fmt.Errorf("release native library: %w", err)
 	}
 	return nil
+}
