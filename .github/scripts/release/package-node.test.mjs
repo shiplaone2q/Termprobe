@@ -41,3 +41,24 @@ test("platform packages include the shared library at the release version", (t) 
     const archive = path.join(directory, "package-artifacts/npm", `fixture-termprobe-${platform}-1.0.0.tgz`);
     const entries = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).split("\n");
     assert.ok(entries.includes(`package/${library(platform)}`));
+    assert.ok(!entries.some((entry) => entry.endsWith(".node")));
+    const manifest = JSON.parse(execFileSync("tar", ["-xOf", archive, "package/package.json"], { encoding: "utf8" }));
+    assert.equal(manifest.version, "1.0.0");
+    assert.deepEqual(manifest.os, [platform.split("-")[0]]);
+    assert.deepEqual(manifest.cpu, [platform.split("-")[1]]);
+    if (platform.startsWith("linux")) assert.deepEqual(manifest.libc, [platform.endsWith("gnu") ? "glibc" : "musl"]);
+  }
+  const archive = path.join(directory, "package-artifacts/npm/fixture-termprobe-1.0.0.tgz");
+  const manifest = JSON.parse(execFileSync("tar", ["-xOf", archive, "package/package.json"], { encoding: "utf8" }));
+  assert.equal(manifest.dependencies.koffi, "^3.3.3");
+  assert.deepEqual(manifest.optionalDependencies, Object.fromEntries(targets.map((platform) => [`@fixture/termprobe-${platform}`, "1.0.0"])));
+});
+
+test("packaging rejects a missing shared library artifact", (t) => {
+  const directory = fixture(t);
+  fs.unlinkSync(path.join(directory, "bindings/js/artifacts", library("darwin-arm64")));
+  assert.throws(
+    () => execFileSync(process.execPath, [script], { cwd: directory, stdio: "pipe" }),
+    /Missing shared library/,
+  );
+});
