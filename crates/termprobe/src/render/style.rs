@@ -229,3 +229,429 @@ impl Padding {
         ]
     }
 }
+
+/// The default gap on each side, for a `Padding` that names none.
+#[derive(Debug, Clone, Copy)]
+struct Sides {
+    top: u32,
+    right: u32,
+    bottom: u32,
+    left: u32,
+}
+
+/// Around the window.
+const CANVAS_SIDES: Sides = Sides {
+    top: 24,
+    right: 24,
+    bottom: 24,
+    left: 24,
+};
+
+/// Between the window and the grid inside it. Wider at the sides than at the
+/// top and bottom because a character sits tight in its cell horizontally and
+/// the rows already carry their own leading.
+const CONTENT_SIDES: Sides = Sides {
+    top: 8,
+    right: 15,
+    bottom: 14,
+    left: 15,
+};
+
+/// Everything about how output is drawn.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Style {
+    pub font: FontFamilies,
+    /// Grid font size in pixels. Cell width and height follow it.
+    pub font_size: f32,
+    /// Title bar font size in pixels.
+    pub title_font_size: f32,
+    /// Background outside the panel, separate from the title bar and terminal.
+    pub canvas_background: Rgb,
+    /// The width of that area on every side of the panel.
+    pub canvas_padding: Padding,
+    /// The gap between the window and the grid drawn inside it.
+    pub content_padding: Padding,
+    pub window: WindowStyle,
+    pub border: BorderStyle,
+    pub shadow: ShadowStyle,
+}
+
+impl Default for Style {
+    fn default() -> Self {
+        Self {
+            font: FontFamilies::default(),
+            font_size: DEFAULT_FONT_SIZE,
+            title_font_size: 13.0,
+            canvas_background: Rgb::new(104, 103, 170),
+            canvas_padding: Padding::Uniform(CANVAS_SIDES.top),
+            content_padding: Padding::Sides(PaddingSides::default()),
+            window: WindowStyle::default(),
+            border: BorderStyle::default(),
+            shadow: ShadowStyle::default(),
+        }
+    }
+}
+
+impl Style {
+    /// Reject non-finite values, invalid sizes, and excessive dimensions.
+    pub fn validate(&self) -> Result<(), String> {
+        for (name, value) in [
+            ("font_size", self.font_size),
+            ("title_font_size", self.title_font_size),
+        ] {
+            if !value.is_finite() || value <= 0.0 {
+                return Err(format!("{name} must be finite and greater than zero"));
+            }
+            if value > MAX_FONT_SIZE {
+                return Err(format!("{name} must not exceed {MAX_FONT_SIZE}"));
+            }
+        }
+        for (name, value) in [
+            ("border.width", self.border.width),
+            ("border.radius", self.border.radius),
+            ("shadow.offset", self.shadow.offset),
+            ("shadow.spread", self.shadow.spread),
+        ] {
+            if !value.is_finite() || value < 0.0 {
+                return Err(format!("{name} must be finite and not negative"));
+            }
+            if value > MAX_LENGTH {
+                return Err(format!("{name} must not exceed {MAX_LENGTH}"));
+            }
+        }
+        for (name, padding, fallback) in [
+            ("canvas_padding", self.canvas_padding, CANVAS_SIDES),
+            ("content_padding", self.content_padding, CONTENT_SIDES),
+        ] {
+            for (side, value) in padding.each(fallback) {
+                if value > MAX_PADDING {
+                    return Err(format!("{name} {side} must not exceed {MAX_PADDING}"));
+                }
+            }
+        }
+        // A positive font size can still be too small to draw with: a
+        // subnormal one leaves cells that round to nothing.
+        if self.cell_width() < 1.0 || self.cell_height() < 1.0 {
+            return Err("font_size is too small to draw a cell".to_string());
+        }
+        if self.font.family.trim().is_empty() {
+            return Err("font.family must name a font".to_string());
+        }
+        for (name, family) in [
+            ("font.bold", &self.font.bold),
+            ("font.italic", &self.font.italic),
+            ("font.bold_italic", &self.font.bold_italic),
+        ] {
+            if family.as_deref().is_some_and(|f| f.trim().is_empty()) {
+                return Err(format!("{name} must name a font when it is set"));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn cell_width(&self) -> f32 {
+        self.font_size * CELL_W_RATIO
+    }
+
+    pub fn cell_height(&self) -> f32 {
+        self.font_size * CELL_H_RATIO
+    }
+
+    /// Where a glyph sits inside its cell, measured from the cell's top.
+    pub fn baseline(&self) -> f32 {
+        (self.cell_height() - self.font_size) / 2.0 + self.font_size * 0.78
+    }
+
+    /// The gap around the window, resolved per side.
+    pub fn canvas_top(&self) -> u32 {
+        self.canvas_padding.side(|s| s.top, CANVAS_SIDES.top)
+    }
+
+    pub fn canvas_right(&self) -> u32 {
+        self.canvas_padding.side(|s| s.right, CANVAS_SIDES.right)
+    }
+
+    pub fn canvas_bottom(&self) -> u32 {
+        self.canvas_padding.side(|s| s.bottom, CANVAS_SIDES.bottom)
+    }
+
+    pub fn canvas_left(&self) -> u32 {
+        self.canvas_padding.side(|s| s.left, CANVAS_SIDES.left)
+    }
+
+    /// What the canvas grows by to hold the window, or `None` past `u32`.
+    pub fn canvas_horizontal(&self) -> Option<u32> {
+        self.canvas_left().checked_add(self.canvas_right())
+    }
+
+    pub fn canvas_vertical(&self) -> Option<u32> {
+        self.canvas_top().checked_add(self.canvas_bottom())
+    }
+
+    pub fn content_top(&self) -> f32 {
+        self.content_padding.side(|s| s.top, CONTENT_SIDES.top) as f32
+    }
+
+    pub fn content_right(&self) -> f32 {
+        self.content_padding.side(|s| s.right, CONTENT_SIDES.right) as f32
+    }
+
+    pub fn content_bottom(&self) -> f32 {
+        self.content_padding
+            .side(|s| s.bottom, CONTENT_SIDES.bottom) as f32
+    }
+
+    pub fn content_left(&self) -> f32 {
+        self.content_padding.side(|s| s.left, CONTENT_SIDES.left) as f32
+    }
+
+    /// The height the title bar occupies, zero when it is not drawn.
+    pub fn header_height(&self) -> f32 {
+        if self.window.title_bar {
+            34.0
+        } else {
+            0.0
+        }
+    }
+
+    /// The height of the line under the title bar.
+    pub fn divider_height(&self) -> f32 {
+        if self.window.title_bar {
+            1.0
+        } else {
+            0.0
+        }
+    }
+
+    /// The shadow's stacked rectangles, empty when it is turned off.
+    pub fn shadow_layers(&self) -> Vec<(f32, f32, u8)> {
+        if self.shadow.enabled {
+            self.shadow.layers().to_vec()
+        } else {
+            Vec::new()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The default has to reproduce the constants the renderer used to hold,
+    /// or every existing screenshot and recording shifts.
+    #[test]
+    fn the_default_reproduces_the_original_geometry() {
+        let style = Style::default();
+        assert_eq!(style.cell_width(), 10.0);
+        assert_eq!(style.cell_height(), 21.0);
+        assert_eq!(style.font_size, 17.0);
+        assert_eq!(style.baseline(), (21.0 - 17.0) / 2.0 + 17.0 * 0.78);
+        assert_eq!(style.header_height(), 34.0);
+        assert_eq!(style.divider_height(), 1.0);
+        assert_eq!(style.canvas_top(), 24);
+        assert_eq!(style.border.radius, 8.0);
+        assert_eq!(style.border.width, 0.0, "no border was drawn before");
+        assert_eq!(style.shadow_layers().len(), 4);
+    }
+
+    /// One knob moves the grid: the ratios are what keep a larger font from
+    /// overflowing cells sized for the old one.
+    #[test]
+    fn cell_geometry_follows_the_font_size() {
+        let style = Style {
+            font_size: 34.0,
+            ..Style::default()
+        };
+        assert_eq!(style.cell_width(), 20.0);
+        assert_eq!(style.cell_height(), 42.0);
+    }
+
+    #[test]
+    fn a_variant_font_falls_back_to_the_family() {
+        let plain = FontFamilies::default();
+        assert_eq!(plain.resolve(true, true), DEFAULT_FONT_FAMILY);
+
+        let mixed = FontFamilies {
+            family: "Regular".into(),
+            bold: Some("Bold".into()),
+            ..FontFamilies::default()
+        };
+        assert_eq!(mixed.resolve(false, false), "Regular");
+        assert_eq!(mixed.resolve(true, false), "Bold");
+        assert_eq!(mixed.resolve(false, true), "Regular");
+        assert_eq!(
+            mixed.resolve(true, true),
+            "Bold",
+            "bold italic falls through to bold before giving up on the variant"
+        );
+    }
+
+    #[test]
+    fn turning_the_title_bar_off_removes_its_height() {
+        let style = Style {
+            window: WindowStyle {
+                title_bar: false,
+                ..WindowStyle::default()
+            },
+            ..Style::default()
+        };
+        assert_eq!(style.header_height(), 0.0);
+        assert_eq!(style.divider_height(), 0.0);
+    }
+
+    #[test]
+    fn a_disabled_shadow_draws_no_layers() {
+        let style = Style {
+            shadow: ShadowStyle {
+                enabled: false,
+                ..ShadowStyle::default()
+            },
+            ..Style::default()
+        };
+        assert!(style.shadow_layers().is_empty());
+    }
+
+    #[test]
+    fn font_files_resolve_against_the_config_that_named_them() {
+        // Built by joining rather than written out: a literal "/opt/x" is
+        // relative on Windows, which has no drive letter for it, and a
+        // literal expectation would compare separators byte for byte.
+        let config_dir = std::env::temp_dir().join("config");
+        let absolute = std::env::temp_dir().join("Absolute.ttf");
+        assert!(absolute.is_absolute(), "the fixture is absolute everywhere");
+
+        let mut font = FontFamilies {
+            files: vec![
+                PathBuf::from("fonts").join("Berkeley.ttf"),
+                absolute.clone(),
+            ],
+            ..FontFamilies::default()
+        };
+        font.resolve_paths(&config_dir);
+        assert_eq!(
+            font.files[0],
+            config_dir.join("fonts").join("Berkeley.ttf"),
+            "a repository carrying its own font renders the same wherever it sits"
+        );
+        assert_eq!(font.files[1], absolute, "an absolute path is left alone");
+    }
+
+    #[test]
+    fn every_named_family_is_reported_for_loading() {
+        let font = FontFamilies {
+            family: "Regular".into(),
+            bold: Some("Bold".into()),
+            bold_italic: Some("BoldItalic".into()),
+            ..FontFamilies::default()
+        };
+        let named: Vec<&str> = font.named().collect();
+        assert_eq!(named, ["Regular", "Bold", "BoldItalic"]);
+    }
+
+    #[test]
+    fn the_config_spelling_matches_the_rest_of_the_file() {
+        // Colors spells bright_black, so Style spells font_size. One config
+        // file should not carry two naming conventions.
+        let style: Style = toml::from_str(
+            "font_size = 20\ncanvas_padding = 8\n\
+             [font]\nfamily = \"Berkeley Mono\"\nbold_italic = \"Berkeley Mono Oblique\"\n\
+             [window]\ntitle_bar = false\n\
+             [border]\nwidth = 2\ncolor = \"#ff0000\"\n\
+             [shadow]\nenabled = false\noffset = 2\n",
+        )
+        .unwrap();
+        assert_eq!(style.font_size, 20.0);
+        assert_eq!(style.font.resolve(true, true), "Berkeley Mono Oblique");
+        assert!(!style.window.title_bar);
+        assert_eq!(style.border.width, 2.0);
+        assert!(!style.shadow.enabled);
+        assert_eq!(style.shadow.offset, 2.0);
+        assert_eq!(
+            style.canvas_background,
+            Style::default().canvas_background,
+            "anything unnamed keeps its default"
+        );
+    }
+
+    #[test]
+    fn a_kebab_case_key_is_rejected() {
+        let error = toml::from_str::<Style>("font-size = 20\n").unwrap_err();
+        assert!(
+            error.to_string().contains("font-size"),
+            "the file's convention is snake_case: {error}"
+        );
+    }
+
+    /// The shadow's layer stack is derived, and at the defaults it has to
+    /// reproduce the four rectangles the renderer used to hold as a constant.
+    #[test]
+    fn the_default_shadow_reproduces_the_original_stack() {
+        assert_eq!(
+            Style::default().shadow_layers(),
+            vec![
+                (7.0, 5.0, 18),
+                (5.0, 4.0, 20),
+                (3.0, 3.0, 22),
+                (1.0, 2.0, 24)
+            ]
+        );
+    }
+
+    #[test]
+    fn a_wider_shadow_scales_every_layer() {
+        let style = Style {
+            shadow: ShadowStyle {
+                spread: 14.0,
+                offset: 10.0,
+                ..ShadowStyle::default()
+            },
+            ..Style::default()
+        };
+        let layers = style.shadow_layers();
+        assert_eq!(
+            layers[0],
+            (14.0, 10.0, 18),
+            "the outermost follows the knobs"
+        );
+        assert_eq!(
+            layers[3].0, 2.0,
+            "and the innermost steps in proportionally"
+        );
+    }
+
+    /// A config file is user input, so every value that reaches the renderers
+    /// has to be one they can draw.
+    #[test]
+    fn a_style_that_cannot_be_drawn_is_rejected() {
+        let bad = [
+            ("font_size = nan", "font_size"),
+            ("font_size = inf", "font_size"),
+            ("font_size = 0", "font_size"),
+            ("font_size = -17", "font_size"),
+            ("font_size = 1e10", "font_size"),
+            ("font_size = 1e-40", "too small"),
+            ("title_font_size = 0", "title_font_size"),
+            ("canvas_padding = 4294967295", "canvas_padding"),
+            ("[border]\nwidth = -1", "border.width"),
+            ("[border]\nradius = nan", "border.radius"),
+            ("[shadow]\noffset = inf", "shadow.offset"),
+            ("[shadow]\nspread = -3", "shadow.spread"),
+            ("[font]\nfamily = \"\"", "font.family"),
+            ("[font]\nbold = \"  \"", "font.bold"),
+        ];
+        for (source, expected) in bad {
+            let style: Style = toml::from_str(source).expect("parses as TOML");
+            let error = style
+                .validate()
+                .expect_err(&format!("{source:?} must be rejected"));
+            assert!(
+                error.contains(expected),
+                "{source:?} should name {expected}, said {error:?}"
+            );
+        }
+        Style::default()
+            .validate()
+            .expect("the default is drawable");
+    }
+}
