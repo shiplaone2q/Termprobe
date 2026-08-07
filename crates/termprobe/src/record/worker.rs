@@ -86,3 +86,7 @@ pub(super) fn worker_loop(
                         protected.check_path(&request.target_path)?;
                     }
                     cast::CastWriter::create_guarded(
+                        &request.capture_path,
+                        request.cols,
+                        request.rows,
+                        &request.env,

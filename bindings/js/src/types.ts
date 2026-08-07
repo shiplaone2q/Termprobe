@@ -108,3 +108,7 @@ export interface SpawnOptions {
   waitReady?: boolean;
   restart?: boolean;
   retries?: number;
+  profile?: Profile;
+  timeouts?: Timeouts;
+}
+

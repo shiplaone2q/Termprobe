@@ -133,3 +133,7 @@ test("nested input buffers remain live during native start and marshaling", () =
       },
     });
     const session = new TestSession("marshal-gc-regression");
+    for (let i = 0; i < 100; i++) {
+      await assert.rejects(
+        session.run({ program: "unused", args: [expected], env: [["TEST", expected]] }),
+        /native call returned a null task/,
