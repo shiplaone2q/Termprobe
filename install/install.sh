@@ -91,3 +91,4 @@ elif [ "$VERSION" = "beta" ]; then
         exit
       }
     ' "$RELEASES_PATH"
+  )"

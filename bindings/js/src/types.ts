@@ -112,3 +112,5 @@ export interface SpawnOptions {
   timeouts?: Timeouts;
 }
 
+export type Timeouts = NativeTimeouts;
+
