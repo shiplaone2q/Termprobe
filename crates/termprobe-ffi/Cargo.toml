@@ -14,3 +14,4 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+termprobe = { workspace = true, features = ["ghostty", "rio", "xtermjs", "recording-font-jetbrains-mono-styles"] }
