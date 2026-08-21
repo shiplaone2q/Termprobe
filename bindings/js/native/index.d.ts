@@ -115,3 +115,258 @@ export interface Timeouts {
   idle?: number
   command?: number
   exit?: number
+  ready?: number
+}
+
+export interface AutomaticRecordingOptions {
+  directory?: string
+}
+
+export interface TraceOptions {
+  mode?: string
+  directory?: string
+}
+
+export interface FailureArtifactOptions {
+  directory: string
+  mode?: string
+  includeRecording?: boolean
+}
+
+export interface OpenOptions {
+  backend?: Backend
+  shell?: Shell
+  cols?: number
+  rows?: number
+  cwd?: string
+  env?: Array<[string, string]>
+  waitReady?: boolean
+  restart?: boolean
+  profileScrollback?: number
+  profileColors?: Array<[string, string]>
+  timeouts?: Timeouts
+  screenHistoryLimit?: number
+}
+
+export interface RunOptions {
+  backend?: Backend
+  program: string
+  args?: Array<string>
+  cols?: number
+  rows?: number
+  cwd?: string
+  env?: Array<[string, string]>
+  waitReady?: boolean
+  restart?: boolean
+  profileScrollback?: number
+  profileColors?: Array<[string, string]>
+  timeouts?: Timeouts
+  screenHistoryLimit?: number
+}
+
+export interface LocatorStyle {
+  foreground?: string
+  background?: string
+  bold?: boolean
+  dim?: boolean
+  italic?: boolean
+  underlineStyle?: string
+  underlineColor?: string
+  inverse?: boolean
+  hidden?: boolean
+  strikethrough?: boolean
+  blink?: boolean
+}
+
+export interface LocatorNode {
+  kind: LocatorNodeKind
+  text?: string
+  regex?: boolean
+  whitespace?: string
+  style?: LocatorStyle
+  link?: string
+  full?: boolean
+  direction?: LocatorStageDirection
+  within?: number
+  left?: number
+  right?: number
+  input?: number
+  has?: number
+  hasNot?: number
+  occurrence?: string
+  nth?: number
+}
+
+export interface LocatorExpression {
+  nodes: Array<LocatorNode>
+  root: number
+}
+
+export interface TitleOptions {
+  regex?: boolean
+  timeoutMs?: number
+  not?: boolean
+}
+
+export interface ClipboardWaitOptions {
+  regex?: boolean
+  timeoutMs?: number
+}
+
+export interface SnapshotOptions {
+  update?: boolean
+  includeStyle?: boolean
+  includeTitle?: boolean
+  cwd?: string
+}
+
+export interface ScreenshotOptions {
+  full?: boolean
+  path?: string
+  zoom?: number
+  background?: string
+  transparent?: boolean
+}
+
+export interface RecordingOptions {
+  path: string
+  format?: RecordingFormat
+  fps?: number
+  speed?: number
+  idleTimeLimit?: number
+  zoom?: number
+  background?: string
+  transparent?: boolean
+}
+
+export interface MouseClickOptions {
+  x?: number
+  y?: number
+  onText?: string
+  button?: number
+  clicks?: number
+}
+
+export declare const enum Backend {
+  Alacritty = "alacritty",
+  Ghostty = "ghostty",
+  Rio = "rio",
+  Xtermjs = "xtermjs",
+}
+
+export declare const enum Shell {
+  Bash = "bash",
+  Powershell = "powershell",
+  Pwsh = "pwsh",
+  Cmd = "cmd",
+  Fish = "fish",
+  Zsh = "zsh",
+  Xonsh = "xonsh",
+  Elvish = "elvish",
+  Nushell = "nushell",
+}
+
+export declare const enum RecordingFormat {
+  Apng = "apng",
+  Gif = "gif",
+  Mp4 = "mp4",
+  Cast = "cast",
+}
+
+export declare const enum SnapshotResult {
+  Passed = "passed",
+  Written = "written",
+  Updated = "updated",
+}
+
+export declare const enum UnderlineStyle {
+  None = "none",
+  Single = "single",
+  Double = "double",
+  Curly = "curly",
+  Dotted = "dotted",
+  Dashed = "dashed",
+}
+
+export declare const enum LocatorNodeKind {
+  Text = "text",
+  Style = "style",
+  Link = "link",
+  And = "and",
+  Or = "or",
+  Filter = "filter",
+}
+
+export declare const enum LocatorStageDirection {
+  Within = "within",
+  After = "after",
+  Before = "before",
+}
+
+export declare class NativeSession {
+  constructor(name: string, recording?: AutomaticRecordingOptions | null, artifacts?: FailureArtifactOptions | null, trace?: TraceOptions | null)
+  name(): string
+  open(options?: OpenOptions | null): Promise<OpenResult>
+  run(options: RunOptions): Promise<OpenResult>
+  close(failed?: boolean | null): Promise<void>
+  panicProbe(): Promise<void>
+  restart(gracefulTimeoutMs: number): Promise<OpenResult>
+  state(): Promise<State>
+  text(full?: boolean | undefined | null): Promise<string>
+  packedScreen(full?: boolean | undefined | null): Promise<PackedScreen>
+  cells(x: number, y: number, w?: number | undefined | null, h?: number | undefined | null): Promise<Array<Cell>>
+  findLocator(expression: LocatorExpression, requireOne?: boolean | undefined | null): Promise<Array<TextMatch>>
+  waitLocator(expression: LocatorExpression, not?: boolean | undefined | null, timeoutMs?: number | undefined | null): Promise<void>
+  expectLocator(expression: LocatorExpression, not?: boolean | undefined | null, timeoutMs?: number | undefined | null): Promise<void>
+  clickLocator(expression: LocatorExpression, button?: number | undefined | null, clicks?: number | undefined | null, timeoutMs?: number | undefined | null): Promise<void>
+  highlightLocator(expression: LocatorExpression, timeoutMs?: number | undefined | null): Promise<Array<TextMatch>>
+  getCommand(): Promise<string | null>
+  getOutput(): Promise<string | null>
+  getExitCode(): Promise<number | null>
+  getCwd(): Promise<string | null>
+  getTitle(): Promise<string | null>
+  getClipboard(): Promise<string>
+  getCursor(): Promise<Cursor>
+  getSize(): Promise<Size>
+  getViewport(): Promise<Viewport>
+  scroll(lines: number): Promise<void>
+  scrollToTop(): Promise<void>
+  scrollToBottom(): Promise<void>
+  getBellCount(): Promise<number>
+  getBellEvents(): Promise<Array<BellEvent>>
+  write(data: string): Promise<void>
+  type(text: string): Promise<void>
+  submit(data?: string | undefined | null): Promise<void>
+  press(keys: Array<string>): Promise<void>
+  keyDown(keys: Array<string>): Promise<void>
+  repeat(keys: Array<string>): Promise<void>
+  keyUp(keys: Array<string>): Promise<void>
+  mouseClick(options?: MouseClickOptions | undefined | null): Promise<void>
+  mouseMove(x: number, y: number): Promise<void>
+  mouseDown(x: number, y: number, button?: number | undefined | null): Promise<void>
+  mouseUp(x: number, y: number, button?: number | undefined | null): Promise<void>
+  mouseDrag(x1: number, y1: number, x2: number, y2: number, button?: number | undefined | null): Promise<void>
+  mouseScroll(direction: string, amount?: number | undefined | null): Promise<void>
+  resize(cols: number, rows: number): Promise<void>
+  signal(name: string): Promise<void>
+  waitTitle(text: string, options?: TitleOptions | undefined | null): Promise<void>
+  expectTitle(text: string, options?: TitleOptions | undefined | null): Promise<void>
+  waitClipboard(text?: string | undefined | null, options?: ClipboardWaitOptions | undefined | null): Promise<void>
+  waitIdle(timeoutMs?: number | undefined | null): Promise<void>
+  waitCommand(timeoutMs?: number | undefined | null): Promise<void>
+  waitExit(timeoutMs?: number | undefined | null): Promise<void>
+  waitReady(timeoutMs?: number | undefined | null): Promise<void>
+  waitBell(timeoutMs?: number | undefined | null): Promise<void>
+  expectExitCode(code: number, timeoutMs?: number | undefined | null): Promise<void>
+  expectOutput(text: string, regex?: boolean | undefined | null): Promise<void>
+  expectBellCount(count: number, timeoutMs?: number | undefined | null): Promise<void>
+  snapshot(name: string, options?: SnapshotOptions | undefined | null): Promise<SnapshotResult>
+  screenshot(options?: ScreenshotOptions | undefined | null): Promise<string>
+  startRecording(options: RecordingOptions): Promise<void>
+  stopRecording(): Promise<string>
+}
+
+export declare function sessions(): Promise<Array<string>>;
+export declare function recording(name: string): Promise<string>;
+export declare function closeAll(): Promise<void>;
+export declare function closeAllSync(): void;
