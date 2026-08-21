@@ -51,3 +51,51 @@ const options = {
         assets.set("report.html", template);
         const shell = template.replace("/* REPORT_CSS */", () => assets.get("report.min.css"))
           .replace("/* REPORT_JS */", () => assets.get("report.min.js"));
+        const bytes = Buffer.byteLength(shell);
+        const gzipBytes = gzipSync(shell, { level: 9 }).length;
+        if (bytes > 144 * 1024 || gzipBytes > 48 * 1024) {
+          throw new Error(`Viewer exceeds the 144 KiB raw / 48 KiB gzip budget: ${bytes} raw / ${gzipBytes} gzip bytes`);
+        }
+        if (!check) await mkdir(destination, { recursive: true });
+        for (const [name, generated] of assets) {
+          const output = path.join(destination, name);
+          if (check) {
+            const existing = await readFile(output, "utf8");
+            if (existing.replace(/\r\n/g, "\n") !== generated) {
+              throw new Error(`${name} is stale. Run npm run build --prefix trace-viewer.`);
+            }
+          } else {
+            await writeFile(output, generated);
+          }
+          console.log(`${check ? "Checked" : "Built"} ${name}: ${Buffer.byteLength(generated)} bytes`);
+        }
+        console.log(`Standalone viewer (excluding trace data): ${bytes} bytes / ${gzipBytes} bytes gzip`);
+        if (reportPath) {
+          const report = await readFile(reportPath, "utf8");
+          const embedded = /<script id="report-data" type="application\/json">([\s\S]*?)<\/script>/.exec(report)?.[1];
+          if (!embedded) throw new Error("The supplied HTML has no embedded report-data block");
+          const data = JSON.stringify(JSON.parse(embedded)).replace(/[<>&\u2028\u2029]/g,
+            (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`);
+          await mkdir(path.dirname(previewPath), { recursive: true });
+          await writeFile(previewPath, shell.replace("null /* REPORT_DATA */", () => data));
+          console.log(`Preview: ${previewPath}${watch ? " (reload your browser after edits)" : ""}`);
+        }
+      });
+    },
+  }],
+};
+
+if (watch) {
+  const watcher = await context(options);
+  await watcher.watch();
+  const watchedFiles = [templatePath, path.resolve(reportPath)];
+  for (const file of watchedFiles) watchFile(file, { interval: 500 }, () => {
+    watcher.rebuild().catch((error) => console.error(error.message));
+  });
+  process.once("SIGINT", async () => {
+    for (const file of watchedFiles) unwatchFile(file);
+    await watcher.dispose();
+  });
+} else {
+  await build(options);
+}

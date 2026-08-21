@@ -59,3 +59,35 @@ pub(crate) fn close(
 
 pub(crate) fn recording(name: &str) -> Result<OperationResult> {
     global_registry()
+        .recording(name)
+        .map(OperationResult::Recording)
+        .map_err(|error| {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                TermprobeError::new(
+                    ErrorKind::NoSession,
+                    format!("no recording for session '{name}'"),
+                )
+            } else {
+                TermprobeError::internal(format!(
+                    "failed to read recording for session '{name}': {error}"
+                ))
+            }
+        })
+}
+
+pub(crate) fn capture_background(
+    background: Option<String>,
+    transparent: bool,
+) -> Result<Option<CaptureBackground>> {
+    if background.is_some() && transparent {
+        return Err(TermprobeError::usage(
+            "background and transparent options conflict",
+        ));
+    }
+    if transparent {
+        return Ok(Some(CaptureBackground::Transparent));
+    }
+    background
+        .map(|value| CaptureBackground::parse(&value))
+        .transpose()
+}
