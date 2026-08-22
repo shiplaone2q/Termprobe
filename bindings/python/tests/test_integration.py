@@ -270,3 +270,972 @@ class IntegrationTests(unittest.TestCase):
                 initial_state = await su.state()
                 self.assertEqual(initial_state.bell_count, 2)
                 initial_events = await su.get_bell_events()
+                self.assertEqual(
+                    [event.sequence for event in initial_events],
+                    [1, 2],
+                )
+                self.assertGreaterEqual(
+                    initial_events[1].elapsed_ms,
+                    initial_events[0].elapsed_ms,
+                )
+                self.assertEqual(await su.get_bell_count(), 2)
+                self.assertEqual(await su.get_bell_count(), 2)
+
+                await su.submit(DELAYED_BELL_COMMAND)
+                await su.wait_bell(timeout=5000)
+                await su.expect_bell_count(3)
+                self.assertEqual(await su.get_bell_count(), 3)
+                final_state = await su.state()
+                self.assertEqual(final_state.bell_count, 3)
+                final_events = await su.get_bell_events()
+                self.assertEqual(
+                    [event.sequence for event in final_events],
+                    [1, 2, 3],
+                )
+                self.assertGreaterEqual(
+                    final_events[2].elapsed_ms,
+                    final_events[1].elapsed_ms,
+                )
+
+        run(scenario())
+
+    def test_link_locators_compose_and_filter(self):
+        async def scenario():
+            uri = "https://example.com"
+            output = (
+                "\x1b[1mA\x1b]8;;" + uri + "\x1b\\B\x1b[22mC\x1b]8;;\x1b\\\r\n"
+                "\x1b]8;;" + uri + "\x1b\\\x1b[1mA\x1b[22m \x1b[1mB\x1b[0m\x1b]8;;\x1b\\\r\n"
+            )
+            script = "import sys,time; time.sleep(.15); sys.stdout.write({!r}); sys.stdout.flush(); time.sleep(30)".format(output)
+            async with self._client() as su:
+                await su.run(sys.executable, "-c", script)
+                row = su.get_by_text("ABC")
+                bold = su.get_by_style(TextStyle(bold=True))
+                link = su.get_by_link(uri)
+                intersection = row.and_(bold).and_(link)
+                await intersection.wait(timeout=3000)
+                match = await intersection.location()
+                self.assertEqual(match.text, "B")
+                self.assertEqual((match.start.row, match.start.column, match.end.column), (0, 1, 2))
+                self.assertEqual((await row.and_(bold).or_(row.and_(link)).location()).text, "ABC")
+                self.assertEqual((await row.filter(has=link, has_not=su.get_by_text("absent")).location()).text, "ABC")
+                self.assertEqual(await row.filter(has_not=link).count(), 0)
+                self.assertEqual(await row.get_by_link(uri).count(), 0)
+                self.assertEqual(await row.get_by_link("").count(), 0)
+                spaced = su.get_by_text("A B")
+                self.assertEqual((await spaced.get_by_style(TextStyle(bold=True)).get_by_link(uri).location()).text, "A B")
+                pieces = spaced.and_(bold).and_(link)
+                self.assertEqual([match.text for match in await pieces.locations()], ["A", "B"])
+                with self.assertRaises(ExpectationError):
+                    await pieces.location()
+                await intersection.click(timeout=100)
+                await intersection.highlight(timeout=100)
+                await intersection.expect(timeout=100)
+                self.assertEqual((await (await pieces.all())[1].location()).text, "B")
+
+        run(scenario())
+
+    def test_locators_support_scoped_text_matches_and_style_assertions(self):
+        async def scenario():
+            script = (
+                "import sys,time; "
+                "sys.stdout.write("
+                "'Settings One\\n  Save\\nSettings Two\\n  Save\\n"
+                "\\x1b[1mWarning\\x1b[0m\\n"
+                "\\x1b[1mPart\\x1b[0mial\\n'"
+                "); "
+                "sys.stdout.flush(); time.sleep(30)"
+            )
+            async with self._client() as su:
+                await su.run(sys.executable, "-c", script)
+                await su.get_by_text("Warning").wait(timeout=2000)
+                matches = await (
+                    su.get_by_text("Settings")
+                    .get_by_text(
+                        "Save",
+                        whitespace="normalize",
+                        direction="after",
+                    )
+                    .locations()
+                )
+                self.assertEqual(len(matches), 2)
+                self.assertEqual(matches[0].start.row, 1)
+                self.assertEqual(matches[0].start.column, 2)
+                self.assertEqual(matches[1].start.row, 3)
+                before = await (
+                    su.get_by_text("Save")
+                    .first()
+                    .get_by_text("Settings", direction="before")
+                    .unique()
+                    .location()
+                )
+                self.assertEqual(before.start.row, 0)
+                from_style = await (
+                    su.get_by_style(TextStyle(bold=True))
+                    .get_by_text("Save", direction="before")
+                    .last()
+                    .location()
+                )
+                self.assertEqual(from_style.start.row, 3)
+                await (
+                    su.get_by_text("Warning")
+                    .get_by_style(TextStyle(bold=True))
+                    .unique()
+                    .expect()
+                )
+                with self.assertRaises(ExpectationError) as raised:
+                    await (
+                        su.get_by_text("Warning")
+                        .get_by_style(TextStyle(bold=False))
+                        .unique()
+                        .expect(timeout=20)
+                    )
+                self.assertIn(
+                    "waiting for 'style' to be visible",
+                    str(raised.exception),
+                )
+                await (
+                    su.get_by_style(TextStyle(bold=True))
+                    .get_by_text("Part")
+                    .unique()
+                    .expect()
+                )
+                with self.assertRaises(ExpectationError):
+                    await (
+                        su.get_by_text("Partial")
+                        .get_by_style(TextStyle(bold=True))
+                        .expect(timeout=20)
+                    )
+
+        run(scenario())
+
+    def test_get_by_locators_are_lazy_selectable_and_actionable(self):
+        async def scenario():
+            script = (
+                "import sys,time; "
+                "time.sleep(.2); "
+                "sys.stdout.write("
+                "'item outside\\n\\x1b[1mitem item\\x1b[0m\\n'"
+                "); "
+                "sys.stdout.flush(); time.sleep(30)"
+            )
+            async with self._client() as su:
+                await su.run(sys.executable, "-c", script)
+                locator = su.get_by_text("item")
+                waited = await locator.wait(timeout=2000)
+                self.assertIs(waited, locator)
+                self.assertEqual(await locator.count(), 3)
+                await locator.any().expect(timeout=20)
+                await locator.expect(timeout=20)
+                await locator.first().expect(timeout=20)
+                await locator.last().expect(timeout=20)
+                await locator.nth(2).expect(timeout=20)
+                await locator.nth(3).expect(not_=True, timeout=20)
+                await su.get_by_text("missing-item").unique().expect(
+                    not_=True,
+                    timeout=20,
+                )
+                with self.assertRaises(ExpectationError):
+                    await locator.unique().expect(timeout=20)
+                with self.assertRaises(ExpectationError) as raised:
+                    await locator.unique().expect(not_=True, timeout=20)
+                self.assertIn("found 3", str(raised.exception))
+                with self.assertRaises(ExpectationError):
+                    await locator.first().expect(not_=True, timeout=20)
+                nested = (
+                    su.get_by_text("item item")
+                    .get_by_style(TextStyle(bold=True))
+                    .get_by_text("tem")
+                )
+                await nested.wait(timeout=2000)
+                self.assertEqual(await nested.count(), 2)
+                self.assertEqual(
+                    await su.get_by_style(
+                        TextStyle(bold=True)
+                    ).get_by_text("item").count(),
+                    2,
+                )
+
+                items = await locator.all()
+                self.assertEqual(len(items), 3)
+                self.assertEqual((await items[0].location()).start.column, 0)
+                self.assertEqual((await items[1].location()).start.row, 1)
+                self.assertEqual(
+                    (await locator.last().location()).start.column, 5
+                )
+
+                with self.assertRaises(ExpectationError):
+                    await locator.unique().locations()
+
+                with self.assertRaises(ExpectationError) as raised:
+                    await su.get_by_text("missing-item").location()
+                self.assertNotIn("Terminal content:", str(raised.exception))
+                self.assertIsNone(raised.exception.artifact)
+                self.assertFalse(hasattr(raised.exception, "terminal"))
+                self.assertEqual(
+                    raised.exception.details.locator.selectors, ("missing-item",)
+                )
+
+                await nested.highlight()
+                await nested.first().click(timeout=2000)
+                await nested.first().expect()
+
+        run(scenario())
+
+    def test_wait_returns_the_actionable_locator(self):
+        async def scenario():
+            script = (
+                "import sys,time; "
+                "sys.stdout.write('clickable\\n'); "
+                "sys.stdout.flush(); time.sleep(30)"
+            )
+            async with self._client() as su:
+                await su.run(sys.executable, "-c", script)
+                locator = su.get_by_text("clickable")
+                self.assertIs(await locator.wait(timeout=2000), locator)
+                await locator.click(timeout=2000)
+                await locator.highlight(timeout=2000)
+
+        run(scenario())
+
+    def test_clipboard_getter_and_change_wait(self):
+        async def scenario():
+            async with self._client() as su:
+                await su.open(shell=SHELL)
+                self.assertEqual(await su.get_clipboard(), "")
+
+                await su.submit(clipboard_command("Y2hhbmdlZA=="))
+                await su.wait_command()
+                await su.wait_clipboard(timeout=5000)
+                self.assertEqual(await su.get_clipboard(), "changed")
+
+                await su.submit(clipboard_command("cHJlZml4LXJlYWR5LTQy"))
+                await su.wait_command()
+                await su.wait_clipboard("ready", timeout=5000)
+
+                await su.submit(clipboard_command("YnVpbGQtMTIz"))
+                await su.wait_command()
+                await su.wait_clipboard(
+                    re.compile(r"^BUILD-[0-9]+$", re.IGNORECASE),
+                    timeout=5000,
+                )
+                await su.wait_clipboard(re.compile(r"^build-\w+$", re.ASCII), timeout=0)
+                await su.wait_clipboard(
+                    re.compile(r"^ build - [0-9]+ $", re.VERBOSE), timeout=0
+                )
+                await su.wait_clipboard(re.compile(r"(?x: build - [0-9]+ )"), timeout=0)
+                await su.wait_clipboard(re.compile(r"(?a:^\w+-\d+$)"), timeout=0)
+
+        run(scenario())
+
+    def test_compiled_clipboard_patterns_use_python_semantics(self):
+        async def scenario():
+            async with self._client() as su:
+                await su.open(shell=SHELL)
+                for value, pattern, matches in (
+                    ("echo-echo", re.compile(r"^(\w+)-\1$"), True),
+                    ("prefix-ready", re.compile(r"(?<=prefix-)ready\Z"), True),
+                    ("\u0130", re.compile(r"^i$", re.IGNORECASE), True),
+                    ("\u00b2", re.compile(r"^\w$"), True),
+                    ("e\u0301", re.compile(r"^\w+$"), False),
+                    ("ready\n", re.compile(r"ready$"), True),
+                ):
+                    with self.subTest(value=value, pattern=pattern):
+                        encoded = base64.b64encode(value.encode("utf-8")).decode("ascii")
+                        await su.submit(clipboard_command(encoded))
+                        await su.wait_command()
+                        self.assertEqual(await su.get_clipboard(), value)
+                        if matches:
+                            await su.wait_clipboard(pattern, timeout=0)
+                        else:
+                            with self.assertRaises(ExpectationError):
+                                await su.wait_clipboard(pattern, timeout=0)
+                pending = asyncio.create_task(su.wait_clipboard(
+                    re.compile(r"(?<=next-)value\Z"), timeout=5000
+                ))
+                try:
+                    await su.submit(clipboard_command("bmV4dC12YWx1ZQ=="))
+                    await pending
+                    await su.wait_command()
+                finally:
+                    if not pending.done():
+                        pending.cancel()
+                        await asyncio.gather(pending, return_exceptions=True)
+
+        run(scenario())
+
+    def test_xtermjs_clipboard_is_a_typed_internal_error(self):
+        async def scenario():
+            async with self._client(backend="xtermjs") as su:
+                await su.open(shell=SHELL)
+                with self.assertRaises(InternalError) as raised:
+                    await su.get_clipboard()
+                self.assertIn("unavailable", str(raised.exception))
+
+        run(scenario())
+
+    def test_effective_timeouts_are_exposed_in_typed_state(self):
+        async def scenario():
+            expected = Timeouts(
+                text=1234,
+                idle=2345,
+                command=3456,
+                exit=4567,
+                ready=5678,
+            )
+            async with self._client() as su:
+                await su.open(shell=SHELL, timeouts=expected)
+                self.assertEqual((await su.state()).timeouts, expected)
+
+        run(scenario())
+
+    def test_profile_object_recolors_the_terminal(self):
+        async def scenario():
+            marker = "python-profile-color"
+            script = (
+                "import sys; "
+                "sys.stdout.write('\\x1b[31m{}\\x1b[0m'); "
+                "sys.stdout.flush()"
+            ).format(marker)
+            async with self._client() as su:
+                await su.run(
+                    sys.executable,
+                    "-c",
+                    script,
+                    profile=Profile(colors=Colors(red="#010203")),
+                )
+                await su.get_by_text(marker).wait(timeout=5000)
+                await (
+                    su.get_by_text(marker)
+                    .get_by_style(TextStyle(foreground="#010203"))
+                    .unique()
+                    .expect()
+                )
+
+        run(scenario())
+
+    def test_invalid_numeric_arguments_are_typed_usage_errors(self):
+        async def scenario():
+            su = self._client()
+            cases = [
+                ("u16-negative", lambda: su.resize(-1, 24)),
+                ("u16-too-large", lambda: su.cells(2**16, 0)),
+                ("u16-bool", lambda: su.resize(True, 24)),
+                ("u64-negative", lambda: su.wait_idle(timeout=-1)),
+                ("u64-too-large", lambda: su.wait_idle(timeout=2**64)),
+                ("u64-huge", lambda: su.wait_idle(timeout=10**1000)),
+                ("u64-bool", lambda: su.wait_idle(timeout=True)),
+                (
+                    "i32-too-small",
+                    lambda: su.expect_exit_code(-(2**31) - 1),
+                ),
+                ("i32-too-large", lambda: su.expect_exit_code(2**31)),
+                ("i32-bool", lambda: su.expect_exit_code(True)),
+                ("non-integer", lambda: su.resize(object(), 24)),
+            ]
+            for label, call in cases:
+                with self.subTest(label=label):
+                    with self.assertRaises(UsageError) as raised:
+                        await call()
+                    self.assertIn("must be an integer", str(raised.exception))
+
+        run(scenario())
+
+    def test_locator_expect_error_contains_only_actionable_details(self):
+        async def scenario():
+            async with self._client() as su:
+                await su.run(
+                    sys.executable,
+                    "-c",
+                    "import sys,time; sys.stdout.write('ready'); "
+                    "sys.stdout.flush(); time.sleep(60)",
+                )
+                await su.get_by_text("ready").wait(timeout=2000)
+                with self.assertRaises(ExpectationError) as raised:
+                    await su.get_by_text(
+                        "text-that-is-not-on-screen"
+                    ).unique().expect(timeout=50)
+                message = str(raised.exception)
+                self.assertIn(
+                    "locator.expect: timed out after 50ms waiting for "
+                    "'text-that-is-not-on-screen' to be visible",
+                    message,
+                )
+                self.assertNotIn("Terminal content:", message)
+                self.assertNotIn("ready", message)
+                self.assertIsNone(raised.exception.artifact)
+                self.assertFalse(hasattr(raised.exception, "terminal"))
+                self.assertIsNotNone(raised.exception.details)
+                self.assertEqual(
+                    raised.exception.details.operation,
+                    "locator.expect",
+                )
+                self.assertEqual(
+                    raised.exception.details.locator.selectors,
+                    ("text-that-is-not-on-screen",),
+                )
+
+        run(scenario())
+
+    def test_blocking_wait_does_not_block_event_loop(self):
+        async def scenario():
+            async with self._client() as su:
+                await su.open(shell=SHELL)
+                ticks = []
+                stop = asyncio.Event()
+
+                async def heartbeat():
+                    while not stop.is_set():
+                        ticks.append(asyncio.get_running_loop().time())
+                        await asyncio.sleep(0.01)
+
+                heartbeat_task = asyncio.create_task(heartbeat())
+                try:
+                    with self.assertRaises(ExpectationError):
+                        await su.get_by_text(
+                            "text-that-will-never-appear-on-screen"
+                        ).wait(timeout=300)
+                finally:
+                    stop.set()
+                    await heartbeat_task
+
+                self.assertGreaterEqual(len(ticks), 5)
+
+        run(scenario())
+
+    def test_sessions_lists_open_session(self):
+        async def scenario():
+            su = TuiTest(unique_session("pytest"))
+            await su.open(shell=SHELL)
+            try:
+                names = await tui_test.sessions()
+                self.assertIn(su.session, names)
+            finally:
+                await su.close_quiet()
+
+        run(scenario())
+
+    def test_close_evicts_session_and_retains_recording(self):
+        async def scenario(root):
+            name = unique_session("recording")
+            su = TuiTest(name, trace={"mode": "on", "directory": root})
+            await su.open(shell=SHELL)
+            await su.submit("echo retained-recording")
+            await su.wait_command()
+            await su.close()
+
+            self.assertNotIn(name, await tui_test.sessions())
+            with self.assertRaises(NoSessionError):
+                await su.state()
+            self.assertIn("retained-recording", await get_recording(name))
+            with self.assertRaises(NoSessionError):
+                await get_recording(unique_session("missing-recording"))
+
+        with tempfile.TemporaryDirectory() as root:
+            run(scenario(root))
+
+    def test_trace_uses_the_final_context_manager_outcome(self):
+        async def scenario(root):
+            for mode, failed in (("on-failure", False), ("on-failure", True), ("on", False)):
+                directory = Path(root) / "{}-{}".format(mode, failed)
+                async def run_test():
+                    async with testing.terminal(
+                        program=[sys.executable, "-c", "import time; print('ready', flush=True); time.sleep(30)"],
+                        wait_ready=False,
+                        trace={"mode": mode, "directory": str(directory)},
+                    ) as terminal:
+                        await terminal.get_by_text("ready").wait()
+                        if failed:
+                            raise RuntimeError("external test failure")
+                        for _ in range(2):
+                            with self.assertRaises(ExpectationError):
+                                await terminal.get_by_text("missing expected marker").expect(timeout=0)
+                if failed:
+                    with self.assertRaisesRegex(RuntimeError, "external test failure"):
+                        await run_test()
+                else:
+                    await run_test()
+                bundles = list(directory.iterdir())
+                if mode == "on-failure" and not failed:
+                    self.assertEqual(bundles, [])
+                else:
+                    self.assertEqual(len(bundles), 1)
+                    manifest = json.loads((bundles[0] / "trace.json").read_text(encoding="utf-8"))
+                    self.assertEqual(manifest["outcome"], "failed" if failed else "passed")
+                    self.assertTrue((bundles[0] / "trace.html").is_file())
+                    self.assertTrue((bundles[0] / "trace.md").is_file())
+                    self.assertIn('"version":2', (bundles[0] / "session.cast").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as root:
+            run(scenario(root))
+
+    def test_native_failure_artifacts_follow_the_configured_mode(self):
+        async def scenario(root):
+            for mode in ("all", "text", "none"):
+                with self.subTest(mode=mode):
+                    directory = Path(root) / mode
+                    async with self._client(
+                        artifacts={"dir": str(directory), "on_failure": mode}
+                    ) as terminal:
+                        await terminal.run(
+                            sys.executable, "-c",
+                            "import time; print('native-artifact', flush=True); time.sleep(30)",
+                        )
+                        await terminal.get_by_text("native-artifact").wait()
+                        with self.assertRaises(ExpectationError) as raised:
+                            await terminal.get_by_text("missing marker").expect(timeout=0)
+                        error = raised.exception
+                        self.assertIsInstance(error.details, FailureDetails)
+                        self.assertEqual(error.details.operation, "locator.expect")
+                        self.assertFalse(hasattr(error, "terminal"))
+                        if mode == "none":
+                            self.assertIsNone(error.artifact)
+                            self.assertFalse(directory.exists())
+                        else:
+                            self.assertIsInstance(error.artifact, FailureArtifactRef)
+                            self.assertEqual(error.artifact.status, FailureArtifactStatus.WRITTEN)
+                            self.assertEqual(error.artifact.errors, ())
+                            self.assertIn(
+                                "native-artifact",
+                                Path(error.artifact.screen_text).read_text(encoding="utf-8"),
+                            )
+                            if mode == "all":
+                                self.assertTrue(Path(error.artifact.screen_svg).is_file())
+                            else:
+                                self.assertIsNone(error.artifact.screen_svg)
+
+        with tempfile.TemporaryDirectory() as root:
+            run(scenario(root))
+
+    def test_trace_export_failure_preserves_body_error_and_closes_session(self):
+        async def scenario(root):
+            blocked = Path(root) / "not-a-directory"
+            blocked.write_text("block trace export", encoding="utf-8")
+            program = [
+                sys.executable, "-c",
+                "import time; print('cleanup-ready', flush=True); time.sleep(30)",
+            ]
+            trace = {"mode": "on", "directory": str(blocked)}
+            for use_helper in (False, True):
+                for failure in (None, RuntimeError("test failed"), asyncio.CancelledError()):
+                    with self.subTest(
+                        use_helper=use_helper, failure=type(failure).__name__
+                    ):
+                        name = unique_session("failed-trace-cleanup")
+                        manager = (
+                            testing.terminal(
+                                session=name, program=program, trace=trace,
+                                wait_ready=False, retries=0,
+                            )
+                            if use_helper else TuiTest(name, trace=trace)
+                        )
+                        expected_error = type(failure) if failure is not None else InternalError
+                        with self.assertRaises(expected_error) as raised:
+                            async with manager as term:
+                                if not use_helper:
+                                    await term.run(*program, wait_ready=False)
+                                await term.get_by_text("cleanup-ready").wait()
+                                if failure is not None:
+                                    raise failure
+                        if failure is not None:
+                            self.assertIs(raised.exception, failure)
+                        else:
+                            self.assertIn("trace directory", str(raised.exception))
+                        self.assertNotIn(name, await tui_test.sessions())
+                        self.assertEqual(testing.tracked_count(), 0)
+
+        with tempfile.TemporaryDirectory() as root:
+            run(scenario(root))
+
+    def test_same_name_clients_share_typed_operations(self):
+        async def scenario():
+            name = unique_session("same-name")
+            first = TuiTest(name)
+            second = TuiTest(name)
+            try:
+                await first.open(shell=SHELL)
+                await second.submit("echo shared-session")
+                await first.wait_command()
+                self.assertIn("shared-session", await second.text())
+                self.assertIn(name, await tui_test.sessions())
+            finally:
+                await first.close_quiet()
+                await second.close_quiet()
+
+        run(scenario())
+
+    def test_close_all_cleans_process_local_sessions(self):
+        async def scenario():
+            first = self._client()
+            second = self._client()
+            await first.open(shell=SHELL)
+            await second.open(shell=SHELL)
+            await tui_test.close_all()
+            self.assertNotIn(first.session, await tui_test.sessions())
+            self.assertNotIn(second.session, await tui_test.sessions())
+            with self.assertRaises(NoSessionError):
+                await first.state()
+            with self.assertRaises(NoSessionError):
+                await second.state()
+
+        run(scenario())
+
+    def test_close_all_interrupts_in_flight_waits(self):
+        async def scenario():
+            su = self._client()
+            await su.open(shell=SHELL)
+            wait = asyncio.create_task(
+                su.get_by_text("never-visible").wait(timeout=60_000)
+            )
+            await asyncio.sleep(0.05)
+
+            await asyncio.wait_for(tui_test.close_all(), timeout=2)
+            with self.assertRaises(ExpectationError) as raised:
+                await wait
+            self.assertRegex(
+                str(raised.exception),
+                r"operation was cancelled|session exited before",
+            )
+            self.assertNotIn(su.session, await tui_test.sessions())
+
+        run(scenario())
+
+    def test_typed_operation_results_keep_public_shapes(self):
+        async def scenario():
+            async with self._client() as su:
+                opened = await su.open(shell=SHELL, cols=92, rows=28)
+                self.assertEqual(opened["session"], su.session)
+                self.assertIn("ready", opened)
+                await su.resize(90, 27)
+                await su.type("echo typed-input")
+                await su.keyboard.press("Enter")
+                await su.wait_command()
+                await su.expect_output("typed-input", regex=False)
+                await su.get_by_text("typed-input").first().expect()
+                self.assertEqual(await su.get_exit_code(), 0)
+                self.assertIn("echo typed-input", await su.get_command())
+                self.assertIn("typed-input", await su.get_output())
+                self.assertIsInstance(await su.get_cwd(), (str, type(None)))
+                self.assertEqual(await su.get_size(), {"cols": 90, "rows": 27})
+                cursor = await su.get_cursor()
+                self.assertEqual(
+                    set(cursor), {"x", "y", "visible", "shape", "color"}
+                )
+                self.assertIsInstance(cursor["visible"], bool)
+                self.assertIsInstance(cursor["x"], int)
+                self.assertIsInstance(cursor["y"], int)
+                self.assertIsInstance(cursor["color"], str)
+                self.assertIn(cursor["shape"], {"block", "underline", "bar"})
+                cells = await su.cells(0, 0, 2, 1)
+                self.assertTrue(cells)
+                self.assertIsInstance(cells[0].fg, (str, int))
+                self.assertIsInstance(cells[0].bg, (str, int))
+                self.assertIn("typed-input", await su.screenshot())
+                await su.mouse.click(0, 0)
+                await su.mouse.move(1, 1)
+                await su.mouse.down(1, 1)
+                await su.mouse.up(1, 1)
+                await su.mouse.drag(0, 0, 1, 1)
+                await su.mouse.scroll("down", amount=1)
+
+        run(scenario())
+
+    def test_restart_recreates_session_with_open_result(self):
+        async def scenario():
+            su = self._client()
+            try:
+                opened = await su.run(
+                    sys.executable,
+                    "-c",
+                    "import time; print('restart-ready', flush=True); time.sleep(60)",
+                )
+                restarted = await su.restart(graceful_timeout=0)
+                self.assertEqual(set(restarted), set(opened))
+                self.assertEqual(restarted["session"], su.session)
+                await su.get_by_text("restart-ready").wait(timeout=5000)
+                await su.close()
+                with self.assertRaises(NoSessionError):
+                    await su.restart(graceful_timeout=0)
+            finally:
+                await su.close_quiet()
+
+        run(scenario())
+
+    def test_restart_preserves_cwd_after_the_caller_changes_directory(self):
+        async def scenario():
+            original = os.getcwd()
+            with tempfile.TemporaryDirectory() as root:
+                start = Path(root) / "start"
+                other = Path(root) / "other"
+                start.mkdir()
+                other.mkdir()
+                for command in ("open", "run"):
+                    for cwd in (None, "."):
+                        with self.subTest(command=command, cwd=cwd):
+                            su = self._client()
+                            try:
+                                os.chdir(start)
+                                if command == "open":
+                                    await su.open(shell=SHELL, cwd=cwd)
+                                else:
+                                    await su.run(
+                                        sys.executable,
+                                        "-c",
+                                        "import os, sys, time; "
+                                        "print('cwd-preserved' if os.path.samefile('.', sys.argv[1]) "
+                                        "else 'cwd-changed', flush=True); time.sleep(60)",
+                                        str(start),
+                                        cwd=cwd,
+                                    )
+                                    await su.get_by_text("cwd-preserved").wait(timeout=5000)
+                                os.chdir(other)
+                                await su.restart(graceful_timeout=0)
+                                if command == "open":
+                                    self.assertTrue(os.path.samefile(await su.get_cwd(), start))
+                                else:
+                                    await su.get_by_text("cwd-preserved").wait(timeout=5000)
+                            finally:
+                                os.chdir(original)
+                                await su.close_quiet()
+
+        run(scenario())
+
+    def test_signal_and_wait_exit_are_typed_operations(self):
+        async def scenario():
+            async with self._client() as su:
+                await su.run(
+                    sys.executable,
+                    "-c",
+                    "import time; print('signal-ready', flush=True); time.sleep(60)",
+                )
+                await su.get_by_text("signal-ready").wait(timeout=5000)
+                with self.assertRaises(ExpectationError):
+                    await su.wait_exit(timeout=30)
+                await su.signal("KILL")
+                await su.wait_exit(timeout=5000)
+                state = await su.state()
+                if sys.platform == "win32":
+                    self.assertIsNone(state.exit_signal)
+                else:
+                    self.assertIsInstance(state.exit_signal, str)
+
+        run(scenario())
+
+    def test_packed_screen_preserves_logical_utf8_rows(self):
+        async def scenario():
+            su = self._client()
+            await su.run(
+                sys.executable,
+                "-c",
+                "import sys,time; "
+                "sys.stdout.buffer.write("
+                "bytes.fromhex('c3a9e7958c5820200d0a0d0a5a')); "
+                "sys.stdout.flush(); time.sleep(60)",
+                cols=8,
+                rows=4,
+                wait_ready=False,
+            )
+            await su.get_by_text("X").wait(timeout=5000)
+            view, cols, rows = await su._packed_screen()
+            self.assertIsInstance(view, memoryview)
+            self.assertTrue(view.readonly)
+            self.assertEqual((cols, rows), (8, 4))
+            before = bytes(view)
+            text = before.decode("utf-8")
+            lines = text.split("\n")
+            self.assertEqual(len(lines), rows)
+            self.assertTrue(lines[0].startswith("é界X"))
+            self.assertTrue(lines[0].endswith(" "))
+            self.assertEqual(lines[1], " " * cols)
+            self.assertTrue(lines[2].startswith("Z"))
+            self.assertEqual(lines[3], " " * cols)
+
+            x_byte_offset = before.index(b"X")
+            self.assertEqual(x_byte_offset, len("é界".encode("utf-8")))
+            self.assertNotEqual(x_byte_offset, 3)
+            self.assertEqual((await su.cells(3, 0))[0].char, "X")
+
+            await su.close()
+            del su
+            gc.collect()
+            self.assertEqual(bytes(view), before)
+            if len(view):
+                with self.assertRaises(TypeError):
+                    view[0] = 0
+
+        run(scenario())
+
+    def test_ghostty_backend_preserves_blink(self):
+        async def scenario():
+            async with self._client(backend="ghostty") as su:
+                await su.run(
+                    sys.executable,
+                    "-c",
+                    "import sys,time; "
+                    "sys.stdout.write('\\x1b[5mX\\x1b[0m'); "
+                    "sys.stdout.flush(); time.sleep(30)",
+                    cols=10,
+                    rows=2,
+                )
+                await su.get_by_text("X").wait(timeout=5000)
+                self.assertTrue((await su.cells(0, 0))[0].blink)
+
+        run(scenario())
+
+    def test_worker_internal_error_preserves_later_operations(self):
+        async def scenario():
+            with patch.object(_native, "_invoke", side_effect=_native._error(5, "worker failure")):
+                with self.assertRaises(InternalError) as raised:
+                    await self._client().state()
+            self.assertIn("worker failure", str(raised.exception))
+            async with self._client() as su:
+                await su.open(shell=SHELL)
+                self.assertGreater((await su.state()).cols, 0)
+
+        run(scenario())
+
+    def test_cancelling_wait_does_not_block_later_operations(self):
+        async def scenario():
+            async with self._client() as su:
+                await su.run(
+                    sys.executable,
+                    "-c",
+                    "import time; print('cancel-ready', flush=True); time.sleep(60)",
+                )
+                await su.get_by_text("cancel-ready").wait(timeout=5000)
+                wait = asyncio.create_task(
+                    su.get_by_text("never-visible").wait(timeout=2000)
+                )
+                await asyncio.sleep(0.05)
+                wait.cancel()
+                with self.assertRaises(asyncio.CancelledError):
+                    await wait
+
+                state = await asyncio.wait_for(su.state(), timeout=1)
+                self.assertGreater(state.cols, 0)
+
+        run(scenario())
+
+    def test_any_shared_handle_can_close_a_reopened_named_session(self):
+        async def scenario():
+            name = unique_session("shared-close")
+            first = TuiTest(name)
+            second = TuiTest(name)
+            try:
+                await first.open(shell=SHELL)
+                await first.close()
+                await second.open(shell=SHELL)
+                await first.close()
+                self.assertNotIn(name, await tui_test.sessions())
+            finally:
+                await second.close_quiet()
+
+        run(scenario())
+
+    def test_snapshot_lands_in_client_cwd(self):
+        async def scenario():
+            original = os.getcwd()
+            snap_root = tempfile.mkdtemp(prefix="tui-test-snap-")
+            name = f"snap-{os.path.basename(snap_root)}"
+            try:
+                async with self._client() as su:
+                    await su.open(shell=SHELL)
+                    await su.submit("echo snapshot-marker")
+                    await su.wait_command()
+                    await su.wait_idle()
+                    os.chdir(snap_root)
+                    try:
+                        status = await su.expect_snapshot(name)
+                        self.assertEqual(status, "written")
+                        created = Path(snap_root) / "__snapshots__" / f"{name}.snap"
+                        self.assertTrue(created.is_file())
+                        other_cwd = Path(original) / "__snapshots__" / f"{name}.snap"
+                        self.assertFalse(other_cwd.exists())
+                        self.assertEqual(await su.expect_snapshot(name), "passed")
+                    finally:
+                        os.chdir(original)
+            finally:
+                shutil.rmtree(snap_root, ignore_errors=True)
+
+        run(scenario())
+
+
+class TestingHelperTests(unittest.TestCase):
+    def tearDown(self):
+        run(testing.close_all_tracked())
+        testing.reset_terminal_defaults()
+
+    def test_terminal_drives_a_real_shell_and_cleans_up(self):
+        async def scenario():
+            async with testing.terminal(shell=SHELL) as t:
+                session = t.session
+                await t.submit("echo helper-sdk")
+                await t.wait_command()
+                await t.get_by_text("helper-sdk").first().expect()
+                await t.expect_exit_code(0)
+                self.assertEqual(testing.tracked_count(), 1)
+            self.assertEqual(testing.tracked_count(), 0)
+            self.assertNotEqual(session, "default")
+
+        run(scenario())
+
+    def test_create_terminal_is_tracked_until_closed(self):
+        async def scenario():
+            t = await testing.create_terminal(shell=SHELL)
+            self.assertEqual(testing.tracked_count(), 1)
+            await testing.close_all_tracked()
+            self.assertEqual(testing.tracked_count(), 0)
+            await t.close_quiet()
+
+        run(scenario())
+
+    def test_two_terminals_are_isolated(self):
+        async def scenario():
+            async with testing.terminal(shell=SHELL) as a:
+                async with testing.terminal(shell=SHELL) as b:
+                    self.assertNotEqual(a.session, b.session)
+                    await a.submit("echo only-in-a")
+                    await a.wait_command()
+                    await b.get_by_text("only-in-a").expect(not_=True)
+
+        run(scenario())
+
+    def test_program_option_uses_run(self):
+        async def scenario():
+            async with testing.terminal(
+                program=[
+                    sys.executable,
+                    "-c",
+                    "import sys,time; sys.stdout.write('from-run'); "
+                    "sys.stdout.flush(); time.sleep(60)",
+                ]
+            ) as t:
+                await t.get_by_text("from-run").wait(timeout=5000)
+
+        run(scenario())
+
+    def test_terminal_snapshot_normalises_live_output(self):
+        async def scenario():
+            async with testing.terminal(shell=SHELL) as t:
+                await t.submit("echo snap-me")
+                await t.wait_command()
+                normalised = testing.terminal_snapshot(await t.text())
+                self.assertIn("snap-me", normalised)
+                self.assertFalse(normalised.endswith("\n"))
+                for line in normalised.split("\n"):
+                    self.assertEqual(line, line.rstrip())
+
+        run(scenario())
+
+    def test_suite_defaults_reach_the_client(self):
+        async def scenario():
+            testing.set_terminal_defaults(cols=101, rows=24)
+            async with testing.terminal(shell=SHELL) as t:
+                state = await t.state()
+                self.assertEqual(state.cols, 101)
+                self.assertEqual(state.rows, 24)
+
+        run(scenario())
+
+
+if __name__ == "__main__":
+    unittest.main()
