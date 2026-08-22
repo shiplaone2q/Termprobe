@@ -6,3 +6,4 @@ export function uniqueSession(prefix?: string): string {
   const suffix = `-${process.pid}-${random}-${sessionCounter++}`;
   const room = Math.max(1, 64 - suffix.length);
   return `${sanitized.slice(0, room)}${suffix}`;
+}
