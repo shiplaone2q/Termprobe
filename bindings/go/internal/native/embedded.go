@@ -75,3 +75,6 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 	path = filepath.Join(directory, library.name)
 	if err := verifyCachedLibrary(root, library); err == nil {
 		return path, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("check native engine cache %q: %w", path, err)
+	}

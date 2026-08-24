@@ -70,3 +70,6 @@ $archivePath = Join-Path $tempDir $asset
 $extractDir = Join-Path $tempDir "extract"
 
 New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+
+try {
+    $request = @{

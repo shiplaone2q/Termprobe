@@ -62,3 +62,5 @@ def _have_binary():
 
 
 @unittest.skipUnless(_have_binary(), "tui-test binary not available for agent-context")
+class ConformanceTests(unittest.TestCase):
+    def test_every_command_is_mapped_or_excluded(self):
