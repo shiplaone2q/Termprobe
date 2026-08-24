@@ -44,3 +44,6 @@ pub fn scroll(x: u16, y: u16, up: bool) -> String {
     let code = if up { 64 } else { 65 };
     format!("{CSI}<{};{};{}M", code, u32::from(x) + 1, u32::from(y) + 1)
 }
+
+/// A full click: press then release.
+pub fn click(x: u16, y: u16, options: MouseOptions) -> String {
