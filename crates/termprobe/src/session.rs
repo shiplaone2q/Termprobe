@@ -325,3 +325,7 @@ impl Session {
             state,
             viewport_input: Arc::new(Mutex::new(())),
             cancelled,
+            bells,
+            recorder,
+            logger,
+            reader: Some(reader_handle),

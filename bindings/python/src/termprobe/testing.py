@@ -98,3 +98,5 @@ def _install_safety_net() -> None:
     _safety_net_installed = True
     atexit.register(_close_all_tracked_blocking)
 
+
+def _close_all_tracked_blocking() -> None:

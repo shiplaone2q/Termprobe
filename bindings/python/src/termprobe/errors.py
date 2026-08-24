@@ -47,3 +47,4 @@ _BY_KIND = {
     "usage": UsageError,
     "no_session": NoSessionError,
     "internal": InternalError,
+}
