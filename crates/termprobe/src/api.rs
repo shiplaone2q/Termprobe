@@ -501,3 +501,5 @@ impl LocatorSelector {
                 if let Some(has) = has {
                     description.push_str(&format!(" has ({})", has.selector.description()));
                 }
+                if let Some(has_not) = has_not {
+                    description.push_str(&format!(" has not ({})", has_not.selector.description()));

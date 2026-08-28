@@ -275,3 +275,6 @@ def _append_node(
             raise ValueError("locator direction requires a parent locator")
         if query is not None:
             node["within"] = result.root
+    result.root = len(result.nodes)
+    result.nodes.append(node)
+    return result

@@ -51,3 +51,5 @@ func TestCleanupAndParallelIsolation(t *testing.T) {
 			terminal := termprobetest.New(t, helperOptions(t))
 			names <- terminal.Session()
 			if err := terminal.GetByText("helper-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(10 * time.Second)}); err != nil {
+				t.Fatal(err)
+			}
