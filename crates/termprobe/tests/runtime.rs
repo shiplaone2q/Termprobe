@@ -736,3 +736,5 @@ fn on_failure_recording_is_kept_only_after_an_operation_failure() {
 
     let success = registry.session("recording-success");
     let opened = success
+        .open(OpenOptions {
+            wait_ready: Some(false),

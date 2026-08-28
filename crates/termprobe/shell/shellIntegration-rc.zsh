@@ -35,3 +35,6 @@ __su_precmd() {
 		__su_osc "D;$ec"
 	fi
 	__su_cwd
+	__su_started=1
+}
+

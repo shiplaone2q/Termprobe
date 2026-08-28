@@ -140,3 +140,6 @@ export interface FailureLocatorStageDetails {
   readonly direction: "within" | "after" | "before";
   readonly requested_occurrence: FailureMatchOccurrence;
   /** Action operations may require a unique match. */
+  readonly effective_occurrence: FailureMatchOccurrence;
+  readonly occurrence_source: "explicit" | "action_default";
+  readonly input_candidate_count: number;
