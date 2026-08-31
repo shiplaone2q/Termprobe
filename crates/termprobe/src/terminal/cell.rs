@@ -115,3 +115,6 @@ impl Color {
 /// than inside a nested struct.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum UnderlineStyle {
+    #[default]
+    None,
+    Single,

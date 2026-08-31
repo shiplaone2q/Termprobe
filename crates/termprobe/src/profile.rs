@@ -336,3 +336,6 @@ pub struct RecordingConfig {
     pub directory: Option<PathBuf>,
     /// How screenshots and recordings taken under this profile are drawn.
     pub style: Option<crate::render::style::Style>,
+}
+
+fn fill_missing(overlay: &mut toml::Value, base: &toml::Value) {

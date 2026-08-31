@@ -329,3 +329,4 @@ impl Session {
             recorder,
             logger,
             reader: Some(reader_handle),
+            _process_watcher: process_watcher,

@@ -62,3 +62,6 @@ A missing interpreter prevents startup before the binding can select an engine.
 
 ### Existing native installation
 
+Set `TERMPROBE__NATIVE_LIBRARY` to override the bundled engine:
+
+```sh
