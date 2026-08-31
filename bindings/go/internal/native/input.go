@@ -85,3 +85,4 @@ func nativeFloat(value *float64) abiOptionalF64 {
 	return abiOptionalF64{present: true, value: float64(*value)}
 }
 
+func (memory *nativeMemory) query(expression LocatorExpression) (abiQuery, error) {

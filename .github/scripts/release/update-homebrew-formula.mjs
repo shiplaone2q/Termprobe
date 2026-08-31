@@ -54,3 +54,5 @@ const formula = `class Termprobe < Formula
   end
 
   test do
+    system bin/"termprobe", "--version"
+  end
