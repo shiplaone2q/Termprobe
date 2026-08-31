@@ -92,3 +92,7 @@ class OwnershipTests(unittest.TestCase):
         self.assertEqual(expression["nodes"][0]["occurrence"], "nth")
         self.assertEqual(json.loads(native._text(query.json))["nodes"][0]["occurrence"], {"nth": 2})
 
+    def test_integer_validation_precedes_narrowing(self):
+        class BooleanIndex:
+            def __index__(self):
+                return True

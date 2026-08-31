@@ -53,3 +53,4 @@ try {
   if (!output.includes("hello")) throw new Error(`README example failed: ${output}`);
   console.log(`README quick start: ${output.trim()}`);
 } finally {
+  fs.rmSync(directory, { recursive: true, force: true });
