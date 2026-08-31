@@ -61,3 +61,5 @@ const MAPPING = {
   "get-recording": [["module", "getRecording"]],
 };
 
+const EXCLUDED = new Set(["monitor", "status", "daemon", "usage", "agent-context", "skill"]);
+

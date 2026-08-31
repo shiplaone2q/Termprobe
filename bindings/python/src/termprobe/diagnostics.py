@@ -72,3 +72,7 @@ class FailureLocatorDetails:
     reason: Optional[str] = None
     stage_index: Optional[int] = None
 
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "FailureLocatorDetails":
+        return cls(
+            selectors=tuple(value["selectors"]),

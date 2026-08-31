@@ -62,3 +62,4 @@ if (process.platform === "win32") {
 const functions = { ...bind(library), library, platformLibrary };
 const version = functions.tui_abi_version();
 if (version !== abiVersion) {
+  throw new Error(`termprobe native ABI mismatch: expected ${abiVersion}, got ${version}`);
