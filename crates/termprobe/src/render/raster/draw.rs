@@ -110,3 +110,7 @@ pub(super) fn fill_circle(pixmap: &mut Pixmap, x: f32, y: f32, radius: f32, colo
         &path,
         &paint,
         FillRule::Winding,
+        Transform::identity(),
+        None,
+    );
+}

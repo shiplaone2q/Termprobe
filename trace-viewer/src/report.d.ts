@@ -143,3 +143,5 @@ export interface FailureLocatorStageDetails {
   readonly effective_occurrence: FailureMatchOccurrence;
   readonly occurrence_source: "explicit" | "action_default";
   readonly input_candidate_count: number;
+  readonly raw_candidate_count: number;
+  /** Candidates remaining after applying the requested styles. */
