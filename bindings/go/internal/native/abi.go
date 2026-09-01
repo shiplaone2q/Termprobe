@@ -93,3 +93,5 @@ type abiCursor struct {
 	y       uint16
 	visible bool
 	shape   abiString
+	color   abiString
+}

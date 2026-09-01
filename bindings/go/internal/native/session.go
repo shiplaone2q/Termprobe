@@ -190,3 +190,7 @@ func (runtime *Session) GetViewport() (Viewport, error) {
 	defer nativeFunctions.ResultFree(result)
 	if err := nativeError(result); err != nil {
 		return Viewport{}, err
+	}
+	return Viewport{Offset: uint64(result.viewport.offset), History: uint64(result.viewport.history)}, nil
+}
+
