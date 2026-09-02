@@ -65,3 +65,4 @@ A missing interpreter prevents startup before the binding can select an engine.
 Set `TERMPROBE__NATIVE_LIBRARY` to override the bundled engine:
 
 ```sh
+export TERMPROBE__NATIVE_LIBRARY=/absolute/path/to/libtermprobe_ffi.so

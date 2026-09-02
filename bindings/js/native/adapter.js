@@ -131,3 +131,5 @@ function decode(type, value) {
     } else if (fieldType.startsWith("Tui")) decoded = decode(fieldType, value[field]);
     else decoded = typeof value[field] === "bigint" ? Number(value[field]) : value[field];
     result[field === "character" ? "char" : field] = decoded;
+  }
+  return result;
