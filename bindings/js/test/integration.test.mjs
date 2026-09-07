@@ -326,3 +326,5 @@ test("trace retention and recording directory are configurable", async () => {
     trace: { mode: "off", directory: join(root, "traces") },
   });
   assert.equal((await disabled.open({ shell, waitReady: false })).recording, "");
+  await disabled.close();
+
