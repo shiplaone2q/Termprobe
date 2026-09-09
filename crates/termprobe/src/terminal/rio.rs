@@ -182,3 +182,328 @@ impl ColorState {
     }
 
     fn set(&self, index: usize, color: Option<ColorRgb>) {
+        self.overrides
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)[index] =
+            color.map(|color| Rgb::new(color.r, color.g, color.b));
+    }
+}
+
+#[derive(Clone)]
+struct CaptureProxy {
+    pending: Arc<Mutex<Vec<u8>>>,
+    colors: ColorState,
+    clipboard: Arc<Mutex<Clipboard>>,
+    bells: BellTracker,
+}
+
+impl EventListener for CaptureProxy {
+    fn event(&self) -> (Option<RioEvent>, bool) {
+        (None, false)
+    }
+
+    fn send_event(&self, event: RioEvent, _id: WindowId) {
+        match event {
+            RioEvent::PtyWrite(_, text) => self.push(text.into_bytes()),
+            RioEvent::ColorRequest(_, index, format) => {
+                let color = self.colors.get(index);
+                self.push(
+                    format(ColorRgb {
+                        r: color.r,
+                        g: color.g,
+                        b: color.b,
+                    })
+                    .into_bytes(),
+                );
+            }
+            RioEvent::ColorChange(_, index, color) => self.colors.set(index, color),
+            RioEvent::ClipboardStore(clipboard, text) => {
+                self.clipboard
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .set(clipboard_type(clipboard), text);
+            }
+            RioEvent::ClipboardLoad(_, clipboard, format) => {
+                let text = self
+                    .clipboard
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .get(clipboard_type(clipboard))
+                    .to_string();
+                self.push(format(&text).into_bytes());
+            }
+            RioEvent::Bell => self.bells.ring(),
+            _ => {}
+        }
+    }
+}
+
+impl CaptureProxy {
+    fn push(&self, bytes: Vec<u8>) {
+        self.pending
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .extend(bytes);
+    }
+}
+
+pub struct RioEmu {
+    term: Crosswords<CaptureProxy>,
+    processor: Processor,
+    pending: Arc<Mutex<Vec<u8>>>,
+    colors: ColorState,
+    clipboard: Arc<Mutex<Clipboard>>,
+    clipboard_validator: ClipboardValidator,
+    cols: u16,
+    rows: u16,
+}
+
+impl RioEmu {
+    pub fn new(cols: u16, rows: u16, profile: &Profile) -> Self {
+        Self::with_bell_tracker(cols, rows, profile, BellTracker::default())
+    }
+
+    pub(crate) fn with_bell_tracker(
+        cols: u16,
+        rows: u16,
+        profile: &Profile,
+        bells: BellTracker,
+    ) -> Self {
+        let cols = cols.max(1);
+        let rows = rows.max(1);
+        let pending = Arc::new(Mutex::new(Vec::new()));
+        let colors = ColorState::new(profile);
+        let clipboard = Arc::new(Mutex::new(Clipboard::default()));
+        let proxy = CaptureProxy {
+            pending: Arc::clone(&pending),
+            colors: colors.clone(),
+            clipboard: Arc::clone(&clipboard),
+            bells,
+        };
+        Self {
+            term: Crosswords::new(
+                CrosswordsSize::new(cols as usize, rows as usize),
+                RioCursorShape::Block,
+                proxy,
+                WindowId::from(0),
+                0,
+                profile.scrollback,
+            ),
+            processor: Processor::default(),
+            pending,
+            colors,
+            clipboard,
+            clipboard_validator: ClipboardValidator::new(),
+            cols,
+            rows,
+        }
+    }
+
+    fn rows_in_range(&self, start: i32, end: i32) -> Vec<Vec<EmuCell>> {
+        let styles = &self.term.grid.style_set;
+        let extras = &self.term.grid.extras_table;
+        let mut output = Vec::with_capacity((end - start).max(0) as usize);
+        let mut links = LinkCache::default();
+        for line in start..end {
+            let source = &self.term.grid[Line(line)];
+            let mut row = Vec::with_capacity(self.cols as usize);
+            for col in 0..self.cols as usize {
+                let square = source.inner.get(col).copied().unwrap_or_default();
+                row.push(cell_from_rio(square, styles, extras, &mut links));
+            }
+            output.push(row);
+        }
+        output
+    }
+}
+
+impl Emulator for RioEmu {
+    fn process(&mut self, bytes: &[u8]) {
+        self.clipboard_validator.process(bytes);
+        self.processor.advance(&mut self.term, bytes);
+    }
+
+    fn fault(&self) -> Option<String> {
+        self.clipboard_validator.fault()
+    }
+
+    fn take_pending_writes(&mut self) -> Vec<u8> {
+        std::mem::take(&mut *self.pending.lock().unwrap_or_else(PoisonError::into_inner))
+    }
+
+    fn cursor_key_application(&self) -> bool {
+        self.term.mode().contains(Mode::APP_CURSOR)
+    }
+
+    fn clipboard(&self, clipboard: ClipboardType) -> anyhow::Result<String> {
+        Ok(self
+            .clipboard
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .get(clipboard)
+            .to_string())
+    }
+
+    fn clipboard_revision(&self, clipboard: ClipboardType) -> anyhow::Result<u64> {
+        Ok(self
+            .clipboard
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .revision(clipboard))
+    }
+
+    fn keyboard_mode(&self) -> KeyboardMode {
+        let mode = self.term.mode();
+        let mut keyboard_mode = KeyboardMode::empty();
+        for (rio_mode, keyboard_flag) in [
+            (
+                Mode::DISAMBIGUATE_ESC_CODES,
+                KeyboardMode::DISAMBIGUATE_ESC_CODES,
+            ),
+            (Mode::REPORT_EVENT_TYPES, KeyboardMode::REPORT_EVENT_TYPES),
+            (
+                Mode::REPORT_ALTERNATE_KEYS,
+                KeyboardMode::REPORT_ALTERNATE_KEYS,
+            ),
+            (
+                Mode::REPORT_ALL_KEYS_AS_ESC,
+                KeyboardMode::REPORT_ALL_KEYS_AS_ESC,
+            ),
+            (
+                Mode::REPORT_ASSOCIATED_TEXT,
+                KeyboardMode::REPORT_ASSOCIATED_TEXT,
+            ),
+        ] {
+            keyboard_mode.set(keyboard_flag, mode.contains(rio_mode));
+        }
+        keyboard_mode
+    }
+
+    fn mode(&self, mode: TerminalMode) -> bool {
+        if mode == TerminalMode::CursorVisible {
+            return self.term.mode().contains(Mode::SHOW_CURSOR)
+                && self.term.cursor_shape != RioCursorShape::Hidden;
+        }
+        let flag = match mode {
+            TerminalMode::ApplicationCursorKeys => Mode::APP_CURSOR,
+            TerminalMode::ApplicationKeypad => Mode::APP_KEYPAD,
+            TerminalMode::Origin => Mode::ORIGIN,
+            TerminalMode::Wraparound => Mode::LINE_WRAP,
+            TerminalMode::Insert => Mode::INSERT,
+            TerminalMode::FocusEvents => Mode::FOCUS_IN_OUT,
+            TerminalMode::BracketedPaste => Mode::BRACKETED_PASTE,
+            TerminalMode::AlternateScreen => Mode::ALT_SCREEN,
+            TerminalMode::CursorVisible => unreachable!("handled above"),
+        };
+        self.term.mode().contains(flag)
+    }
+
+    fn resize(&mut self, cols: u16, rows: u16) {
+        self.cols = cols.max(1);
+        self.rows = rows.max(1);
+        self.term
+            .resize(CrosswordsSize::new(self.cols as usize, self.rows as usize));
+    }
+
+    fn size(&self) -> (u16, u16) {
+        (self.cols, self.rows)
+    }
+
+    fn scroll(&mut self, target: crate::api::ScrollTarget) {
+        use crate::api::ScrollTarget;
+        use rio_vt::crosswords::grid::Scroll;
+        self.term
+            .scroll_display(match target.clamped(self.viewport()) {
+                ScrollTarget::Lines(lines) => Scroll::Delta(lines),
+                ScrollTarget::Top => Scroll::Top,
+                ScrollTarget::Bottom => Scroll::Bottom,
+            });
+    }
+
+    fn viewport(&self) -> crate::api::Viewport {
+        crate::api::Viewport {
+            offset: self.term.display_offset(),
+            history: self.term.history_size(),
+        }
+    }
+
+    fn cursor(&self) -> (u16, u16) {
+        let position = self.term.cursor().pos;
+        let x = (position.col.0 as u16).min(self.cols.saturating_sub(1));
+        let y = position.row.0.max(0).min(self.rows as i32 - 1) as u16;
+        (x, y)
+    }
+
+    fn viewport_cursor(&self) -> Option<(u16, u16)> {
+        // Rio hides the non-vi cursor whenever its viewport leaves the bottom.
+        (self.term.cursor().content != RioCursorShape::Hidden).then(|| self.cursor())
+    }
+
+    fn title(&self) -> Option<String> {
+        (!self.term.title.is_empty()).then(|| self.term.title.clone())
+    }
+
+    fn cursor_shape(&self) -> CursorShape {
+        // `Term::cursor()` masks the shape to `Hidden` whenever the cursor is
+        // not drawn, including when scrolled out of view. Read the unmasked
+        // shape so viewport movement does not change application cursor state.
+        match self.term.cursor_shape {
+            RioCursorShape::Underline => CursorShape::Underline,
+            RioCursorShape::Beam => CursorShape::Bar,
+            RioCursorShape::Block | RioCursorShape::Hidden => CursorShape::Block,
+        }
+    }
+
+    fn viewable_rows(&self) -> Vec<Vec<EmuCell>> {
+        let start = -(self.term.display_offset() as i32);
+        self.rows_in_range(start, start + self.rows as i32)
+    }
+
+    fn full_rows(&self) -> Vec<Vec<EmuCell>> {
+        self.rows_in_range(-(self.term.history_size() as i32), self.rows as i32)
+    }
+
+    fn active_rows(&self) -> Vec<Vec<EmuCell>> {
+        self.rows_in_range(0, self.rows as i32)
+    }
+
+    fn color(&self, slot: ColorSlot) -> Rgb {
+        self.colors.get(ColorState::slot_index(slot))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scrollback_cursor_matches_native_rio_visibility() {
+        use crate::api::ScrollTarget;
+        let mut emu = RioEmu::new(12, 3, &Profile::default());
+        emu.process(b"row0\r\nrow1\r\nrow2\r\nrow3\r\nrow4\r\nrow5\x1b[1;1H");
+        assert_eq!(emu.viewport_cursor(), Some((0, 0)));
+        emu.scroll(ScrollTarget::Lines(1));
+        assert_eq!(emu.cursor(), (0, 0));
+        assert!(emu.cursor_visible());
+        assert_eq!(emu.term.cursor().content, RioCursorShape::Hidden);
+        assert_eq!(emu.viewport_cursor(), None);
+        emu.scroll(ScrollTarget::Bottom);
+        assert_eq!(emu.viewport_cursor(), Some((0, 0)));
+    }
+
+    crate::emulator_conformance_tests!(
+        |cols, rows, profile| { Box::new(RioEmu::new(cols, rows, profile)) },
+        &[crate::terminal::conformance::Divergence::NoLegacyAlternateScreen]
+    );
+
+    #[test]
+    fn multiple_bells_in_one_chunk_are_counted_individually() {
+        let bells = BellTracker::default();
+        let mut emulator = RioEmu::with_bell_tracker(80, 24, &Profile::default(), bells.clone());
+
+        emulator.process(b"\x07\x07");
+
+        assert_eq!(bells.count(), 2);
+        assert_eq!(bells.sequence(), 2);
+    }
+}
