@@ -22,3 +22,4 @@ const exact = model.attachments[0].blob.size === 64 * 1024 * 1024
   && await model.attachments[0].blob.slice(-1).text() === "x";
 resources.dispose();
 const disposed = await retainedBytes() - baseline;
+console.log(JSON.stringify({ parsed, withResources, disposed, exact }));
