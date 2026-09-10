@@ -66,3 +66,4 @@ const extension = target.includes("windows") ? "dll" : target.includes("apple") 
 const library = extension === "dll" ? "termprobe_ffi.dll" : `libtermprobe_ffi.${extension}`;
 const output = join(root, "target", ...(explicitTarget || zigbuild ? [target] : []), debug ? "debug" : "release", library);
 mkdirSync(join(directory, "native"), { recursive: true });
+copyFileSync(output, join(directory, "native", `termprobe.${tag}.${extension}`));
