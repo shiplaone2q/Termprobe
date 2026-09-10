@@ -59,3 +59,113 @@ function installSafetyNet(): void {
     typeof process !== "undefined" ? process : undefined;
   proc?.once?.("beforeExit", () => {
     void closeAllTracked();
+  });
+}
+
+export function trackTerminal(terminal: Termprobe): void {
+  tracked.add(terminal);
+  installSafetyNet();
+}
+
+export function untrackTerminal(terminal: Termprobe): void {
+  tracked.delete(terminal);
+}
+
+export async function closeAllTracked(): Promise<void> {
+  const pending = [...tracked];
+  tracked.clear();
+  await Promise.all(pending.map((terminal) => terminal.closeQuiet()));
+}
+
+export function trackedCount(): number {
+  return tracked.size;
+}
+
+function clientOptions(opts: CreateTerminalOptions): ClientOptions {
+  const client: ClientOptions = {};
+  for (const key of [
+    "backend",
+    "timeouts",
+    "screenHistoryLimit",
+    "profile",
+    "artifacts",
+    "recording",
+    "trace",
+  ] as const) {
+    const value = opts[key];
+    if (value !== undefined) {
+      Object.assign(client, { [key]: value });
+    }
+  }
+  return client;
+}
+
+function spawnOptions(opts: CreateTerminalOptions): SpawnOptions {
+  const spawn: SpawnOptions = { retries: opts.retries ?? 2 };
+  for (const key of ["cols", "rows", "cwd", "env", "waitReady", "timeouts"] as const) {
+    const value = opts[key];
+    if (value !== undefined) {
+      Object.assign(spawn, { [key]: value });
+    }
+  }
+  return spawn;
+}
+
+export async function createTerminal(
+  options: CreateTerminalOptions = {},
+): Promise<Termprobe> {
+  const opts: CreateTerminalOptions = { ...defaults, ...options };
+  const session = opts.session ?? uniqueSession(opts.prefix);
+  const terminal = new Termprobe(session, clientOptions(opts));
+  trackTerminal(terminal);
+  const spawn = spawnOptions(opts);
+  try {
+    if (opts.program && opts.program.length > 0) {
+      const [command, ...args] = opts.program;
+      await terminal.run(command, args, spawn);
+    } else {
+      await terminal.open({ shell: opts.shell, ...spawn });
+    }
+  } catch (error) {
+    if (!(error instanceof UsageError) && !(error instanceof TypeError)) {
+      await terminal.closeQuiet();
+    }
+    untrackTerminal(terminal);
+    throw error;
+  }
+  return terminal;
+}
+
+export async function withTerminal<T>(
+  options: CreateTerminalOptions,
+  fn: (terminal: Termprobe) => Promise<T> | T,
+): Promise<T> {
+  const terminal = await createTerminal(options);
+  try {
+    let value: T;
+    try {
+      value = await fn(terminal);
+    } catch (error) {
+      try {
+        await terminal.close({ failed: true });
+      } catch (closeError) {
+        throw new AggregateError([error, closeError], "Test and terminal cleanup failed");
+      }
+      throw error;
+    }
+    await terminal.close({ failed: false });
+    return value;
+  } finally {
+    untrackTerminal(terminal);
+  }
+}
+
+export const defaultShell: Shell = IS_WINDOWS ? "powershell" : IS_MACOS ? "zsh" : "bash";
+
+export function terminalSnapshot(text: string): string {
+  const lines = text.split("\n").map((line) => line.replace(/\s+$/u, ""));
+  while (lines.length > 0 && lines[lines.length - 1] === "") {
+    lines.pop();
+  }
+  return lines.join("\n");
+}

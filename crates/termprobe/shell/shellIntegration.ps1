@@ -62,3 +62,33 @@ function Global:Prompt() {
         if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
             $path = $path.Replace('\', '/')
         }
+        $path = [System.Uri]::EscapeDataString($path).Replace('%2F', '/').Replace('%3A', ':')
+        if (-not $path.StartsWith('/')) { $path = '/' + $path }
+        $out += __su_seq "7;file://$([System.Environment]::MachineName)$path"
+    }
+    # Markers bracket the prompt so the command region (after B) excludes "> ".
+    $out += "> "
+    $out += __su_seq "133;B"
+
+    $Global:__su_state.LastHistoryId = $lastHistory.Id
+    $Global:__su_state.LastError = $global:Error[0]
+    $Global:__su_state.LastNativeExit = $lastExit
+    return $out
+}
+
+if (-not (Get-Module -Name PSReadLine)) {
+    try { Import-Module PSReadLine -ErrorAction SilentlyContinue } catch {}
+}
+if (Get-Module -Name PSReadLine) {
+    $Global:__su_state.HasPSReadLine = $true
+    $Global:__su_state.OriginalReadLine = $function:PSConsoleHostReadLine
+    function Global:PSConsoleHostReadLine {
+        $commandLine = $Global:__su_state.OriginalReadLine.Invoke()
+        Set-StrictMode -Off
+        $Global:__su_state.IsInExecution = $true
+        $Global:__su_state.LastError = if ($global:Error.Count -gt 0) { $global:Error[0] } else { $null }
+        $Global:__su_state.LastNativeExit = $global:LASTEXITCODE
+        [Console]::Write((__su_seq "133;C"))
+        $commandLine
+    }
+}
