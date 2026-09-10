@@ -177,3 +177,525 @@ impl XtermJsEmu {
         // The color every slot takes when no program has changed it. Resolved
         // here rather than in the shim so a query is answered with the same
         // value whichever backend a session runs on.
+        let mut base = Vec::with_capacity(SLOTS);
+        for index in 0..=255u8 {
+            base.push(rgb_to_i32(profile.colors.rgb(index)));
+        }
+        base.push(rgb_to_i32(profile.colors.foreground));
+        base.push(rgb_to_i32(profile.colors.background));
+        base.push(rgb_to_i32(profile.colors.cursor));
+        // A profile can ask for more scrollback than the count crossing into
+        // JS can hold. Saturating keeps a deep request deep; the cast alone
+        // would wrap it round to a shallow one.
+        let scrollback = u32::try_from(profile.scrollback).unwrap_or(u32::MAX);
+        let runtime = Runtime::new()?;
+        let ctx = Context::full(&runtime)?;
+
+        ctx.with(|ctx| -> anyhow::Result<()> {
+            // Shim first: the bundle reads `process`/`exports` while it
+            // evaluates, not just when the terminal is constructed.
+            ctx.eval::<(), _>(SHIM)?;
+            ctx.eval::<(), _>(XTERM_BUNDLE)?;
+            ctx.eval::<(), _>(UNICODE11)?;
+            ctx.eval::<(), _>(UNICODE11_CAPTURE)?;
+            let boot: Function = ctx.globals().get("__boot")?;
+            let emu: Object = boot.call((cols, rows, scrollback, base.clone()))?;
+            ctx.globals().set("__emu", emu)?;
+            Ok(())
+        })?;
+
+        let mut emu = XtermJsEmu {
+            _runtime: runtime,
+            ctx,
+            cols,
+            rows,
+            profile: *profile,
+            fault: Mutex::new(None),
+            bells,
+            clipboard_validator: ClipboardValidator::unsupported(),
+        };
+        emu.sync_size();
+        Ok(emu)
+    }
+
+    /// Adopt the size xterm.js settled on.
+    fn sync_size(&mut self) {
+        self.cols = self.call::<i32>("cols").clamp(0, u16::MAX as i32) as u16;
+        self.rows = self.call::<i32>("rows").clamp(0, u16::MAX as i32) as u16;
+    }
+
+    /// Call a zero-argument method on the shim's emulator object.
+    ///
+    /// No `this` is threaded through: every method the shim returns is a
+    /// closure over its own `term`, so the receiver is unused, and rquickjs
+    /// would otherwise pass a `This` wrapper as the first positional argument.
+    fn call<R>(&self, method: &str) -> R
+    where
+        R: for<'js> rquickjs::FromJs<'js> + Default,
+    {
+        self.call_or(method, R::default())
+    }
+
+    /// Like [`Self::call`], for a method whose failure should not read as
+    /// `false`: a cursor is visible unless something says otherwise.
+    fn call_or<R>(&self, method: &str, fallback: R) -> R
+    where
+        R: for<'js> rquickjs::FromJs<'js>,
+    {
+        self.invoke(method, |emu, _| emu.get::<_, Function>(method)?.call(()))
+            .unwrap_or(fallback)
+    }
+
+    /// Call a one-argument method on the shim's emulator object.
+    fn call_with<R>(&self, method: &str, arg: impl for<'js> rquickjs::IntoJs<'js>) -> R
+    where
+        R: for<'js> rquickjs::FromJs<'js> + Default,
+    {
+        self.invoke(method, |emu, _| {
+            emu.get::<_, Function>(method)?.call((arg,))
+        })
+        .unwrap_or_default()
+    }
+
+    /// Run one call against the shim's emulator object, recording a thrown
+    /// exception rather than reporting the call's own default in its place.
+    ///
+    /// A reader that only sees the fallback cannot tell an empty grid from a
+    /// grid it failed to read, which is the distinction [`Self::fault`] keeps.
+    fn invoke<R, F>(&self, method: &str, body: F) -> Option<R>
+    where
+        R: for<'js> rquickjs::FromJs<'js>,
+        F: for<'js> FnOnce(&Object<'js>, &Ctx<'js>) -> rquickjs::Result<R>,
+    {
+        let result = self.ctx.with(|ctx| {
+            let outcome = (|| -> rquickjs::Result<R> {
+                let emu: Object = ctx.globals().get("__emu")?;
+                body(&emu, &ctx)
+            })();
+            outcome.map_err(|error| describe(&ctx, method, error))
+        });
+        match result {
+            Ok(value) => Some(value),
+            Err(message) => {
+                self.record_fault(message);
+                None
+            }
+        }
+    }
+
+    /// Keep the first fault; see [`XtermJsEmu::fault`].
+    fn record_fault(&self, message: String) {
+        let mut fault = self
+            .fault
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if fault.is_none() {
+            *fault = Some(message);
+        }
+    }
+
+    /// Decode one packed row span.
+    ///
+    /// Rows are read in batches rather than all at once. A full-scrollback
+    /// grid is 5,000 rows, and packing it in one call builds a JS array of six
+    /// boxed numbers per cell — 2.4 million of them — which lands above what
+    /// QuickJS reclaims eagerly and below what makes it collect, so a poll loop
+    /// calling `full_rows` grew the daemon by tens of megabytes per call.
+    /// Batching keeps each allocation small enough to be collected between
+    /// calls.
+    fn rows_in_range(&self, start: i32, end: i32) -> Vec<Vec<EmuCell>> {
+        let (cols, _) = self.size();
+        let cols = cols as usize;
+        if cols == 0 {
+            return Vec::new();
+        }
+
+        let mut out = Vec::with_capacity((end - start).max(0) as usize);
+        for batch in (start..end).step_by(PACK_BATCH_ROWS) {
+            let batch_end = (batch + PACK_BATCH_ROWS as i32).min(end);
+            let packed = self
+                .ctx
+                .with(|ctx| -> rquickjs::Result<(String, Vec<i32>, String)> {
+                    let emu: Object = ctx.globals().get("__emu")?;
+                    let packed: rquickjs::Array =
+                        emu.get::<_, Function>("pack")?.call((batch, batch_end))?;
+                    Ok((packed.get(0)?, packed.get(1)?, packed.get(2)?))
+                });
+            let (chars, meta, links) = match packed {
+                Ok(p) => p,
+                Err(_) => return Vec::new(),
+            };
+            decode_into(&mut out, &chars, &meta, &decode_links(&links), cols);
+        }
+        out
+    }
+}
+
+/// Rebuild the batch's link table, whose entries the packed cells index by
+/// their position in it, one-based so that `0` means "no link".
+///
+/// Each entry is the `id=` parameter, empty when the sequence carried none,
+/// then NUL, then the URI. Entries are separated by `\u{1}`, which cannot
+/// appear in either: xterm.js parses an OSC payload only up to a C0 byte.
+fn decode_links(packed: &str) -> Vec<Arc<Hyperlink>> {
+    if packed.is_empty() {
+        return Vec::new();
+    }
+    packed
+        .split('\u{1}')
+        .map(|entry| {
+            let (id, uri) = entry.split_once('\0').unwrap_or(("", entry));
+            Arc::new(Hyperlink {
+                id: (!id.is_empty()).then(|| id.to_compact_string()),
+                uri: uri.to_compact_string(),
+            })
+        })
+        .collect()
+}
+
+/// Decode a packed batch into whole rows, appending to `out`.
+fn decode_into(
+    out: &mut Vec<Vec<EmuCell>>,
+    chars: &str,
+    meta: &[i32],
+    links: &[Arc<Hyperlink>],
+    cols: usize,
+) {
+    let mut cells = chars.split('\0');
+    let mut row = Vec::with_capacity(cols);
+    for m in meta.as_chunks::<STRIDE>().0 {
+        let ch = cells.next().unwrap_or("");
+        let (width, fg, bg, ul_color, ul_style, flags, link) =
+            (m[0], m[1], m[2], m[3], m[4], m[5], m[6]);
+
+        // Width alone does not identify a continuation. xterm.js also reports
+        // width 0 for a genuine zero-width grapheme that had no base character
+        // to combine with (a lone combining mark, ZWSP, ZWJ, or a variation
+        // selector at the start of a row): that cell owns its column and holds
+        // real text. Only an *empty* zero-width cell is the second column of a
+        // double-width character. Reading width alone dropped the grapheme and
+        // left the row one column short of the grid.
+        let ch = if !ch.is_empty() {
+            ch.to_compact_string()
+        } else if width == 0 {
+            CompactString::const_new(CONTINUATION)
+        } else {
+            CompactString::const_new(" ")
+        };
+
+        row.push(EmuCell {
+            ch,
+            fg: color(fg, flags, FG_PALETTE, FG_RGB),
+            bg: color(bg, flags, BG_PALETTE, BG_RGB),
+            underline: underline(ul_style),
+            underline_color: color(ul_color, flags, UL_PALETTE, UL_RGB),
+            attrs: attrs(flags),
+            hyperlink: usize::try_from(link)
+                .ok()
+                .and_then(|link| links.get(link.checked_sub(1)?))
+                .cloned(),
+        });
+
+        if row.len() == cols {
+            out.push(std::mem::replace(&mut row, Vec::with_capacity(cols)));
+        }
+    }
+}
+
+impl Emulator for XtermJsEmu {
+    fn process(&mut self, bytes: &[u8]) {
+        self.clipboard_validator.process(bytes);
+        // Fed as bytes rather than as a string on purpose: xterm.js runs its
+        // own incremental UTF-8 decoder over a byte array and carries a
+        // partial sequence across calls, which is what keeps a multi-byte
+        // character split across two PTY reads from being corrupted.
+        let bell_count: i32 = self
+            .invoke("feed", |emu, ctx| {
+                let buf = rquickjs::TypedArray::<u8>::new(ctx.clone(), bytes)?;
+                let result: Object = emu.get::<_, Function>("feed")?.call((buf,))?;
+                result.get("bell_count")
+            })
+            .unwrap_or_default();
+        for _ in 0..bell_count.max(0) {
+            self.bells.ring();
+        }
+    }
+
+    fn fault(&self) -> Option<String> {
+        self.fault
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .or_else(|| self.clipboard_validator.fault())
+    }
+
+    fn take_pending_writes(&mut self) -> Vec<u8> {
+        self.call::<String>("takeReplies").into_bytes()
+    }
+
+    fn mode(&self, mode: TerminalMode) -> bool {
+        // Not in xterm.js's `modes`; it lives on the core service instead.
+        if mode == TerminalMode::CursorVisible {
+            return self.call_or("cursorVisible", true);
+        }
+        self.invoke("mode", |emu, ctx| {
+            let name = rquickjs::String::from_str(ctx.clone(), mode.name())?;
+            emu.get::<_, Function>("mode")?.call((name,))
+        })
+        .unwrap_or(0i32)
+            != 0
+    }
+
+    fn resize(&mut self, cols: u16, rows: u16) {
+        self.invoke("resize", |emu, _| {
+            emu.get::<_, Function>("resize")?.call((cols, rows))
+        })
+        .unwrap_or(());
+        // Read the size back rather than trusting the request: xterm.js clamps
+        // to its 2x1 minimum, and recording a smaller size than the grid it
+        // actually holds makes every later decode mis-chunk the rows.
+        self.sync_size();
+    }
+
+    fn size(&self) -> (u16, u16) {
+        (self.cols, self.rows)
+    }
+
+    fn cursor(&self) -> (u16, u16) {
+        let x = self.call::<i32>("cursorX").max(0) as u16;
+        let y = self.call::<i32>("cursorY").max(0) as u16;
+        (
+            x.min(self.cols.saturating_sub(1)),
+            y.min(self.rows.saturating_sub(1)),
+        )
+    }
+
+    fn title(&self) -> Option<String> {
+        self.call::<Option<String>>("title")
+            .filter(|title| !title.is_empty())
+    }
+
+    fn cursor_key_application(&self) -> bool {
+        self.call_or("cursorKeyApplication", 0) != 0
+    }
+
+    fn cursor_shape(&self) -> CursorShape {
+        match self.call::<String>("cursorShape").as_str() {
+            "underline" => CursorShape::Underline,
+            "bar" => CursorShape::Bar,
+            // xterm.js also spells the beam `bar`, and a terminal that has
+            // been told nothing draws a block.
+            _ => CursorShape::Block,
+        }
+    }
+
+    /// What a program set, else what the profile configured.
+    ///
+    /// The shim reports -1 for a slot no program has touched, which is what
+    /// keeps a reset from having to remember the configured color separately.
+    fn color(&self, slot: ColorSlot) -> Rgb {
+        let colors = &self.profile.colors;
+        let (index, configured) = match slot {
+            ColorSlot::Indexed(index) => (index as usize, colors.rgb(index)),
+            ColorSlot::Foreground => (FOREGROUND, colors.foreground),
+            ColorSlot::Background => (BACKGROUND, colors.background),
+            ColorSlot::Cursor => (CURSOR, colors.cursor),
+        };
+        match self.call_with::<i32>("colorOverride", index as i32) {
+            set if set >= 0 => Rgb::new(
+                ((set >> 16) & 0xff) as u8,
+                ((set >> 8) & 0xff) as u8,
+                (set & 0xff) as u8,
+            ),
+            _ => configured,
+        }
+    }
+
+    fn colors(&self) -> ColorTable {
+        let colors = &self.profile.colors;
+        let mut table = ColorTable {
+            foreground: colors.foreground,
+            background: colors.background,
+            cursor: colors.cursor,
+            palette: std::array::from_fn(|index| colors.rgb(index as u8)),
+        };
+        // One crossing carrying only the slots a program changed, rather than
+        // 259 asking about slots it mostly has not.
+        let flat: Vec<i32> = self.call("colorOverrides");
+        for [slot, value] in flat.as_chunks::<2>().0 {
+            let (slot, value) = (*slot, *value);
+            if value < 0 {
+                continue;
+            }
+            let rgb = Rgb::new(
+                ((value >> 16) & 0xff) as u8,
+                ((value >> 8) & 0xff) as u8,
+                (value & 0xff) as u8,
+            );
+            match slot as usize {
+                FOREGROUND => table.foreground = rgb,
+                BACKGROUND => table.background = rgb,
+                CURSOR => table.cursor = rgb,
+                index if index < 256 => table.palette[index] = rgb,
+                _ => {}
+            }
+        }
+        table
+    }
+
+    fn viewable_rows(&self) -> Vec<Vec<EmuCell>> {
+        self.rows_in_range(self.call_with("start", false), self.call_with("end", false))
+    }
+
+    fn active_rows(&self) -> Vec<Vec<EmuCell>> {
+        let start: i32 = self.call("history");
+        self.rows_in_range(start, start + i32::from(self.size().1))
+    }
+
+    fn scroll(&mut self, target: crate::api::ScrollTarget) {
+        match target {
+            crate::api::ScrollTarget::Lines(lines) => self.call_with::<()>("scroll", lines),
+            crate::api::ScrollTarget::Top => self.call::<()>("scrollTop"),
+            crate::api::ScrollTarget::Bottom => self.call::<()>("scrollBottom"),
+        }
+    }
+
+    fn viewport(&self) -> crate::api::Viewport {
+        crate::api::Viewport {
+            offset: self.call::<u32>("offset") as usize,
+            history: self.call::<u32>("history") as usize,
+        }
+    }
+
+    fn full_rows(&self) -> Vec<Vec<EmuCell>> {
+        self.rows_in_range(0, self.call_with("end", true))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recording_seed_decodes_only_the_active_screen() {
+        let mut emulator = XtermJsEmu::new(80, 3, &Profile::default()).unwrap();
+        emulator.process(&b"row\r\n".repeat(10_003));
+        assert_eq!(emulator.viewport().history, 10_000);
+        let active = emulator.viewable_rows();
+        emulator.scroll(crate::api::ScrollTarget::Top);
+        let viewport = emulator.viewport();
+        emulator
+            .ctx
+            .with(|ctx| {
+                ctx.eval::<(), _>(
+                    "globalThis.__packedRows = 0;
+                     var pack = __emu.pack;
+                     __emu.pack = function(start, end) {
+                         __packedRows += end - start;
+                         return pack(start, end);
+                     };",
+                )
+            })
+            .unwrap();
+        let seed = crate::record::cast::snapshot_to_ansi(&emulator);
+        let decoded = emulator
+            .ctx
+            .with(|ctx| ctx.eval::<u32, _>("__packedRows"))
+            .unwrap();
+        assert_eq!(decoded, 3, "recording seed decoded retained history");
+        assert_eq!(emulator.viewport(), viewport);
+        let mut replay = XtermJsEmu::new(80, 3, &Profile::default()).unwrap();
+        replay.process(seed.as_bytes());
+        assert_eq!(replay.viewable_rows(), active);
+    }
+
+    /// A JS exception has to reach the caller, not read back as an empty grid.
+    ///
+    /// Everything below `process` returns a value rather than a `Result`, so
+    /// before this a thrown exception left the grid frozen at whatever it last
+    /// held and every later read reported that stale grid as fact.
+    #[test]
+    fn a_thrown_exception_is_reported_rather_than_swallowed() {
+        let mut emu = XtermJsEmu::new(10, 2, &Profile::default()).expect("create emulator");
+        emu.process(b"ok");
+        assert!(emu.fault().is_none(), "a healthy emulator has no fault");
+
+        // Break `feed` the way a bundle upgrade moving a private API would.
+        emu.ctx
+            .with(|ctx| -> rquickjs::Result<()> {
+                let emu: Object = ctx.globals().get("__emu")?;
+                let thrower: Function =
+                    ctx.eval("(function () { throw new Error('feed exploded'); })")?;
+                emu.set("feed", thrower)
+            })
+            .expect("replace feed");
+
+        emu.process(b"more");
+        let fault = emu.fault().expect("the exception is recorded");
+        assert!(
+            fault.contains("feed exploded"),
+            "the fault carries the JS message: {fault}"
+        );
+
+        // The first fault wins: a later failure does not overwrite the message
+        // that named the cause.
+        emu.resize(20, 4);
+        assert_eq!(
+            emu.fault().as_deref(),
+            Some(fault.as_str()),
+            "the first fault is kept"
+        );
+    }
+
+    #[test]
+    fn multiple_bells_in_one_chunk_are_counted_individually() {
+        let bells = BellTracker::default();
+        let mut emulator =
+            XtermJsEmu::with_bell_tracker(80, 24, &Profile::default(), bells.clone())
+                .expect("create emulator");
+
+        emulator.process(b"\x07\x07");
+
+        assert_eq!(bells.count(), 2);
+        assert_eq!(bells.sequence(), 2);
+    }
+
+    #[test]
+    fn an_osc_bell_terminator_does_not_ring_the_terminal_bell() {
+        let bells = BellTracker::default();
+        let mut emulator =
+            XtermJsEmu::with_bell_tracker(80, 24, &Profile::default(), bells.clone())
+                .expect("create emulator");
+
+        emulator.process(b"\x1b]0;window");
+        emulator.process(b" title\x07");
+        assert_eq!(bells.count(), 0);
+
+        emulator.process(b"\x07");
+        assert_eq!(bells.count(), 1);
+    }
+
+    crate::emulator_conformance_tests!(
+        |cols, rows, profile| {
+            Box::new(XtermJsEmu::new(cols, rows, profile).expect("create xterm.js emulator"))
+        },
+        &[
+            // xterm.js keeps a cell's underline color in an extended-attribute
+            // record it allocates only for a cell that has an underline style,
+            // so `SGR 58` alone is not readable back off the cell. Verified
+            // against the bundle rather than inferred: the cell reports
+            // `isAttributeDefault()`, and the color is absent from the line's
+            // extended attributes while remaining in the current SGR state.
+            crate::terminal::conformance::Divergence::UnderlineColorNeedsAStyle,
+            // Clipboard access is unavailable.
+            crate::terminal::conformance::Divergence::ClipboardUnsupported,
+            // xterm.js has no Kitty keyboard protocol implementation at all:
+            // the bundle contains no handler for `CSI > u`, `CSI = u`, or
+            // `CSI < u`, so the modes a child pushes are parsed and dropped.
+            crate::terminal::conformance::Divergence::NoKittyKeyboard,
+            // `ESC c` clears every other mode on this backend but leaves a
+            // hidden cursor hidden.
+            crate::terminal::conformance::Divergence::RisDoesNotResetCursorVisibility,
+        ]
+    );
+}

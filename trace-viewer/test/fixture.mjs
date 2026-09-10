@@ -47,3 +47,69 @@ export function fixture() {
   };
   const stage = {
     stage_index: 1, expression_path: "root", evaluations: 1, mode: "parent_style_filter", direction: "within",
+    requested_occurrence: "any", effective_occurrence: "any", occurrence_source: "explicit",
+    input_candidate_count: 1, raw_candidate_count: 1, style_candidate_count: 0, selected_count: 0,
+    candidates: [], candidates_truncated: false, mismatches_truncated: false,
+  };
+  return structuredClone({
+    details: {
+      schema_version: 1, signature: "sha256:test", reason: "locator_no_match", summary: hostile, outcome: "failed", truncated: false,
+      operation: { name: "locator.expect", elapsed_ms: 20, timeout_ms: 20, started_screen_sequence: 2, failed_screen_sequence: 3 },
+      terminal: {
+        size: frames[2].size, cursor: frames[2].cursor, title: hostile, last_visual_change_ms: 30, unchanged_for_ms: 9,
+        screen_history: { limit: 10, dropped_screen_count: 1, dropped_checkpoint_count: 2, dropped_row_count: 0, screens: frames },
+      },
+      runtime: {
+        session_name: "deployment-wizard", shell: "pwsh", backend: "alacritty", target_os: "test", target_arch: "test",
+        termprobe_version: "fixture",
+        timeouts: { text: 5000, idle: 5000, command: 30000, exit: 30000, ready: 30000 },
+      },
+      process: { pid: 123, state: "running", cancelled: false, ready: true, command_running: false },
+      recent_operations: [
+        operation(1, "evicted check", 999, { kind: "unavailable", reason: "evidence limit" }),
+        operation(2, "ready", 1, ready),
+        operation(3, "ready again", 1, ready),
+        operation(4, "submit", 2, undefined, "ok", { arguments: { kind: "submit", data: "DEPLOY staging" }, sent_bytes: [65, 13] }),
+        operation(5, "passing on failure screen", 3, { kind: "locator", query: query("A"), outcome: "visible" }),
+        operation(6, "locator.expect", 3, { kind: "locator", query: query("A", { foreground: "2" }), outcome: "visible" }, "assertion"),
+      ],
+      locator: {
+        search_scope: "full", viewport_origin_y: 7, final_candidate_count: 0, failure_stage: 1, selected: [],
+        stages: [
+          { ...stage, stage_index: 0, mismatches: [{ ...mismatch, location: { column: 3, row: 7 } }] },
+          { ...stage, mismatches: [mismatch, { ...mismatch, property: "underline_color" }] },
+        ],
+      },
+      hints: [{ code: "inspect_style_mismatch", message: "The selector found candidate text, but its requested style did not match." }],
+      context: { test: hostile },
+    },
+    timeline: { geometry, frames, failure_screen_sequence: 3 },
+    explanation: {
+      title: "Foreground mismatch", expected: '"style": foreground equals ANSI 2 (green slot)',
+      actual: "Candidate matched, but foreground was ANSI 1 (red slot); rendered #112233.",
+      note: "Select a highlighted cell for its exact comparison.",
+    },
+    files: [{ path: "session.cast", status: "omitted", reason: "inclusion is opt-in" }], errors: [],
+    attachments: [
+      attachment("current.svg", frames[2].svg), attachment("current.txt", frames[2].text),
+      attachment("failure.md", hostile), attachment("timeline.json", JSON.stringify({ frames })),
+      attachment("failure.json", JSON.stringify({ summary: hostile })),
+    ],
+  });
+}
+
+export async function renderReport(data) {
+  const base = new URL("../../crates/termprobe/assets/trace-viewer/", import.meta.url);
+  const [template, css, js] = await Promise.all(["report.html", "report.min.css", "report.min.js"].map((name) =>
+    readFile(new URL(name, base), "utf8")));
+  const json = JSON.stringify(data).replace(/[<>&\u2028\u2029]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`);
+  return template.replace("/* REPORT_CSS */", () => css).replace("/* REPORT_JS */", () => js)
+    .replace("null /* REPORT_DATA */", () => json);
+}
+
+export async function writeReport(filename, data = fixture()) {
+  await mkdir(path.dirname(filename), { recursive: true });
+  await writeFile(filename, await renderReport(data));
+  return filename;
+}
