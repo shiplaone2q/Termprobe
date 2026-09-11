@@ -330,3 +330,707 @@ impl Session {
             logger,
             reader: Some(reader_handle),
             _process_watcher: process_watcher,
+        })
+    }
+
+    pub fn write(&self, data: &[u8]) -> anyhow::Result<()> {
+        if data.is_empty() {
+            return Ok(());
+        }
+        self.logger.write(data);
+        {
+            let mut st = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if !st.tracker.executing() {
+                let started_count = st.tracker.started_count();
+                st.awaiting_start = Some(started_count);
+            }
+        }
+        self.pty.write(data)?;
+        Ok(())
+    }
+
+    pub fn resize(&self, cols: u16, rows: u16) -> Result<(), crate::api::TermprobeError> {
+        validate_size(cols, rows)?;
+        self.logger.event(&format!("resize {cols}x{rows}"));
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        // Keep output processing and recording on the old size unless the PTY
+        // accepts the resize. In particular, never feed zero sizes to an emulator.
+        self.pty.resize(cols, rows).map_err(|error| {
+            crate::api::TermprobeError::internal(format!("failed to resize PTY: {error}"))
+        })?;
+        resize_emulator_and_record(&mut state, &self.recorder, cols, rows);
+        Ok(())
+    }
+
+    pub fn scroll(&self, target: crate::api::ScrollTarget) -> Result<(), crate::api::TermprobeError> {
+        let _input = self
+            .viewport_input
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        scroll_emulator_and_record(&mut state, target)
+    }
+
+    pub fn start_recording(
+        &self,
+        options: ManualRecordingOptions,
+    ) -> Result<(), crate::api::TermprobeError> {
+        let ManualRecordingOptions {
+            path,
+            format,
+            fps,
+            speed,
+            idle_time_limit,
+            zoom,
+            background,
+        } = options;
+        if path.trim().is_empty() {
+            return Err(crate::api::TermprobeError::usage(
+                "recording path must not be empty",
+            ));
+        }
+        let format = format
+            .or_else(|| crate::api::RecordingFormat::infer(&path))
+            .ok_or_else(|| {
+                crate::api::TermprobeError::usage(
+                    "cannot infer recording format; use .png, .apng, .gif, .mp4, or .cast",
+                )
+            })?;
+        let zoom = crate::api::resolve_zoom(zoom)?;
+        if format == crate::api::RecordingFormat::Cast && zoom != 1.0 {
+            return Err(crate::api::TermprobeError::usage(
+                "zoom is only supported for image and video recordings",
+            ));
+        }
+        if format == crate::api::RecordingFormat::Cast && background.is_some() {
+            return Err(crate::api::TermprobeError::usage(
+                "background customization is only supported for image and video recordings",
+            ));
+        }
+        if format == crate::api::RecordingFormat::Mp4
+            && background == Some(crate::api::CaptureBackground::Transparent)
+        {
+            return Err(crate::api::TermprobeError::usage(
+                "transparent backgrounds are not supported for MP4 recordings",
+            ));
+        }
+        #[cfg(not(feature = "recording-raster"))]
+        if format != crate::api::RecordingFormat::Cast {
+            return Err(crate::api::TermprobeError::usage(
+                "APNG, GIF, and MP4 recording require the termprobe 'recording-raster' feature",
+            ));
+        }
+        #[cfg(feature = "recording-raster")]
+        let ffmpeg_path = recording_ffmpeg_path(format)?;
+        let fps = fps.unwrap_or(30);
+        if fps == 0 {
+            return Err(crate::api::TermprobeError::usage(
+                "recording fps must be greater than zero",
+            ));
+        }
+        let speed = speed.unwrap_or(1.0);
+        if !speed.is_finite() || speed <= 0.0 {
+            return Err(crate::api::TermprobeError::usage(
+                "recording speed must be finite and greater than zero",
+            ));
+        }
+        let idle_time_limit = idle_time_limit.unwrap_or(5.0);
+        if !idle_time_limit.is_finite() || idle_time_limit < 0.0 {
+            return Err(crate::api::TermprobeError::usage(
+                "idle time limit must be a finite, non-negative number of seconds",
+            ));
+        }
+        let idle_time_limit = std::time::Duration::try_from_secs_f64(idle_time_limit)
+            .map_err(|_| crate::api::TermprobeError::usage("idle time limit is too large"))?;
+        std::time::Duration::try_from_secs_f64(idle_time_limit.as_secs_f64() / speed)
+            .map_err(|_| crate::api::TermprobeError::usage("recording speed is too small"))?;
+
+        let target_path = PathBuf::from(path);
+        let capture_path = if format == crate::api::RecordingFormat::Cast {
+            target_path.clone()
+        } else {
+            record::sidecar_path(&target_path)
+        };
+        let mut env = vec![("TERM".to_string(), "xterm-256color".to_string())];
+        if let Some(shell) = self.shell {
+            env.push(("SHELL".to_string(), shell.as_str().to_string()));
+        }
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let (cols, rows) = state.emu.size();
+        let initial_output = record::cast::snapshot_to_ansi(state.emu.as_ref());
+        let request = StartRecording {
+            target_path,
+            capture_path,
+            format,
+            cols,
+            rows,
+            env,
+            initial_output,
+            #[cfg(feature = "recording-raster")]
+            zoom,
+            #[cfg(feature = "recording-raster")]
+            style: state.style.clone(),
+            #[cfg(feature = "recording-raster")]
+            background,
+            #[cfg(feature = "recording-raster")]
+            timeline: record::frames::TimelineOptions {
+                fps,
+                speed,
+                idle_time_limit,
+                ..record::frames::TimelineOptions::default()
+            },
+            #[cfg(feature = "recording-raster")]
+            ffmpeg_path,
+        };
+        #[cfg(feature = "recording-raster")]
+        let frames = if format == crate::api::RecordingFormat::Cast {
+            None
+        } else {
+            Some(
+                record::frames::FrameCapture::new(
+                    state.emu.as_ref(),
+                    request.timeline.clone(),
+                    Instant::now(),
+                )
+                .map_err(|error| crate::api::TermprobeError::internal(error.to_string()))?,
+            )
+        };
+        self.recorder.start(request).map_err(capture_error)?;
+        #[cfg(feature = "recording-raster")]
+        {
+            let mut state = state;
+            state.recording_frames = frames;
+        }
+        Ok(())
+    }
+
+    pub fn stop_recording(&self) -> Result<String, crate::api::TermprobeError> {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        #[cfg(feature = "recording-raster")]
+        let mut state = state;
+        #[cfg(feature = "recording-raster")]
+        let frames = state.recording_frames.take();
+        let stopped = self.recorder.stop().map_err(capture_error)?;
+        drop(state);
+        if stopped.format == crate::api::RecordingFormat::Cast {
+            return Ok(stopped.target_path.to_string_lossy().into_owned());
+        }
+
+        #[cfg(not(feature = "recording-raster"))]
+        return Err(crate::api::TermprobeError::internal(
+            "raster recording was started without the 'recording-raster' feature",
+        ));
+
+        #[cfg(feature = "recording-raster")]
+        {
+            let temporary_path = temporary_output_path(&stopped.target_path);
+            let result = (|| -> anyhow::Result<()> {
+                let frames = frames
+                    .ok_or_else(|| anyhow::anyhow!("recording frames are unavailable"))?
+                    .finish()?;
+                let (max_cols, max_rows) = record::frames::max_dimensions(&frames)?;
+                let mut renderer = GridRenderer::with_zoom_and_background(
+                    max_cols,
+                    max_rows,
+                    2.0 * stopped.zoom,
+                    stopped.style.clone(),
+                    stopped.background,
+                )?;
+                crate::render::encode::encode(
+                    &temporary_path,
+                    stopped.format,
+                    &frames,
+                    &mut renderer,
+                    stopped.timeline.fps,
+                    stopped.ffmpeg_path.as_deref(),
+                )?;
+                replace_output(&temporary_path, &stopped.target_path)?;
+                cleanup_sidecar(&stopped.capture_path, |message| self.logger.event(message));
+                Ok(())
+            })();
+
+            match result {
+                Ok(()) => Ok(stopped.target_path.to_string_lossy().into_owned()),
+                Err(error) => {
+                    let _ = std::fs::remove_file(&temporary_path);
+                    Err(crate::api::TermprobeError::internal(format!(
+                        "failed to export recording; captured cast retained at {}: {error}",
+                        stopped.capture_path.display()
+                    )))
+                }
+            }
+        }
+    }
+
+    pub fn kill(&self) {
+        self.cancelled.store(true, Ordering::Release);
+        self.pty.close();
+    }
+
+    pub fn pid(&self) -> Option<u32> {
+        self.child_pid
+    }
+
+    /// A parse failure the emulator hit on the reader thread, if any.
+    ///
+    /// See [`crate::terminal::emu::Emulator::fault`]. The reader has nobody to
+    /// return an error to, so the failure is recorded there and reported by
+    /// whichever operation runs next.
+    pub fn fault(&self) -> Option<String> {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.emu.fault().or_else(|| state.diagnostic_error.clone())
+    }
+
+    pub fn is_alive(&self) -> Result<bool, crate::api::TermprobeError> {
+        if self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .exited
+            .is_some()
+        {
+            return Ok(false);
+        }
+
+        let exit_code = self.pty.try_wait().map_err(|error| {
+            crate::api::TermprobeError::internal(format!("failed to query process status: {error}"))
+        })?;
+        let Some(status) = exit_code else {
+            return Ok(true);
+        };
+
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.exited.get_or_insert(status.code);
+        if state.exit_signal.is_none() {
+            state.exit_signal = status.signal;
+        }
+        Ok(false)
+    }
+
+    pub fn is_ready(&self) -> bool {
+        !self.cancelled.load(Ordering::Acquire)
+            && self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .is_ready()
+    }
+
+    pub fn flush_recording(&self) -> Result<(), crate::api::TermprobeError> {
+        self.recorder.flush().map_err(capture_error)
+    }
+
+    pub(crate) fn snapshot_automatic_recording(
+        &self,
+        target_path: PathBuf,
+        max_bytes: u64,
+    ) -> Result<record::AutomaticRecordingSnapshot, CaptureError> {
+        self.recorder.snapshot_automatic(target_path, max_bytes)
+    }
+
+    pub fn automatic_recording_enabled(&self) -> bool {
+        self.recorder.automatic_enabled()
+    }
+}
+
+fn resize_emulator_and_record(state: &mut TermState, recorder: &Recorder, cols: u16, rows: u16) {
+    recorder.on_resize(cols, rows);
+    state.emu.resize(cols, rows);
+    invalidate_emulator_view(state);
+    let _ = try_capture_visual_state(state, true);
+}
+
+pub(crate) fn scroll_emulator_and_record(
+    state: &mut TermState,
+    target: crate::api::ScrollTarget,
+) -> Result<(), crate::api::TermprobeError> {
+    let before = state.emu.viewport();
+    state.emu.scroll(target);
+    let after = state.emu.viewport();
+    if let Some(error) = state.emu.fault() {
+        return Err(crate::api::TermprobeError::internal(error));
+    }
+    if before != after {
+        invalidate_emulator_view(state);
+        try_capture_visual_state(state, true).map_err(crate::api::TermprobeError::internal)?;
+    }
+    Ok(())
+}
+
+fn invalidate_emulator_view(state: &mut TermState) {
+    state.visual_revision = state.visual_revision.wrapping_add(1);
+    state.screen_dirty = true;
+    state.last_change = Instant::now();
+    state.highlight = None;
+    #[cfg(feature = "recording-raster")]
+    capture_recording_frame(state);
+}
+
+#[cfg(feature = "recording-raster")]
+fn capture_recording_frame(state: &mut TermState) {
+    if let Some(frames) = state.recording_frames.as_mut() {
+        frames.capture(state.emu.as_ref(), Instant::now());
+    }
+}
+
+pub(crate) fn capture_visual_state(state: &mut TermState, force: bool) -> u64 {
+    if !state.screen_dirty {
+        return state
+            .screen_history
+            .observe_current(elapsed_ms(state.started_at));
+    }
+    if !force
+        && state.last_screen_sample.elapsed() < Duration::from_millis(crate::config::POLL_DELAY_MS)
+    {
+        return state.screen_history.current_sequence();
+    }
+    let rows = state.emu.viewable_rows();
+    let (cols, _) = state.emu.size();
+    let title = state.emu.title();
+    let viewport_cursor = state.emu.viewport_cursor();
+    let cursor = viewport_cursor.unwrap_or_else(|| state.emu.cursor());
+    let cursor_visible = viewport_cursor.is_some();
+    let cursor_shape = state.emu.cursor_shape();
+    let previous_sequence = state.screen_history.current_sequence();
+    let elapsed = elapsed_ms(state.started_at);
+    let sequence = state.screen_history.capture(
+        rows,
+        cols,
+        title,
+        cursor,
+        cursor_visible,
+        cursor_shape,
+        elapsed,
+        crate::render::svg::RenderState::capture(state.emu.as_ref()),
+    );
+    if sequence != previous_sequence {
+        state.last_visual_change_ms = elapsed;
+        state.last_change = Instant::now();
+    }
+    state.screen_dirty = false;
+    state.last_screen_sample = Instant::now();
+    sequence
+}
+
+pub(crate) fn try_capture_visual_state(state: &mut TermState, force: bool) -> Result<u64, String> {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        capture_visual_state(state, force)
+    })) {
+        Ok(sequence) => Ok(sequence),
+        Err(payload) => {
+            let message = format!(
+                "terminal diagnostic capture panicked: {}",
+                diagnostic_panic_message(payload.as_ref())
+            );
+            if state.diagnostic_error.is_none() {
+                state.diagnostic_error = Some(message.clone());
+            }
+            Err(message)
+        }
+    }
+}
+
+fn diagnostic_panic_message(payload: &(dyn std::any::Any + Send)) -> &str {
+    if let Some(message) = payload.downcast_ref::<&'static str>() {
+        message
+    } else if let Some(message) = payload.downcast_ref::<String>() {
+        message.as_str()
+    } else {
+        "unknown panic"
+    }
+}
+
+fn drain_reader_and_recorder(reader: &mut Option<JoinHandle<()>>, recorder: &mut Recorder) {
+    if let Some(reader) = reader.take() {
+        let _ = reader.join();
+    }
+    recorder.shutdown();
+}
+
+impl Drop for Session {
+    fn drop(&mut self) {
+        self.cancelled.store(true, Ordering::Release);
+        self.pty.close();
+        drain_reader_and_recorder(&mut self.reader, &mut self.recorder);
+    }
+}
+
+#[cfg(feature = "recording-raster")]
+fn recording_ffmpeg_path(
+    format: crate::api::RecordingFormat,
+) -> Result<Option<PathBuf>, crate::api::TermprobeError> {
+    recording_ffmpeg_path_with(format, shell::which)
+}
+
+#[cfg(feature = "recording-raster")]
+fn recording_ffmpeg_path_with(
+    format: crate::api::RecordingFormat,
+    find_executable: impl FnOnce(&str) -> Option<String>,
+) -> Result<Option<PathBuf>, crate::api::TermprobeError> {
+    if format != crate::api::RecordingFormat::Mp4 {
+        return Ok(None);
+    }
+    find_executable("ffmpeg")
+        .map(PathBuf::from)
+        .map(Some)
+        .ok_or_else(|| {
+            crate::api::TermprobeError::usage(
+                "MP4 recording requires ffmpeg to be installed and available on PATH",
+            )
+        })
+}
+
+fn capture_error(error: CaptureError) -> crate::api::TermprobeError {
+    match error {
+        CaptureError::AlreadyActive => {
+            crate::api::TermprobeError::usage("a recording is already active")
+        }
+        CaptureError::NotActive => crate::api::TermprobeError::usage("no recording is active"),
+        CaptureError::WorkerStopped => {
+            crate::api::TermprobeError::internal("recording worker stopped unexpectedly")
+        }
+        CaptureError::Io(message) => {
+            crate::api::TermprobeError::internal(format!("recording capture failed: {message}"))
+        }
+    }
+}
+
+#[cfg(feature = "recording-raster")]
+fn cleanup_sidecar(path: &std::path::Path, log: impl FnOnce(&str)) {
+    if let Err(error) = std::fs::remove_file(path) {
+        log(&format!(
+            "recording exported but failed to remove sidecar {}: {error}",
+            path.display()
+        ));
+    }
+}
+
+#[cfg(feature = "recording-raster")]
+fn temporary_output_path(target: &std::path::Path) -> PathBuf {
+    let mut name = target
+        .file_name()
+        .unwrap_or_else(|| std::ffi::OsStr::new("recording"))
+        .to_os_string();
+    name.push(".termprobe.tmp");
+    target.with_file_name(name)
+}
+
+#[cfg(all(feature = "recording-raster", not(windows)))]
+fn replace_output(source: &std::path::Path, target: &std::path::Path) -> std::io::Result<()> {
+    std::fs::rename(source, target)
+}
+
+#[cfg(all(feature = "recording-raster", windows))]
+fn replace_output(source: &std::path::Path, target: &std::path::Path) -> std::io::Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+
+    const MOVEFILE_REPLACE_EXISTING: u32 = 0x0000_0001;
+    const MOVEFILE_WRITE_THROUGH: u32 = 0x0000_0008;
+
+    extern "system" {
+        fn MoveFileExW(
+            existing_file_name: *const u16,
+            new_file_name: *const u16,
+            flags: u32,
+        ) -> i32;
+    }
+
+    let source = source
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
+    let target = target
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
+    let replaced = unsafe {
+        MoveFileExW(
+            source.as_ptr(),
+            target.as_ptr(),
+            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
+        )
+    };
+    if replaced == 0 {
+        Err(std::io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::terminal::alacritty::AlacrittyEmu;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::Duration;
+
+    #[test]
+    fn resize_is_queued_after_old_output_and_starts_a_new_idle_period() {
+        let path = test_path("resize-order");
+        let mut recorder = Recorder::create(
+            Some(path.clone()),
+            1,
+            1,
+            &[],
+            false,
+            Arc::new(Logger::disabled()),
+        )
+        .unwrap();
+        let started_at = Instant::now();
+        let state = Arc::new(Mutex::new(TermState {
+            emu: Box::new(AlacrittyEmu::new(1, 1, &Profile::default())),
+            profile: Profile::default(),
+            style: crate::render::style::Style::default(),
+            #[cfg(feature = "recording-raster")]
+            recording_frames: None,
+            tracker: CommandTracker::new(),
+            mouse_mode: MouseModeTracker::new(),
+            observed_clipboard_revision: 0,
+            started_at,
+            visual_revision: 0,
+            screen_history: ScreenHistory::new(crate::diagnostics::DEFAULT_SCREEN_HISTORY_LIMIT),
+            screen_dirty: true,
+            last_screen_sample: started_at,
+            last_visual_change_ms: 0,
+            diagnostic_error: None,
+            last_change: Instant::now(),
+            awaiting_start: None,
+            exited: None,
+            exit_signal: None,
+            exit_error: None,
+            highlight: None,
+        }));
+        let capture = recorder.capture();
+        let output_state = Arc::clone(&state);
+        let (locked_tx, locked_rx) = std::sync::mpsc::channel();
+        let (release_tx, release_rx) = std::sync::mpsc::channel();
+        let output = std::thread::spawn(move || {
+            let _state = output_state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            locked_tx.send(()).unwrap();
+            release_rx.recv().unwrap();
+            capture.on_data(b"old-size-output");
+        });
+        locked_rx.recv().unwrap();
+        let release = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(20));
+            release_tx.send(()).unwrap();
+        });
+
+        let resize_started = Instant::now();
+        resize_emulator_and_record(&mut state.lock().unwrap(), &recorder, 2, 1);
+        assert!(
+            state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .last_change
+                >= resize_started,
+            "wait idle must not reuse the quiet period from before a resize"
+        );
+        release.join().unwrap();
+        output.join().unwrap();
+        recorder.capture().on_data(b"new-size-output");
+        recorder.flush().unwrap();
+
+        let cast = std::fs::read_to_string(&path).unwrap();
+        let old = cast.find("old-size-output").unwrap();
+        let resize = cast.find("\"r\",\"2x1\"").unwrap();
+        let new = cast.find("new-size-output").unwrap();
+        assert!(old < resize && resize < new, "{cast}");
+
+        recorder.shutdown();
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[cfg(feature = "recording-raster")]
+    #[test]
+    fn mp4_requires_ffmpeg_before_recording_starts() {
+        let error = recording_ffmpeg_path_with(crate::api::RecordingFormat::Mp4, |_| None)
+            .expect_err("missing ffmpeg should reject MP4 recording");
+        assert_eq!(error.kind, crate::api::ErrorKind::Usage);
+        assert!(error.message.contains("ffmpeg"));
+
+        assert_eq!(
+            recording_ffmpeg_path_with(crate::api::RecordingFormat::Apng, |_| {
+                panic!("non-MP4 formats must not look for ffmpeg")
+            })
+            .unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn shutdown_drains_reader_tail_before_stopping_recorder() {
+        let path = test_path("reader-tail");
+        let mut recorder = Recorder::create(
+            Some(path.clone()),
+            1,
+            1,
+            &[],
+            false,
+            Arc::new(Logger::disabled()),
+        )
+        .unwrap();
+        let capture = recorder.capture();
+        let mut reader = Some(std::thread::spawn(move || {
+            capture.on_data(b"reader-tail-marker");
+        }));
+
+        drain_reader_and_recorder(&mut reader, &mut recorder);
+
+        assert!(std::fs::read_to_string(&path)
+            .unwrap()
+            .contains("reader-tail-marker"));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[cfg(feature = "recording-raster")]
+    #[test]
+    fn sidecar_cleanup_failure_does_not_fail_export() {
+        let missing = test_path("missing-sidecar");
+        let mut logged = None;
+        cleanup_sidecar(&missing, |message| logged = Some(message.to_string()));
+        assert!(logged
+            .as_deref()
+            .is_some_and(|message| message.contains("failed to remove sidecar")));
+    }
+
+    fn test_path(label: &str) -> PathBuf {
+        static SEQUENCE: AtomicU64 = AtomicU64::new(0);
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .join("target")
+            .join("session-tests");
+        std::fs::create_dir_all(&root).unwrap();
+        root.join(format!(
+            "{label}-{}-{}.cast",
+            std::process::id(),
+            SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ))
+    }
+}
