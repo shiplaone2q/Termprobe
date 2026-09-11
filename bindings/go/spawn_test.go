@@ -69,3 +69,54 @@ func verifyLaunchTimeouts(t *testing.T, launch string, testCase launchTimeoutCas
 	terminal := newClient(t, termprobe.ClientOptions{Timeouts: clientLaunchTimeouts()})
 	options := termprobe.SpawnOptions{WaitReady: termprobe.Ptr(false), Timeouts: testCase.options}
 	if launch == "run" {
+		runTerminal(t, terminal, options)
+	} else {
+		_, err := terminal.Open(termprobe.OpenOptions{SpawnOptions: options})
+		requireNoError(t, err)
+	}
+	state, err := terminal.State()
+	requireNoError(t, err)
+	if state.Timeouts != testCase.expected {
+		t.Fatalf("launch timeouts=%+v, expected %+v", state.Timeouts, testCase.expected)
+	}
+}
+
+func TestInvalidLaunchRetryPreservesSharedSession(t *testing.T) {
+	for _, launch := range []string{"open", "run"} {
+		t.Run(launch, func(t *testing.T) {
+			terminal := newTerminal(t, termprobe.ClientOptions{})
+			peer, err := termprobe.New(terminal.Session(), termprobe.ClientOptions{})
+			requireNoError(t, err)
+			options := termprobe.SpawnOptions{Backend: termprobe.Backend("unknown"), Retries: 1, Restart: termprobe.Ptr(false)}
+			if launch == "run" {
+				_, err = peer.Run("ignored", nil, options)
+			} else {
+				_, err = peer.Open(termprobe.OpenOptions{SpawnOptions: options})
+			}
+			requireKind(t, err, termprobe.UsageError)
+			requireNoError(t, terminal.GetByText("go-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(time.Duration(0))}))
+			requireNoError(t, terminal.Submit(termprobe.Ptr("session-survived")))
+			requireNoError(t, peer.GetByText("received:session-survived", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(time.Second)}))
+		})
+	}
+}
+
+func TestLaunchRetriesReadinessFailure(t *testing.T) {
+	directory := t.TempDir()
+	terminal := newClient(t, termprobe.ClientOptions{})
+	executable, err := os.Executable()
+	requireNoError(t, err)
+	marker := filepath.Join(directory, "first-launch")
+	result, err := terminal.Run(executable, []string{"-test.run=^TestRetryTerminalProcess$", "--", "--tui-go-retry-child"}, termprobe.SpawnOptions{
+		Cwd: directory, WaitReady: termprobe.Ptr(true), Retries: 1,
+		Timeouts: termprobe.Timeouts{Ready: termprobe.Ptr(3 * time.Second)},
+	})
+	requireNoError(t, err)
+	if !result.Ready {
+		t.Fatal("retry returned before the second launch was ready")
+	}
+	_, err = os.Stat(marker)
+	requireNoError(t, err)
+	requireNoError(t, terminal.Submit(termprobe.Ptr("retried")))
+	requireNoError(t, terminal.GetByText("received:retried", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(3 * time.Second)}))
+}

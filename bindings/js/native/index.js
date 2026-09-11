@@ -63,3 +63,5 @@ const functions = { ...bind(library), library, platformLibrary };
 const version = functions.tui_abi_version();
 if (version !== abiVersion) {
   throw new Error(`termprobe native ABI mismatch: expected ${abiVersion}, got ${version}`);
+}
+export const { NativeSession, sessions, recording, closeAll, closeAllSync } = createAdapter(functions);
