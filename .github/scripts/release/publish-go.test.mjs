@@ -45,3 +45,5 @@ function publicationFixture(t) {
       git(["config", "commit.gpgsign", "false"], workspace);
       fs.cpSync(fixture.output, path.join(workspace, "target/go-package"), { recursive: true });
       fs.symlinkSync(path.join(scripts, "../node_modules"), path.join(workspace, "node_modules"), "junction");
+      const result = spawnSync("bash", ["-c", script], {
+        cwd: workspace, env: { ...process.env, RELEASE_TAG: version }, encoding: "utf8",
