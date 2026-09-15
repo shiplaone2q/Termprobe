@@ -148,3 +148,4 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
     let _ = write!(
         output,
         "\x1b]2;{}\x1b\\",
+        emulator.title().unwrap_or_default()

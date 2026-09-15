@@ -14,3 +14,4 @@
   const evidence = $derived(json(frame ? { operation: action?.evidence ?? null, frame: frame.evidence }
     : { operation: action?.evidence, missing_screen_sequence: missingScreen }));
 </script>
+

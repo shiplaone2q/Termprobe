@@ -78,3 +78,5 @@ const mousePosition = shape({ x: integer, y: integer });
 const mouseButton = shape({ x: integer, y: integer, options: mouseOptions });
 const input = shape({
   arguments: tagged({
+    write: shape({ data: text }), submit: shape({ data: text }),
+    key: shape({ keys: list(text), action: choice(["press", "down", "repeat", "up"]) }),
