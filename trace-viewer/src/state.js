@@ -64,3 +64,4 @@ export function update(model, state, event) {
         detailsTab: event.activate ? "cell" : state.detailsTab };
     }
     case "move-cell": {
+      const frame = selection(model, state).frame;

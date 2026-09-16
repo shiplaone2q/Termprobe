@@ -278,3 +278,6 @@ def _append_node(
     result.root = len(result.nodes)
     result.nodes.append(node)
     return result
+
+
+def _append_operand(query: _LocatorQuery, other: _LocatorQuery) -> int:

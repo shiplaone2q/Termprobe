@@ -328,3 +328,4 @@ test("trace retention and recording directory are configurable", async () => {
   assert.equal((await disabled.open({ shell, waitReady: false })).recording, "");
   await disabled.close();
 
+  const always = new Termprobe(uniqueSession("recording-always"), {
