@@ -66,3 +66,7 @@ Set `TERMPROBE__NATIVE_LIBRARY` to override the bundled engine:
 
 ```sh
 export TERMPROBE__NATIVE_LIBRARY=/absolute/path/to/libtermprobe_ffi.so
+```
+
+Use `libtermprobe_ffi.dylib` on macOS or `termprobe_ffi.dll` on Windows.
+Use the native archive from the same release and the correct platform.

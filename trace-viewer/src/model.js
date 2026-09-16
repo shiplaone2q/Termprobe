@@ -64,3 +64,7 @@ export function parseReport(source) {
       ...entry, stage: stage.stage_index, x: entry.location.column,
       y: entry.location.row - (details.locator?.viewport_origin_y ?? 0),
     })));
+  const duration = Math.max(0, ...actions.map((action) => action.ended), ...frames.map((frame) => frame.ended));
+  const attachmentNames = new Set();
+  /** @type {TraceAttachment[]} */
+  const attachments = data.attachments.map((file, id) => {

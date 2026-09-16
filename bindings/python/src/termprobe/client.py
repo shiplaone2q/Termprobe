@@ -281,3 +281,5 @@ def _append_node(
 
 
 def _append_operand(query: _LocatorQuery, other: _LocatorQuery) -> int:
+    offset = len(query.nodes)
+    if offset + len(other.nodes) >= 256:
