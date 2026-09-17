@@ -149,3 +149,5 @@ pub(crate) fn snapshot_to_ansi(emulator: &dyn Emulator) -> String {
         output,
         "\x1b]2;{}\x1b\\",
         emulator.title().unwrap_or_default()
+    );
+    for (y, row) in rows.iter().enumerate() {
