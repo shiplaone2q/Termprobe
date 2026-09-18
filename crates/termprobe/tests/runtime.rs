@@ -738,3 +738,5 @@ fn on_failure_recording_is_kept_only_after_an_operation_failure() {
     let opened = success
         .open(OpenOptions {
             wait_ready: Some(false),
+            recording: AutomaticRecording {
+                mode: AutomaticRecordingMode::OnFailure,

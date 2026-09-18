@@ -41,3 +41,5 @@ Add `recording-raster` for APNG, GIF, and MP4. Add `ghostty`, `rio`, or `xtermjs
 
 Raster output uses installed fonts. Add a `recording-font-jetbrains-mono*` feature to bundle one.
 
+Use `ExecutionContext` with `FailureArtifactOptions` to write failure artifacts. `TermprobeError` exposes the structured details and artifact reference.
+
