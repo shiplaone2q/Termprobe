@@ -64,3 +64,7 @@ class Profile:
 
 @dataclass
 class Timeouts:
+    text: Optional[int] = None
+    idle: Optional[int] = None
+    command: Optional[int] = None
+    exit: Optional[int] = None

@@ -60,3 +60,4 @@ func nativeError(result *abiResult) error {
 	case 3:
 		kind = NoSessionError
 	}
+	return &Error{Kind: kind, Message: nativeText(result.errorMessage), DetailsJSON: []byte(nativeText(result.errorDetails)), ArtifactJSON: []byte(nativeText(result.errorArtifact))}

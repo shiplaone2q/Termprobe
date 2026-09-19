@@ -78,3 +78,7 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return "", fmt.Errorf("check native engine cache %q: %w", path, err)
 	}
+
+	temporaryName := ".engine-" + rand.Text()
+	file, err := root.OpenFile(temporaryName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {

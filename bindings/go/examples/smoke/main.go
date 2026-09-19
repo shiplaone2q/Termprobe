@@ -63,3 +63,6 @@ func exerciseTerminal(terminal *termprobe.Client) error {
 	if err := terminal.Submit(termprobe.Ptr("quit")); err != nil {
 		return fmt.Errorf("request child exit: %w", err)
 	}
+	if err := terminal.WaitExit(termprobe.WaitOptions{Timeout: &timeout}); err != nil {
+		return fmt.Errorf("wait for child exit: %w", err)
+	}
