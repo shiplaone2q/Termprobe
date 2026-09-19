@@ -68,3 +68,6 @@ class Timeouts:
     idle: Optional[int] = None
     command: Optional[int] = None
     exit: Optional[int] = None
+    ready: Optional[int] = None
+
+

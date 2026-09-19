@@ -65,3 +65,5 @@ export function update(model, state, event) {
     }
     case "move-cell": {
       const frame = selection(model, state).frame;
+      if (!frame) return state;
+      return update(model, state, { type: "inspect", activate: true,

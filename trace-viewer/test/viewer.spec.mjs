@@ -113,3 +113,5 @@ test("filters search locator and input text and drive action navigation", async 
   await page.locator("#assertions-only").check();
   await expect(page.locator("#points")).toHaveText("No matching actions.");
   await expect(page.locator("#previous-point")).toBeDisabled();
+  await expect(page.locator("#next-point")).toBeDisabled();
+  await page.locator("#action-filter").fill("");

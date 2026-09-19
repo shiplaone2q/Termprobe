@@ -13,3 +13,4 @@ export default defineConfig({
     colorScheme: "dark",
     offline: true,
     trace: "retain-on-failure",
+  },
