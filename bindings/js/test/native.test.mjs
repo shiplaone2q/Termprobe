@@ -137,3 +137,6 @@ test("nested input buffers remain live during native start and marshaling", () =
       await assert.rejects(
         session.run({ program: "unused", args: [expected], env: [["TEST", expected]] }),
         /native call returned a null task/,
+      );
+    }
+    assert.equal(calls, 100);

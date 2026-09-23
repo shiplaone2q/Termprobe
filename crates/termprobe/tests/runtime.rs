@@ -744,3 +744,4 @@ fn on_failure_recording_is_kept_only_after_an_operation_failure() {
             },
             ..OpenOptions::default()
         })
+        .unwrap();

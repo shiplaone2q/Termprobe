@@ -38,3 +38,5 @@ __su_precmd() {
 	__su_started=1
 }
 
+setopt PROMPT_SUBST
+PS1='%{$(__su_osc A)%}> %{$(__su_osc B)%}'
