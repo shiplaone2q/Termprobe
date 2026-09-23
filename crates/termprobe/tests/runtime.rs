@@ -740,3 +740,7 @@ fn on_failure_recording_is_kept_only_after_an_operation_failure() {
             wait_ready: Some(false),
             recording: AutomaticRecording {
                 mode: AutomaticRecordingMode::OnFailure,
+                directory: Some(root.clone()),
+            },
+            ..OpenOptions::default()
+        })

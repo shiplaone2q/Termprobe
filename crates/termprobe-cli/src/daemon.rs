@@ -168,3 +168,6 @@ fn handle_connection(
         }
         return;
     }
+    if host.stopping.load(Ordering::Acquire) {
+        return;
+    }
