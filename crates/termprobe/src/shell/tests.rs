@@ -121,3 +121,5 @@ impl TestShell {
         let pair = portable_pty::native_pty_system()
             .openpty(PtySize {
                 rows: 30,
+                cols: 120,
+                pixel_width: 0,

@@ -82,3 +82,5 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 	temporaryName := ".engine-" + rand.Text()
 	file, err := root.OpenFile(temporaryName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
+		return "", fmt.Errorf("create temporary native engine: %w", err)
+	}

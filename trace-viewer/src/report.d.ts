@@ -145,3 +145,4 @@ export interface FailureLocatorStageDetails {
   readonly input_candidate_count: number;
   readonly raw_candidate_count: number;
   /** Candidates remaining after applying the requested styles. */
+  readonly style_candidate_count: number;
