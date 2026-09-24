@@ -43,3 +43,28 @@ func TestNativeLayoutMatchesCompiler(t *testing.T) {
 			}
 		})
 	}
+	file, err := parser.ParseFile(token.NewFileSet(), "abi.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ast.Inspect(file, func(node ast.Node) bool {
+		if declaration, ok := node.(*ast.TypeSpec); ok {
+			if _, isStruct := declaration.Type.(*ast.StructType); isStruct && !checked[declaration.Name.Name] {
+				t.Errorf("generated struct %s has no compiler layout check", declaration.Name.Name)
+			}
+		}
+		return true
+	})
+}
+
+func nativeFields(layout reflect.Type) map[string]reflect.StructField {
+	fields := make(map[string]reflect.StructField)
+	for index := range layout.NumField() {
+		field := layout.Field(index)
+		if field.Name != "_" {
+			name := strings.ToLower(strings.ReplaceAll(field.Name, "_", ""))
+			fields[name] = field
+		}
+	}
+	return fields
+}
