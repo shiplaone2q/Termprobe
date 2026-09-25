@@ -17,3 +17,4 @@
 
 <style>
   .sidebar { min-height: 0; min-width: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+</style>
