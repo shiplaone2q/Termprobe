@@ -28,3 +28,4 @@ curl --proto '=https' --tlsv1.2 -fsSLo "$archive" \
 echo "$sha256  $archive" | sha256sum -c -
 tar -xJf "$archive" -C "$HOME/.local/lib"
 ln -sf "$HOME/.local/lib/zig-$arch-linux-$version/zig" "$HOME/.local/bin/zig"
+"$HOME/.local/bin/zig" version
