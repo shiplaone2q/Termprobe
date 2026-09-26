@@ -56,3 +56,7 @@ const formula = `class Termprobe < Formula
   test do
     system bin/"termprobe", "--version"
   end
+end
+`;
+
+fs.writeFileSync("Formula/termprobe.rb", formula);

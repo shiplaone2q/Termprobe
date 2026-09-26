@@ -47,3 +47,4 @@
   #screen-image { width: 100%; height: auto; display: block; }
   #screen-text { padding: 10px; white-space: pre; align-self: stretch; width: 100%; }
   @media (max-width: 600px) { .viewport { padding: 5px; } }
+</style>
