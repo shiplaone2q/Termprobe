@@ -16,3 +16,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const version = process.argv[2] ?? JSON.parse(fs.readFileSync("bindings/js/package.json", "utf8")).version;
   verifyGoVersion(process.cwd(), version);
   console.log(`Go installation examples match v${version}`);
+}
