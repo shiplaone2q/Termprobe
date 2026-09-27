@@ -171,3 +171,5 @@ fn handle_connection(
     if host.stopping.load(Ordering::Acquire) {
         return;
     }
+    match req {
+        Request::Ping => {

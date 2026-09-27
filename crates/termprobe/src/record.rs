@@ -158,3 +158,7 @@ impl Recorder {
         let (reply, response) = mpsc::sync_channel(0);
         self.sender
             .send(Message::Flush { reply })
+            .map_err(|_| CaptureError::WorkerStopped)?;
+        response.recv().unwrap_or(Err(CaptureError::WorkerStopped))
+    }
+

@@ -68,3 +68,5 @@ export function parseReport(source) {
   const attachmentNames = new Set();
   /** @type {TraceAttachment[]} */
   const attachments = data.attachments.map((file, id) => {
+    if (attachmentNames.has(file.name)) throw new Error(`Duplicate attachment: ${file.name}`);
+    attachmentNames.add(file.name);
