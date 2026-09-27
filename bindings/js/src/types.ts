@@ -114,3 +114,7 @@ export interface SpawnOptions {
 
 export type Timeouts = NativeTimeouts;
 
+export interface ArtifactOptions {
+  dir: string;
+  onFailure?: "all" | "html" | "text" | "none";
+  includeRecording?: boolean;

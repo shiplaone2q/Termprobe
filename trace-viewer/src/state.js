@@ -68,3 +68,6 @@ export function update(model, state, event) {
       if (!frame) return state;
       return update(model, state, { type: "inspect", activate: true,
         x: Math.max(0, Math.min(frame.columns - 1, (state.cell?.x ?? 0) + event.dx)),
+        y: Math.max(0, Math.min(frame.rows - 1, (state.cell?.y ?? 0) + event.dy)) });
+    }
+    case "zoom": return { ...state, zoom: event.value };

@@ -194,3 +194,6 @@ func (runtime *Session) GetViewport() (Viewport, error) {
 	return Viewport{Offset: uint64(result.viewport.offset), History: uint64(result.viewport.history)}, nil
 }
 
+func (runtime *Session) Scroll(lines int32) error {
+	memory := nativeMemory{}
+	defer memory.release()
