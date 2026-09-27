@@ -80,3 +80,5 @@ unsafe fn pairs(data: *const TuiPair, len: usize) -> Result<Vec<(String, String)
 }
 pub(crate) fn u16_option(value: TuiOptionalU64, name: &str) -> Result<Option<u16>> {
     value
+        .option()
+        .map(|v| {

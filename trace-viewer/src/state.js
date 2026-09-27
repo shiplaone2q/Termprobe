@@ -67,3 +67,4 @@ export function update(model, state, event) {
       const frame = selection(model, state).frame;
       if (!frame) return state;
       return update(model, state, { type: "inspect", activate: true,
+        x: Math.max(0, Math.min(frame.columns - 1, (state.cell?.x ?? 0) + event.dx)),
