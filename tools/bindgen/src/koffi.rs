@@ -81,3 +81,5 @@ pub fn generate(
     js.push_str(&layouts);
     js.push_str("export function bind(library) {\nconst functions = {};\n");
     let mut wrappers = format!("// {NOTICE}\nuse super::*;\n");
+    for function in functions {
+        let id = function.sig.ident.to_string();

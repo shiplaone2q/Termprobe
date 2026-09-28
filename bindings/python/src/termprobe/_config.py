@@ -64,3 +64,6 @@ def resolve_timeout(
 def normalize_backend(backend: object) -> Optional[str]:
     if backend is None:
         return None
+    if not isinstance(backend, str):
+        raise TypeError("backend must be a string or None")
+    normalized = backend.strip().lower()

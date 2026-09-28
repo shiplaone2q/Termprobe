@@ -66,3 +66,4 @@ class ConformanceTests(unittest.TestCase):
     def test_every_command_is_mapped_or_excluded(self):
         out = subprocess.run([BIN, "agent-context"], capture_output=True, check=True, text=True).stdout
         schema = json.loads(out)
+        commands = set(schema["commands"].keys())
