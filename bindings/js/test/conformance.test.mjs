@@ -63,3 +63,7 @@ const MAPPING = {
 
 const EXCLUDED = new Set(["monitor", "status", "daemon", "usage", "agent-context", "skill"]);
 
+test("every cli command is mapped or excluded", { skip: !schema }, () => {
+  const instance = new Termprobe("conformance");
+  for (const command of Object.keys(schema.commands)) {
+    if (EXCLUDED.has(command)) {

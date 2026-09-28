@@ -123,3 +123,4 @@ impl TestShell {
                 rows: 30,
                 cols: 120,
                 pixel_width: 0,
+                pixel_height: 0,
