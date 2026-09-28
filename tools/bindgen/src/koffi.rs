@@ -83,3 +83,7 @@ pub fn generate(
     let mut wrappers = format!("// {NOTICE}\nuse super::*;\n");
     for function in functions {
         let id = function.sig.ident.to_string();
+        let args = arguments(function)?
+            .into_iter()
+            .map(type_reference)
+            .collect::<Result<Vec<_>>>()?

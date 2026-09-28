@@ -79,3 +79,5 @@ fn command_json(cmd: &Command) -> Value {
 
 fn arg_json(arg: &Arg) -> Value {
     let positional = arg.is_positional();
+    let is_flag = matches!(arg.get_action(), ArgAction::SetTrue | ArgAction::SetFalse);
+
