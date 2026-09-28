@@ -140,3 +140,6 @@ test("nested input buffers remain live during native start and marshaling", () =
       );
     }
     assert.equal(calls, 100);
+  `);
+});
+
