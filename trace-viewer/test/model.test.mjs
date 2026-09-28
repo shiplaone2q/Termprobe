@@ -91,3 +91,5 @@ for (const [name, change, error] of [
 }
 
 test("attachment preview limits do not change original bytes or split a UTF-8 character", async () => {
+  const data = fixture();
+  const content = "x" + "\u00e9".repeat(300_000);

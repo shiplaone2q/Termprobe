@@ -114,3 +114,5 @@ pub(super) fn fill_circle(pixmap: &mut Pixmap, x: f32, y: f32, radius: f32, colo
         None,
     );
 }
+
+/// The one rounded rectangle every panel, shadow layer and border is cut from.
