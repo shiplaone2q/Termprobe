@@ -47,3 +47,4 @@ __all__ = [
     "get_recording",
     "unique_session",
     "TuiTestError",
+    "ExpectationError",

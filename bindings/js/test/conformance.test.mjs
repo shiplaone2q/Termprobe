@@ -67,3 +67,6 @@ test("every cli command is mapped or excluded", { skip: !schema }, () => {
   const instance = new Termprobe("conformance");
   for (const command of Object.keys(schema.commands)) {
     if (EXCLUDED.has(command)) {
+      continue;
+    }
+    assert.ok(MAPPING[command], `cli command '${command}' has no SDK mapping`);

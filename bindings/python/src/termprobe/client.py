@@ -283,3 +283,7 @@ def _append_node(
 def _append_operand(query: _LocatorQuery, other: _LocatorQuery) -> int:
     offset = len(query.nodes)
     if offset + len(other.nodes) >= 256:
+        raise ValueError("locator expression exceeds 256 nodes")
+    for node in copy.deepcopy(other.nodes):
+        for field in ("within", "left", "right", "input", "has", "has_not"):
+            reference = node.get(field)

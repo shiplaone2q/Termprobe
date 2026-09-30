@@ -123,3 +123,6 @@ fn emit(root: &Path, path: &str, content: &str, check: bool) -> Result<()> {
     Ok(())
 }
 
+fn format_source(command: &str, args: &[&str], content: &str) -> Result<String> {
+    use std::io::Write;
+    let mut child = Command::new(command)
