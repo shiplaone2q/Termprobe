@@ -80,3 +80,5 @@ const input = shape({
   arguments: tagged({
     write: shape({ data: text }), submit: shape({ data: text }),
     key: shape({ keys: list(text), action: choice(["press", "down", "repeat", "up"]) }),
+    mouse_click: shape({
+      target: tagged({ position: mousePosition, text: shape({ text }), locator: shape({}) }),

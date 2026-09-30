@@ -78,3 +78,7 @@ fn state(s: &mut Storage, v: termprobe::api::State) -> TuiState {
 }
 #[allow(unused_variables)]
 fn terminal_colors(s: &mut Storage, v: termprobe::api::TerminalColors) -> TuiTerminalColors {
+    let palette = s.palette(v.palette);
+    TuiTerminalColors {
+        foreground: s.string(v.foreground),
+        background: s.string(v.background),
