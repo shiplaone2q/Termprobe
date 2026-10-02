@@ -70,3 +70,7 @@ class ConformanceTests(unittest.TestCase):
 
         for command in commands:
             if command in EXCLUDED:
+                continue
+            self.assertIn(command, MAPPING, f"cli command '{command}' has no SDK mapping")
+            instance = TuiTest("conformance")
+            for scope, attr in MAPPING[command]:

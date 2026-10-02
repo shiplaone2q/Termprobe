@@ -42,3 +42,6 @@ fn __su_after_command {|cmd-info|
     }
   }
   __su_osc "133;D;"$status
+}
+
+set edit:prompt = { put "> " }

@@ -67,3 +67,4 @@ func exerciseTerminal(terminal *termprobe.Client) error {
 		return fmt.Errorf("wait for child exit: %w", err)
 	}
 	state, err := terminal.State()
+	if err != nil {

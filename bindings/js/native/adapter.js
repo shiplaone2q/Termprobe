@@ -133,3 +133,7 @@ function decode(type, value) {
     result[field === "character" ? "char" : field] = decoded;
   }
   return result;
+}
+
+function resultValue(result, selector) {
+  switch (selector) {
