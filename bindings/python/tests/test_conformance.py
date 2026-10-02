@@ -67,3 +67,6 @@ class ConformanceTests(unittest.TestCase):
         out = subprocess.run([BIN, "agent-context"], capture_output=True, check=True, text=True).stdout
         schema = json.loads(out)
         commands = set(schema["commands"].keys())
+
+        for command in commands:
+            if command in EXCLUDED:

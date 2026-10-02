@@ -82,3 +82,7 @@ fn terminal_colors(s: &mut Storage, v: termprobe::api::TerminalColors) -> TuiTer
     TuiTerminalColors {
         foreground: s.string(v.foreground),
         background: s.string(v.background),
+        cursor: s.string(v.cursor),
+        palette: palette.0,
+        palette_len: palette.1,
+    }

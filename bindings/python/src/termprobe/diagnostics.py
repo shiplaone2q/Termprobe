@@ -76,3 +76,4 @@ class FailureLocatorDetails:
     def from_dict(cls, value: Mapping[str, Any]) -> "FailureLocatorDetails":
         return cls(
             selectors=tuple(value["selectors"]),
+            locations=tuple(FailureLocation(**item) for item in value["locations"]),
