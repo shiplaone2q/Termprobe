@@ -65,3 +65,4 @@ fn demonstrate(backend: Backend) -> Result<()> {
         session
             .get_by_text("received: hello")
             .wait_with_timeout(Some(5_000))?;
+        let OperationResult::Viewport(viewport) = session.execute(Operation::GetViewport)? else {

@@ -9,3 +9,4 @@ publish = false
 [dependencies]
 anyhow.workspace = true
 cbindgen = "0.29"
+quote = "1"
