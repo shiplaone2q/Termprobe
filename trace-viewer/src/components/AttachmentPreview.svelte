@@ -23,3 +23,4 @@
   #attachment-preview { min-width: 0; }
   img { max-width: 100%; max-height: 300px; }
   pre { max-height: 350px; padding: 8px; background: var(--panel); }
+</style>
