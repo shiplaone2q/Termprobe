@@ -14,3 +14,4 @@ export default defineConfig({
     offline: true,
     trace: "retain-on-failure",
   },
+});

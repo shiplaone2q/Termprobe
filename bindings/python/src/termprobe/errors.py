@@ -49,3 +49,20 @@ _BY_KIND = {
     "internal": InternalError,
 }
 
+
+def make_error(
+    kind: str,
+    message: str,
+    *,
+    details: Optional[Mapping[str, object]] = None,
+    artifact: Optional[Mapping[str, object]] = None,
+) -> TuiTestError:
+    return _BY_KIND[kind](
+        message,
+        details=FailureDetails.from_dict(details) if details is not None else None,
+        artifact=(
+            FailureArtifactRef.from_dict(artifact)
+            if artifact is not None
+            else None
+        ),
+    )
