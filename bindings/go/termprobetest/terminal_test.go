@@ -53,3 +53,7 @@ func TestCleanupAndParallelIsolation(t *testing.T) {
 			if err := terminal.GetByText("helper-ready", termprobe.TextSelectorOptions{}).Expect(termprobe.LocatorExpectOptions{Timeout: termprobe.Ptr(10 * time.Second)}); err != nil {
 				t.Fatal(err)
 			}
+		})
+	}
+}
+
