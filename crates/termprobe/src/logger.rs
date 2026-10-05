@@ -80,3 +80,4 @@ fn timestamp() -> String {
     let millis = now.subsec_millis();
     let h = (secs / 3600) % 24;
     let m = (secs / 60) % 60;
+    let s = secs % 60;
