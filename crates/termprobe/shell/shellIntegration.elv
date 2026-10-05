@@ -45,3 +45,5 @@ fn __su_after_command {|cmd-info|
 }
 
 set edit:prompt = { put "> " }
+set edit:rprompt = { put "" }
+set edit:before-readline = (conj $edit:before-readline $__su_before_readline~)
