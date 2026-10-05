@@ -10,3 +10,4 @@ For help and questions about using this project, create a new Github Discussion.
 
 ## Microsoft Support Policy
 
+Support for this project is limited to the resources listed above.
