@@ -30,3 +30,4 @@
   .comparison h2 { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
   .comparison pre { max-height: 90px; }
   @media (max-width: 600px) { .comparison { grid-template-columns: 1fr; } }
+</style>
