@@ -43,3 +43,4 @@ Raster output uses installed fonts. Add a `recording-font-jetbrains-mono*` featu
 
 Use `ExecutionContext` with `FailureArtifactOptions` to write failure artifacts. `TermprobeError` exposes the structured details and artifact reference.
 
+Full API: [docs.rs](https://docs.rs/termprobe-rs/latest/termprobe/)

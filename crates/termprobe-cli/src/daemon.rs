@@ -173,3 +173,370 @@ fn handle_connection(
     }
     match req {
         Request::Ping => {
+            let _ = ipc::write_response(reader.get_mut(), &Response::ok());
+        }
+        Request::Status => {
+            // Startup/teardown can hold the session lock. Publish status after
+            // operations instead of making control-plane probes wait for it.
+            let mut response = host.status.lock().unwrap().clone();
+            if let Ok(Some(frame)) =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| host.engine.frame()))
+            {
+                if let Some(data) = response.data.as_mut() {
+                    data["cols"] = serde_json::json!(frame.size.0);
+                    data["rows"] = serde_json::json!(frame.size.1);
+                    data["exited"] = serde_json::json!(frame.exited);
+                }
+            }
+            enrich_cli_response(&mut response, &host.session, host.logging, true);
+            let _ = ipc::write_response(reader.get_mut(), &response);
+        }
+        Request::Monitor {
+            cols,
+            rows,
+            interactive,
+        } => {
+            spawn_monitor(
+                Arc::clone(&host.engine),
+                reader.into_inner(),
+                (cols, rows),
+                host.session.clone(),
+                interactive,
+            );
+        }
+        Request::MonitorInputStream { cols, rows } => {
+            let frame = host.engine.frame();
+            let initial_frame = monitor::render_frame(
+                frame.as_ref(),
+                (cols, rows),
+                &host.session,
+                true,
+                &mut monitor::ModeMirror::default(),
+            );
+            let response = Response::with(serde_json::json!({ "initial_frame": initial_frame }));
+            if ipc::write_response(reader.get_mut(), &response).is_ok() {
+                spawn_monitor_input(
+                    Arc::clone(&host.engine),
+                    Arc::clone(&host.last_activity),
+                    reader,
+                    (cols, rows),
+                );
+            }
+        }
+        request => {
+            if request.is_wait() {
+                spawn_wait(request, reader.into_inner(), Arc::clone(host));
+                return;
+            }
+            if request_signal(&request).is_some_and(|name| {
+                matches!(
+                    name.trim_start_matches("SIG").to_uppercase().as_str(),
+                    "KILL" | "TERM" | "QUIT"
+                )
+            }) {
+                host.engine.interrupt();
+            }
+            if let Err(error) = operations.try_send((request, reader.into_inner())) {
+                let (mpsc::TrySendError::Full((_, mut conn))
+                | mpsc::TrySendError::Disconnected((_, mut conn))) = error;
+                let response = Response::from_error(termprobe::TermprobeError::internal(
+                    "daemon request queue is full or stopping",
+                ));
+                let _ = ipc::write_response(&mut conn, &response);
+            }
+        }
+    }
+}
+
+fn spawn_wait(request: Request, mut conn: Stream, host: Arc<Host>) {
+    if !try_acquire_permit(&host.waiters, MAX_PENDING_WAITS) {
+        let _ = ipc::write_response(
+            &mut conn,
+            &Response::from_error(termprobe::TermprobeError::internal("too many pending waits")),
+        );
+        return;
+    }
+    let permit = ConnectionPermit(Arc::clone(&host.waiters));
+    std::thread::spawn(move || {
+        let _permit = permit;
+        if conn.set_nonblocking(true).is_err() {
+            return;
+        }
+        let response = request.execute_cancellable(&host.engine, &|| {
+            host.stopping.load(Ordering::Acquire) || ipc::peer_disconnected(&conn)
+        });
+        *host.status.lock().unwrap() = status_response(&host.engine);
+        let _ = ipc::write_response(&mut conn, &response);
+    });
+}
+
+fn request_signal(request: &Request) -> Option<&str> {
+    match request {
+        Request::WithContext { request, .. } => request_signal(request),
+        Request::Signal { name } => Some(name),
+        _ => None,
+    }
+}
+
+fn spawn_operation_worker(
+    requests: mpsc::Receiver<(Request, Stream)>,
+    host: Arc<Host>,
+) -> std::thread::JoinHandle<()> {
+    std::thread::spawn(move || {
+        for (req, mut conn) in requests {
+            if host.stopping.load(Ordering::Acquire) {
+                break;
+            }
+            let recording_lifecycle = req.is_open() || req.is_restart();
+            if recording_lifecycle {
+                let _ = std::fs::write(config::recording_pointer_file(&host.session), "");
+            }
+            let mut response = match req {
+                Request::FlushRecording => flush_recording_response(&host.engine),
+                operation => operation.execute(&host.engine),
+            };
+            if recording_lifecycle {
+                sync_recording_pointer(&host.engine, &host.session);
+                enrich_cli_response(&mut response, &host.session, host.logging, false);
+            }
+            *host.status.lock().unwrap() = status_response(&host.engine);
+            let _ = ipc::write_response(&mut conn, &response);
+        }
+    })
+}
+
+fn shutdown_engine(host: Arc<Host>) -> Response {
+    let (sender, receiver) = mpsc::channel();
+    let closed = Arc::new(AtomicBool::new(false));
+    let cancel_host = Arc::clone(&host);
+    let cancel_done = Arc::clone(&closed);
+    std::thread::spawn(move || {
+        while !cancel_done.load(Ordering::Acquire) {
+            cancel_host.engine.interrupt();
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    });
+    std::thread::spawn(move || {
+        let response = Response::from_result(host.engine.execute(Operation::Close));
+        sync_recording_pointer(&host.engine, &host.session);
+        let _ = sender.send(response);
+    });
+    let response = receiver
+        .recv_timeout(SHUTDOWN_TIMEOUT)
+        .unwrap_or_else(|error| {
+            Response::from_error(termprobe::TermprobeError::internal(match error {
+                mpsc::RecvTimeoutError::Timeout => "session teardown timed out; daemon is stopping",
+                mpsc::RecvTimeoutError::Disconnected => {
+                    "session teardown failed; daemon is stopping"
+                }
+            }))
+        });
+    closed.store(true, Ordering::Release);
+    response
+}
+
+fn flush_recording_response(engine: &Engine) -> Response {
+    let Some(path) = engine.recording_path() else {
+        return Response::with(serde_json::json!({
+            "recording": null,
+            "disabled": true,
+        }));
+    };
+    match engine.flush_recording() {
+        Ok(()) => Response::with(serde_json::json!({
+            "recording": path.to_string_lossy(),
+            "disabled": false,
+        })),
+        Err(error) if error.kind == termprobe::ErrorKind::NoSession => {
+            Response::with(serde_json::json!({
+                "recording": null,
+                "disabled": false,
+            }))
+        }
+        Err(error) => Response::from_error(error),
+    }
+}
+
+fn sync_recording_pointer(engine: &Engine, session: &str) {
+    let value = engine
+        .recording_path()
+        .filter(|path| path.is_file())
+        .map(|path| path.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let _ = std::fs::write(config::recording_pointer_file(session), value);
+}
+
+fn status_response(engine: &Engine) -> Response {
+    let status = engine.status();
+    let mut data = serde_json::json!({
+        "session": status.session,
+        "shell_pid": status.shell_pid,
+        "protocol_version": crate::protocol::PROTOCOL_VERSION,
+    });
+    if status.cols.is_some() {
+        let object = data
+            .as_object_mut()
+            .expect("daemon status is always a JSON object");
+        object.insert("cols".to_string(), serde_json::json!(status.cols));
+        object.insert("rows".to_string(), serde_json::json!(status.rows));
+        object.insert("shell".to_string(), serde_json::json!(status.shell));
+        object.insert("exited".to_string(), serde_json::json!(status.exited));
+        object.insert("timeouts".to_string(), serde_json::json!(status.timeouts));
+    }
+    Response::with(data)
+}
+
+fn enrich_cli_response(response: &mut Response, session: &str, logging: bool, status: bool) {
+    let Some(data) = response
+        .data
+        .as_mut()
+        .and_then(serde_json::Value::as_object_mut)
+    else {
+        return;
+    };
+    data.insert("pid".to_string(), serde_json::json!(std::process::id()));
+    if status {
+        data.insert(
+            "log".to_string(),
+            if logging {
+                serde_json::json!(config::log_file(session).to_string_lossy())
+            } else {
+                serde_json::Value::Null
+            },
+        );
+        data.insert(
+            "version".to_string(),
+            serde_json::json!(env!("CARGO_PKG_VERSION")),
+        );
+    }
+}
+
+fn cleanup(session: &str) {
+    let _ = std::fs::remove_file(config::pid_file(session));
+    if !cfg!(windows) {
+        let _ = std::fs::remove_file(config::socket_name(session));
+    }
+}
+
+fn spawn_idle_watchdog(host: Arc<Host>, shutdown: mpsc::Sender<Option<Stream>>) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_millis(config::IDLE_CHECK_INTERVAL_MS));
+        let idle = host.last_activity.lock().unwrap().elapsed();
+        if idle >= Duration::from_millis(config::IDLE_TIMEOUT_MS) {
+            host.engine.log_event(&format!(
+                "idle timeout: no activity for {}s, shutting down",
+                idle.as_secs()
+            ));
+            if !host.stopping.swap(true, Ordering::AcqRel) {
+                let _ = shutdown.send(None);
+            }
+            break;
+        }
+    });
+}
+
+fn spawn_monitor(
+    engine: Arc<Engine>,
+    mut conn: Stream,
+    viewer: (u16, u16),
+    session: String,
+    interactive: bool,
+) {
+    std::thread::spawn(move || {
+        engine.log_event("monitor attached");
+        let mut modes = monitor::ModeMirror::default();
+        loop {
+            let frame = engine.frame();
+            let bytes =
+                monitor::render_frame(frame.as_ref(), viewer, &session, interactive, &mut modes);
+            if conn.write_all(&bytes).is_err() || conn.flush().is_err() {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(config::MONITOR_FRAME_MS));
+        }
+        engine.log_event("monitor detached");
+    });
+}
+
+/// Forward viewer input, translating SGR mouse coordinates past the frame border.
+fn spawn_monitor_input(
+    engine: Arc<Engine>,
+    last_activity: Arc<Mutex<Instant>>,
+    reader: BufReader<Stream>,
+    viewer: (u16, u16),
+) {
+    std::thread::spawn(move || {
+        let (sender, receiver) = mpsc::channel();
+        std::thread::spawn(move || {
+            let messages = serde_json::Deserializer::from_reader(reader)
+                .into_iter::<crate::protocol::MonitorInput>();
+            for message in messages {
+                let failed = message.is_err();
+                if sender.send(message).is_err() || failed {
+                    break;
+                }
+            }
+        });
+        let mut mouse = monitor::MouseRemapper::new(viewer);
+        loop {
+            let input = match receiver.recv_timeout(Duration::from_millis(50)) {
+                Ok(Ok(crate::protocol::MonitorInput::Write { data })) => {
+                    *last_activity.lock().unwrap() = Instant::now();
+                    mouse.push_input(&data, engine.monitor_mouse_size())
+                }
+                Ok(Ok(crate::protocol::MonitorInput::Resize { cols, rows })) => {
+                    mouse.resize((cols, rows));
+                    Vec::new()
+                }
+                Ok(Err(error)) => {
+                    engine.log_event(&format!("monitor input message failed: {error}"));
+                    break;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    mouse.observe(engine.monitor_mouse_size());
+                    vec![monitor::ForwardedInput::Keyboard(mouse.on_idle())]
+                }
+                Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            };
+            for input in input {
+                let result = match input {
+                    monitor::ForwardedInput::Keyboard(bytes) => {
+                        if bytes.is_empty() {
+                            continue;
+                        }
+                        engine.write_monitor_input_raw(&bytes)
+                    }
+                    monitor::ForwardedInput::Mouse(bytes) => engine.write_monitor_mouse_raw(&bytes),
+                };
+                if let Err(error) = result {
+                    engine.log_event(&format!("monitor input write failed: {}", error.message));
+                }
+            }
+        }
+        let pending = mouse.finish();
+        if !pending.is_empty() {
+            if let Err(error) = engine.write_monitor_input_raw(&pending) {
+                engine.log_event(&format!("monitor input write failed: {}", error.message));
+            }
+        }
+    });
+}
+
+fn sweep_recordings(current: &str) {
+    let Ok(entries) = std::fs::read_dir(config::recording_dir()) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|extension| extension.to_str()) != Some("cast") {
+            continue;
+        }
+        let Some(session) = path.file_stem().and_then(|stem| stem.to_str()) else {
+            continue;
+        };
+        if session != current && ipc::is_running(&config::socket_name(session)) {
+            continue;
+        }
+        let _ = std::fs::remove_file(path);
+    }
+}
