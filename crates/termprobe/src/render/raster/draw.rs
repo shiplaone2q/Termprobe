@@ -116,3 +116,182 @@ pub(super) fn fill_circle(pixmap: &mut Pixmap, x: f32, y: f32, radius: f32, colo
 }
 
 /// The one rounded rectangle every panel, shadow layer and border is cut from.
+fn rounded_rect_path(x: f32, y: f32, width: f32, height: f32, radius: f32) -> Option<Path> {
+    let right = x + width;
+    let bottom = y + height;
+    let radius = radius.min(width / 2.0).min(height / 2.0);
+    let mut path = PathBuilder::new();
+    path.move_to(x + radius, y);
+    path.line_to(right - radius, y);
+    path.quad_to(right, y, right, y + radius);
+    path.line_to(right, bottom - radius);
+    path.quad_to(right, bottom, right - radius, bottom);
+    path.line_to(x + radius, bottom);
+    path.quad_to(x, bottom, x, bottom - radius);
+    path.line_to(x, y + radius);
+    path.quad_to(x, y, x + radius, y);
+    path.close();
+    path.finish()
+}
+
+/// Draw the panel's border. Inset by half the stroke because tiny-skia, like
+/// SVG, centers a stroke on its path, and a border straddling the panel edge
+/// would bleed into the padding.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn stroke_rounded_rect(
+    pixmap: &mut Pixmap,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    radius: f32,
+    color: Rgb,
+    stroke_width: f32,
+) {
+    let inset = stroke_width / 2.0;
+    let Some(path) = rounded_rect_path(
+        x + inset,
+        y + inset,
+        (width - stroke_width).max(0.0),
+        (height - stroke_width).max(0.0),
+        (radius - inset).max(0.0),
+    ) else {
+        return;
+    };
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(color.r, color.g, color.b, 255);
+    let stroke = Stroke {
+        width: stroke_width,
+        ..Stroke::default()
+    };
+    pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn fill_rounded_rect(
+    pixmap: &mut Pixmap,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    radius: f32,
+    color: Rgb,
+) {
+    let Some(path) = rounded_rect_path(x, y, width, height, radius) else {
+        return;
+    };
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(color.r, color.g, color.b, 255);
+    pixmap.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,
+        Transform::identity(),
+        None,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn fill_rounded_rect_alpha(
+    pixmap: &mut Pixmap,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    radius: f32,
+    color: Rgb,
+    alpha: u8,
+) {
+    let Some(path) = rounded_rect_path(x, y, width, height, radius) else {
+        return;
+    };
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(color.r, color.g, color.b, alpha);
+    pixmap.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,
+        Transform::identity(),
+        None,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn fill_top_rounded_rect(
+    pixmap: &mut Pixmap,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    radius: f32,
+    color: Rgb,
+) {
+    let right = x + width;
+    let bottom = y + height;
+    let radius = radius.min(width / 2.0).min(height);
+    let mut path = PathBuilder::new();
+    path.move_to(x, y + radius);
+    path.quad_to(x, y, x + radius, y);
+    path.line_to(right - radius, y);
+    path.quad_to(right, y, right, y + radius);
+    path.line_to(right, bottom);
+    path.line_to(x, bottom);
+    path.close();
+    let Some(path) = path.finish() else {
+        return;
+    };
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(color.r, color.g, color.b, 255);
+    pixmap.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,
+        Transform::identity(),
+        None,
+    );
+}
+
+pub(super) fn is_default_ignorable(character: char) -> bool {
+    matches!(
+        character as u32,
+        0x00AD
+            | 0x034F
+            | 0x061C
+            | 0x115F..=0x1160
+            | 0x17B4..=0x17B5
+            | 0x180B..=0x180F
+            | 0x200B..=0x200F
+            | 0x202A..=0x202E
+            | 0x2060..=0x206F
+            | 0x3164
+            | 0xFE00..=0xFE0F
+            | 0xFEFF
+            | 0xFFA0
+            | 0xE0100..=0xE01EF
+    )
+}
+
+pub(super) fn unsupported_grapheme(grapheme: &str) -> bool {
+    grapheme.chars().count() > 1
+}
+
+pub(super) fn format_glyph_sequence(grapheme: &str) -> String {
+    let codepoints = grapheme
+        .chars()
+        .map(|character| format!("U+{:04X}", character as u32))
+        .collect::<Vec<_>>()
+        .join(" ");
+    format!("{grapheme:?} ({codepoints})")
+}
+
+pub(super) fn unpremultiply(pixel: &mut [u8]) {
+    let alpha = u16::from(pixel[3]);
+    if alpha == 0 {
+        pixel[..3].fill(0);
+    } else if alpha < 255 {
+        for channel in &mut pixel[..3] {
+            let value = (u16::from(*channel) * 255 + alpha / 2) / alpha;
+            *channel = value.min(255) as u8;
+        }
+    }
+}
