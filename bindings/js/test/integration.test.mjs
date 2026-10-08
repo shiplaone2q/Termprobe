@@ -329,3 +329,6 @@ test("trace retention and recording directory are configurable", async () => {
   await disabled.close();
 
   const always = new Termprobe(uniqueSession("recording-always"), {
+    recording: { directory: root },
+    trace: { mode: "on", directory: join(root, "traces") },
+  });

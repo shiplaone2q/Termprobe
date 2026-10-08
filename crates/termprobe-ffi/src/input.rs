@@ -82,3 +82,7 @@ pub(crate) fn u16_option(value: TuiOptionalU64, name: &str) -> Result<Option<u16
     value
         .option()
         .map(|v| {
+            u16::try_from(v)
+                .map_err(|_| TermprobeError::usage(format!("{name} must be between 0 and 65535")))
+        })
+        .transpose()

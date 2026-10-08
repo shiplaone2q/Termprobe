@@ -95,3 +95,4 @@ type abiCursor struct {
 	shape   abiString
 	color   abiString
 }
+type abiSize struct {

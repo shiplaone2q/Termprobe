@@ -92,3 +92,4 @@ elif [ "$VERSION" = "beta" ]; then
       }
     ' "$RELEASES_PATH"
   )"
+  [ -n "$VERSION" ] || fail "No beta release was found."
