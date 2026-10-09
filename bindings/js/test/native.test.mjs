@@ -143,3 +143,4 @@ test("nested input buffers remain live during native start and marshaling", () =
   `);
 });
 
+test("Koffi adapter loads the explicit shared library and honors invalid overrides", (t) => {
