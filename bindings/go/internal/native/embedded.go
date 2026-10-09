@@ -84,3 +84,6 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 	if err != nil {
 		return "", fmt.Errorf("create temporary native engine: %w", err)
 	}
+	defer func() {
+		if err := root.Remove(temporaryName); err != nil {
+			resultErr = errors.Join(resultErr, fmt.Errorf("remove temporary native engine: %w", err))

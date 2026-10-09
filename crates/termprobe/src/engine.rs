@@ -1139,3 +1139,4 @@ impl Engine {
                                 .map(|message| format!("trace: {message}")),
                         );
                     }
+                }

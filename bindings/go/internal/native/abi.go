@@ -96,3 +96,4 @@ type abiCursor struct {
 	color   abiString
 }
 type abiSize struct {
+	_    structs.HostLayout
