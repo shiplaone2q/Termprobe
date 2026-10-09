@@ -86,3 +86,5 @@ fn terminal_colors(s: &mut Storage, v: termprobe::api::TerminalColors) -> TuiTer
         palette: palette.0,
         palette_len: palette.1,
     }
+}
+#[allow(unused_variables)]

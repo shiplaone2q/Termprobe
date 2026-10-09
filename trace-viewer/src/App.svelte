@@ -66,3 +66,5 @@
     {/snippet}
   </SideNav>
 
+  <TerminalViewer frame={selected.frame} action={selected.action} missingScreen={view.missingScreen}
+    sharesFailure={selected.sharesFailure} isFailure={selected.isFailure} result={model.result}

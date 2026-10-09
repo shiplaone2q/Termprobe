@@ -162,3 +162,4 @@ pub unsafe extern "C" fn tui_get_clipboard_start(session: TuiString) -> *mut Tui
 pub unsafe extern "C" fn tui_get_bell_count_start(session: TuiString) -> *mut TuiTask {
     tasks::start(|| unsafe { tui_get_bell_count(session) })
 }
+#[no_mangle]
