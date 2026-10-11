@@ -68,3 +68,13 @@ func exerciseTerminal(terminal *termprobe.Client) error {
 	}
 	state, err := terminal.State()
 	if err != nil {
+		return fmt.Errorf("read child exit status: %w", err)
+	}
+	if state.Exited == nil {
+		return fmt.Errorf("child exit status is unavailable")
+	}
+	if *state.Exited != 0 {
+		return fmt.Errorf("child exited with status %d", *state.Exited)
+	}
+	return nil
+}

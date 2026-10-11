@@ -9,3 +9,4 @@ func nativeLibc() string {
 		return "gnu"
 	}
 	return "musl"
+}
