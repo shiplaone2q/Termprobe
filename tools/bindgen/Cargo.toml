@@ -10,3 +10,7 @@ publish = false
 anyhow.workspace = true
 cbindgen = "0.29"
 quote = "1"
+syn = { version = "2", features = ["full"] }
+
+[dev-dependencies]
+tempfile = "3"
