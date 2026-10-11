@@ -37,3 +37,4 @@ echo
 echo "Next:"
 echo "  cargo test -p termprobe-rs --features xtermjs"
 echo "  re-measure the emoji width table in $assets/README.md"
+echo "  re-check each package's LICENSE, which carry separate notices"

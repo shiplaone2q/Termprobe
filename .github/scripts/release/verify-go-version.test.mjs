@@ -21,3 +21,4 @@ test("release checks require every Go installation example to match the tag", t 
     fs.writeFileSync(filename, current);
   }
   assert.throws(() => verifyGoVersion(fixture.root, "1.2.4"), /must use go get/);
+});
