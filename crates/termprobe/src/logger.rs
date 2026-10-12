@@ -81,3 +81,22 @@ fn timestamp() -> String {
     let h = (secs / 3600) % 24;
     let m = (secs / 60) % 60;
     let s = secs % 60;
+    format!("{h:02}:{m:02}:{s:02}.{millis:03}")
+}
+
+/// Render bytes with control characters made visible.
+fn escape(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len());
+    for &b in bytes {
+        match b {
+            b'\\' => out.push_str("\\\\"),
+            0x1b => out.push_str("\\e"),
+            b'\n' => out.push_str("\\n"),
+            b'\r' => out.push_str("\\r"),
+            b'\t' => out.push_str("\\t"),
+            0x20..=0x7e => out.push(b as char),
+            _ => out.push_str(&format!("\\x{b:02x}")),
+        }
+    }
+    out
+}
