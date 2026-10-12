@@ -14,3 +14,4 @@
   .tab-panel { flex: 1; overflow: auto; min-height: 0; }
   .metadata { padding: 0 12px 12px; }
   .details { padding: 10px 16px; }
+</style>

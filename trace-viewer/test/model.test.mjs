@@ -95,3 +95,135 @@ test("attachment preview limits do not change original bytes or split a UTF-8 ch
   const content = "x" + "\u00e9".repeat(300_000);
   data.attachments.push(attachment("session.cast", content));
   const file = parse(data).attachments.at(-1);
+  assert.equal(file.truncated, true);
+  assert.ok(Buffer.byteLength(file.preview) <= 512 * 1024);
+  assert.ok(!file.preview.includes("\ufffd"));
+  assert.equal(await file.blob.text(), content);
+});
+
+test("the full 64 MiB recording allowance uses a single Blob and bounded text", async () => {
+  const data = fixture();
+  const size = 64 * 1024 * 1024;
+  data.attachments = [attachment("session.cast", "x".repeat(size))];
+  const file = parse(data).attachments[0];
+  assert.equal(file.byteLength, size);
+  assert.equal(file.blob.size, size);
+  assert.equal(await file.blob.slice(-1).text(), "x");
+  assert.equal(Object.values(file).some((value) => ArrayBuffer.isView(value)), false);
+  assert.equal(file.preview.length, 512 * 1024);
+  assert.equal(file.truncated, true);
+});
+
+test("creating and disposing resource URLs does not duplicate the 64 MiB attachment", () => {
+  const result = JSON.parse(execFileSync(process.execPath, [
+    "--expose-gc", fileURLToPath(new URL("./attachment-memory.mjs", import.meta.url)),
+  ], { encoding: "utf8" }));
+  assert.ok(result.parsed >= 64 * 1024 * 1024, JSON.stringify(result));
+  assert.ok(result.parsed < 65 * 1024 * 1024, JSON.stringify(result));
+  assert.ok(result.withResources - result.parsed < 1024 * 1024, JSON.stringify(result));
+  assert.ok(result.disposed - result.parsed < 1024 * 1024, JSON.stringify(result));
+  assert.equal(result.exact, true);
+});
+
+test("selection, cells, filters and playback are pure state transitions", () => {
+  const model = freeze(parse());
+  const original = freeze(initialState(model));
+  assert.equal(selection(model, original).isFailure, true);
+  assert.equal(inspectCell(model, original).mismatches.length, 2);
+  const passed = update(model, original, { type: "select-action", id: 5 });
+  assert.equal(selection(model, passed).sharesFailure, true);
+  assert.equal(selection(model, passed).isFailure, false);
+  assert.deepEqual(selection(model, passed).mismatches, []);
+  const missing = update(model, original, { type: "select-action", id: 1 });
+  assert.equal(selection(model, missing).frame, undefined);
+  assert.equal(missing.missingScreen, 999);
+  assert.equal(update(model, missing, { type: "toggle-playback" }), missing);
+  const filtered = update(model, original, { type: "filter", value: 'getByText("READY")' });
+  assert.deepEqual(visibleActions(model, filtered).map((action) => action.id), [2, 3]);
+  let state = update(model, filtered, { type: "navigate-action", delta: 1 });
+  assert.equal(state.actionId, 2);
+  state = update(model, state, { type: "navigate-action", delta: 1 });
+  assert.equal(state.actionId, 3);
+  assert.equal(state.frameIndex, 0);
+  state = update(model, state, { type: "filter", value: "" });
+  state = update(model, state, { type: "toggle-playback" });
+  assert.deepEqual(state.playback, { target: 2, actionId: 5 });
+  state = update(model, state, { type: "tick" });
+  assert.equal(state.frameIndex, 1);
+  assert.ok(state.playback);
+  state = update(model, state, { type: "tick" });
+  assert.equal(state.actionId, 5);
+  assert.equal(state.playback, undefined);
+  assert.equal(original.actionId, 6);
+});
+
+test("manual selection, filters, pause and inspection cancel playback", () => {
+  const model = freeze(parse());
+  let state = update(model, initialState(model), { type: "select-action", id: 2 });
+  state = freeze(update(model, state, { type: "toggle-playback" }));
+  for (const event of [
+    { type: "select-frame", index: 1 }, { type: "select-action", id: 3 }, { type: "jump-to-result" },
+    { type: "filter", value: "READY" }, { type: "assertions-only", value: true },
+    { type: "inspect", x: 0, y: 0, activate: false }, { type: "pause" }, { type: "toggle-playback" },
+  ]) assert.equal(update(model, state, event).playback, undefined);
+});
+
+test("coordinate drafts are independent from inspection and invalid cells have no overlay", () => {
+  const model = parse();
+  const initial = initialState(model);
+  const draft = update(model, initial, { type: "coordinate", axis: "column", value: "999" });
+  assert.equal(draft.column, "999");
+  assert.deepEqual(draft.cell, initial.cell);
+  let state = update(model, draft, { type: "inspect", x: 999, y: 0, activate: false });
+  assert.equal(inspectCell(model, state), undefined);
+  state = update(model, state, { type: "move-cell", dx: -1, dy: 0 });
+  assert.deepEqual(state.cell, { x: 0, y: 0 });
+  assert.equal(cellAt(model.frames[0], .5, 0), undefined);
+  assert.equal(cellAt(model.frames[0], -1, 0), undefined);
+  state = update(model, state, { type: "inspect", x: 2, y: 0, activate: true });
+  assert.equal(inspectCell(model, state).leadColumn, 1);
+});
+
+test("deep links and passed traces have explicit defaults", () => {
+  const model = parse();
+  assert.equal(initialState(model, "#screen-1").frameIndex, 0);
+  assert.equal(initialState(model, "#screen-999").frameIndex, 2);
+  const data = fixture();
+  data.details.outcome = "passed";
+  const passed = parse(data);
+  assert.equal(selection(passed, initialState(passed)).isFailure, false);
+});
+
+test("Svelte components compose and escape the report without mutating its model", async () => {
+  const result = await build({
+    stdin: {
+      contents: 'export { default as App } from "./src/App.svelte"; export { default as CellTab } from "./src/components/CellTab.svelte"; export { render } from "svelte/server";',
+      resolveDir: fileURLToPath(new URL("../", import.meta.url)), sourcefile: "component-test.js",
+    },
+    bundle: true, write: false, platform: "node", format: "esm", conditions: ["svelte", "production"],
+    plugins: [sveltePlugin("server")],
+  });
+  const { App, CellTab, render } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString("base64")}`);
+  const model = freeze(parse());
+  const resources = freeze({ images: model.frames.map(() => ({})), attachments: model.attachments.map(() => "blob:test"), dispose() {} });
+  const first = render(App, { props: { model, resources } }).body;
+  assert.equal(first, render(App, { props: { model, resources } }).body);
+  for (const id of ["session-summary", "actions-panel", "metadata-panel", "viewport", "errors-panel", "cell-panel", "call-panel", "attachments-panel"]) {
+    assert.ok(first.includes(`id="${id}"`), id);
+  }
+  assert.ok(first.includes('getByText("A")'));
+  assert.ok(!first.includes("<script>"));
+  assert.ok(first.includes("&lt;script>"));
+  assert.equal(globalThis.document, undefined);
+
+  const data = fixture();
+  delete data.timeline.frames[2].cells[4].link;
+  delete data.timeline.frames[2].cells[4].link_id;
+  const unlinked = parse(data);
+  const state = update(unlinked, initialState(unlinked), { type: "inspect", x: 3, y: 0, activate: true });
+  const inspection = inspectCell(unlinked, state);
+  const cell = render(CellTab, { props: {
+    inspection, frame: inspection.frame, column: "3", row: "0", oncoordinate() {}, oninspect() {},
+  } }).body;
+  assert.match(cell, /Changed fields \(previous frame\).*?link, link_id/s);
+});
