@@ -70,3 +70,26 @@ test("every cli command is mapped or excluded", { skip: !schema }, () => {
       continue;
     }
     assert.ok(MAPPING[command], `cli command '${command}' has no SDK mapping`);
+    for (const [scope, name] of MAPPING[command]) {
+      const target = scope === "client" ? instance : sdk;
+      assert.ok(
+        typeof target[name] !== "undefined",
+        `missing SDK member for '${command}': ${scope}.${name}`,
+      );
+    }
+  }
+});
+
+test("keyboard exposes every key action", () => {
+  const keyboard = new Termprobe("keyboard-conformance").keyboard;
+  for (const method of ["press", "down", "repeat", "up"]) {
+    assert.equal(typeof keyboard[method], "function", method);
+  }
+});
+
+test("error exit codes match the taxonomy", () => {
+  assert.equal(new sdk.ExpectationError("x").exitCode, 1);
+  assert.equal(new sdk.UsageError("x").exitCode, 2);
+  assert.equal(new sdk.NoSessionError("x").exitCode, 3);
+  assert.equal(new sdk.InternalError("x").exitCode, 5);
+});

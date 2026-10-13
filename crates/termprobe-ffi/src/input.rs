@@ -86,3 +86,70 @@ pub(crate) fn u16_option(value: TuiOptionalU64, name: &str) -> Result<Option<u16
                 .map_err(|_| TermprobeError::usage(format!("{name} must be between 0 and 65535")))
         })
         .transpose()
+}
+pub(crate) unsafe fn open(value: TuiOpenOptions) -> Result<OpenOptions> {
+    let backend = unsafe { value.backend.optional()? }
+        .map(|s| s.parse())
+        .transpose()
+        .map_err(TermprobeError::usage)?
+        .unwrap_or_default();
+    let shell = unsafe { value.shell.optional()? }
+        .map(|s| {
+            serde_json::from_value(s.clone().into())
+                .map_err(|_| TermprobeError::usage(format!("unknown shell {s:?}")))
+        })
+        .transpose()?;
+    let mut profile = Profile::default();
+    if let Some(scrollback) = value.scrollback.option() {
+        profile.scrollback = usize::try_from(scrollback)
+            .map_err(|_| TermprobeError::usage("scrollback exceeds addressable size"))?;
+    }
+    for (name, color) in unsafe { pairs(value.colors, value.colors_len)? } {
+        let color = Rgb::parse(&color).map_err(TermprobeError::usage)?;
+        if !profile.colors.set_named(&name, color) {
+            return Err(TermprobeError::usage(format!(
+                "unknown profile color {name:?}"
+            )));
+        }
+    }
+    let mode = unsafe { value.recording_mode.optional()? }.unwrap_or_else(|| "disabled".into());
+    let mode = serde_json::from_value(mode.clone().into())
+        .map_err(|_| TermprobeError::usage(format!("unknown automatic recording mode {mode:?}")))?;
+    unsafe { open_input(value, backend, shell, profile, mode) }
+}
+pub(crate) fn mouse(value: TuiMouseOptions) -> Result<MouseOptions> {
+    let button = match value.button {
+        0 => MouseButton::Left,
+        1 => MouseButton::Middle,
+        2 => MouseButton::Right,
+        _ => return Err(TermprobeError::usage("unknown mouse button")),
+    };
+    Ok(mouse_input(value, button))
+}
+pub(crate) unsafe fn query(value: TuiQuery) -> Result<LocatorQuery> {
+    let json = unsafe { value.json.required()? };
+    serde_json::from_str::<LocatorExpression>(&json)
+        .map_err(|error| TermprobeError::usage(format!("invalid locator expression: {error}")))?
+        .into_query()
+}
+
+pub(crate) unsafe fn capture_background(
+    background: TuiString,
+    transparent: bool,
+) -> Result<Option<CaptureBackground>> {
+    crate::session::capture_background(unsafe { background.optional()? }, transparent)
+}
+pub(crate) unsafe fn recording(value: TuiRecordingOptions) -> Result<Operation> {
+    let format = unsafe { value.format.optional()? }
+        .map(|s| {
+            serde_json::from_value(s.into())
+                .map_err(|_| TermprobeError::usage("unknown recording format"))
+        })
+        .transpose()?;
+    let fps = value
+        .fps
+        .option()
+        .map(|v| u8::try_from(v).map_err(|_| TermprobeError::usage("fps must be between 0 and 255")))
+        .transpose()?;
+    unsafe { recording_input(value, format, fps) }
+}
