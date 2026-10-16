@@ -56,3 +56,29 @@ class SourceDistribution(sdist):
             )
         (destination / "Cargo.toml").write_text(manifest, encoding="utf-8")
         for crate in ("tui-test", "tui-test-ffi"):
+            source = RUST_ROOT / "crates" / crate
+            target = destination / "crates" / crate
+            target.mkdir(parents=True)
+            shutil.copy2(source / "Cargo.toml", target / "Cargo.toml")
+            if (source / "build.rs").is_file():
+                shutil.copy2(source / "build.rs", target / "build.rs")
+            for directory in ("src", "assets", "shell", "include"):
+                if (source / directory).is_dir():
+                    shutil.copytree(source / directory, target / directory)
+
+
+setup(
+    rust_extensions=[
+        RustExtension(
+            "tui_test.tui_test_ffi",
+            path=os.path.relpath(RUST_ROOT / "crates/tui-test-ffi/Cargo.toml", ROOT),
+            binding=Binding.NoBinding,
+        ),
+    ],
+    cmdclass={
+        "build_rust": SharedLibraryBuild,
+        "bdist_wheel": SharedLibraryWheel,
+        "sdist": SourceDistribution,
+    },
+    zip_safe=False,
+)
