@@ -61,3 +61,82 @@ func nativeError(result *abiResult) error {
 		kind = NoSessionError
 	}
 	return &Error{Kind: kind, Message: nativeText(result.errorMessage), DetailsJSON: []byte(nativeText(result.errorDetails)), ArtifactJSON: []byte(nativeText(result.errorArtifact))}
+}
+
+func nativeColor(value abiColor) Color {
+	switch value.kind {
+	case 1:
+		return Color(strconv.Itoa(int(value.index)))
+	case 2:
+		return Color(fmt.Sprintf("#%02x%02x%02x", value.red, value.green, value.blue))
+	default:
+		return "default"
+	}
+}
+
+func nativeCells(result *abiResult) []Cell {
+	cells := make([]Cell, int(result.cellsLen))
+	for index, cell := range unsafe.Slice(result.cells, int(result.cellsLen)) { //nolint:gosec // G103: Rust supplies the cell buffer and length; all fields are copied before ResultFree.
+		cells[index] = Cell{X: cell.x, Y: cell.y, Char: nativeText(cell.character), FG: nativeColor(cell.fg), BG: nativeColor(cell.bg), Bold: cell.bold, Dim: cell.dim, Italic: cell.italic, Inverse: cell.inverse, Invisible: cell.invisible, Strike: cell.strike, Blink: cell.blink, Underline: cell.underline, UnderlineStyle: UnderlineStyle(nativeText(cell.underlineStyle)), UnderlineColor: nativeColor(cell.underlineColor), Link: nativeText(cell.link), LinkID: nativeText(cell.linkID)}
+	}
+	return cells
+}
+
+func nativeMatches(result *abiResult) []TextMatch {
+	matches := make([]TextMatch, int(result.matchesLen))
+	for index, match := range unsafe.Slice(result.matches, int(result.matchesLen)) { //nolint:gosec // G103: Rust supplies the match buffer and length; nested data is copied before ResultFree.
+		spans := make([]TextSpan, int(match.spansLen))
+		for spanIndex, span := range unsafe.Slice(match.spans, int(match.spansLen)) { //nolint:gosec // G103: The owning Rust result keeps spans alive until this copy finishes, before ResultFree.
+			spans[spanIndex] = TextSpan{Row: span.row, Start: uint32(span.start), End: uint32(span.end)}
+		}
+		matches[index] = TextMatch{Text: nativeText(match.text), Start: TextPosition{Row: match.start.row, Column: uint32(match.start.column)}, End: TextPosition{Row: match.end.row, Column: uint32(match.end.column)}, Spans: spans}
+	}
+	return matches
+}
+
+func nativeState(value abiState) State {
+	modes := make(map[string]bool, int(value.modesLen))
+	for _, mode := range unsafe.Slice(value.modes, int(value.modesLen)) { //nolint:gosec // Rust-owned result remains live while values are copied.
+		modes[nativeText(mode.name)] = mode.enabled
+	}
+	return State{SessionShell: nativeOptionalText(value.sessionShell), Cols: value.cols, Rows: value.rows, Cursor: nativeCursor(value.cursor), Title: nativeOptionalText(value.title), Cwd: nativeOptionalText(value.cwd), LastCommand: nativeOptionalText(value.lastCommand), LastExit: nativeInt(value.lastExit), ExitSignal: nativeOptionalText(value.exitSignal), Exited: nativeInt(value.exited), Ready: value.ready, BellCount: value.bellCount, Modes: modes, MouseMode: nativeText(value.mouseMode), Colors: nativeTerminalColors(value.colors), Text: nativeText(value.text), Timeouts: EffectiveTimeouts{Text: nativeMilliseconds(value.timeouts.text.value), Idle: nativeMilliseconds(value.timeouts.idle.value), Command: nativeMilliseconds(value.timeouts.command.value), Exit: nativeMilliseconds(value.timeouts.exit.value), Ready: nativeMilliseconds(value.timeouts.ready.value)}}
+}
+
+func nativeCursor(value abiCursor) Cursor {
+	return Cursor{X: value.x, Y: value.y, Visible: value.visible, Shape: nativeText(value.shape), Color: nativeText(value.color)}
+}
+
+func nativeTerminalColors(value abiTerminalColors) TerminalColors {
+	palette := make(map[uint8]string, int(value.paletteLen))
+	for _, entry := range unsafe.Slice(value.palette, int(value.paletteLen)) { //nolint:gosec // Rust-owned result remains live while values are copied.
+		index, err := strconv.ParseUint(nativeText(entry.key), 10, 8)
+		if err == nil {
+			palette[uint8(index)] = nativeText(entry.value)
+		}
+	}
+	return TerminalColors{Foreground: nativeText(value.foreground), Background: nativeText(value.background), Cursor: nativeText(value.cursor), Palette: palette}
+}
+
+// Millisecond precision can round a maximum Go duration beyond its range.
+func nativeMilliseconds(value uint64) time.Duration {
+	if value > uint64(math.MaxInt64/int64(time.Millisecond)) {
+		return time.Duration(math.MaxInt64)
+	}
+	return time.Duration(value) * time.Millisecond
+}
+
+func nativeSessionNames(result *abiResult) []string {
+	sessions := make([]string, int(result.stringsLen))
+	for index, value := range unsafe.Slice(result.strings, int(result.stringsLen)) { //nolint:gosec // G103: Rust supplies the session buffer and length; each string is copied before deferred ResultFree.
+		sessions[index] = nativeText(value)
+	}
+	return sessions
+}
+
+func nativeBellEvents(result *abiResult) []BellEvent {
+	events := make([]BellEvent, int(result.bellsLen))
+	for index, value := range unsafe.Slice(result.bells, int(result.bellsLen)) { //nolint:gosec // G103: Rust supplies the event buffer and length; values are copied before deferred ResultFree.
+		events[index] = BellEvent{Sequence: value.sequence, Elapsed: nativeMilliseconds(value.elapsedMS)}
+	}
+	return events
+}

@@ -87,3 +87,76 @@ func cacheLibrary(cache string, library bundledLibrary) (path string, resultErr 
 	defer func() {
 		if err := root.Remove(temporaryName); err != nil {
 			resultErr = errors.Join(resultErr, fmt.Errorf("remove temporary native engine: %w", err))
+		}
+	}()
+	unpackErr := unpackLibrary(file, library)
+	if err := errors.Join(unpackErr, file.Close()); err != nil {
+		return "", fmt.Errorf("extract bundled native engine: %w", err)
+	}
+	// Publish only a complete file. Never replace an inode that another process
+	// may already have mapped as executable code.
+	if err := root.Link(temporaryName, library.name); err != nil {
+		if !errors.Is(err, os.ErrExist) {
+			return "", fmt.Errorf("publish native engine cache: %w", err)
+		}
+		if err := verifyCachedLibrary(root, library); err != nil {
+			return "", fmt.Errorf("check concurrent native engine extraction: %w", err)
+		}
+	}
+	return path, nil
+}
+
+func verifyCachedLibrary(root *os.Root, library bundledLibrary) error {
+	file, err := root.Open(library.name)
+	if err != nil {
+		return err
+	}
+	hash := sha256.New()
+	_, readErr := io.Copy(hash, file)
+	if err := errors.Join(readErr, file.Close()); err != nil {
+		return err
+	}
+	if fmt.Sprintf("%x", hash.Sum(nil)) != library.checksum {
+		return fmt.Errorf("checksum mismatch; remove this cached file and run again")
+	}
+	return nil
+}
+
+func unpackLibrary(destination io.Writer, library bundledLibrary) error {
+	compressed, err := gzip.NewReader(bytes.NewReader(library.archive))
+	if err != nil {
+		return err
+	}
+	defer compressed.Close()
+	archive := tar.NewReader(compressed)
+	found := false
+	for {
+		header, err := archive.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if header.Name != library.name {
+			continue
+		}
+		if found || header.Typeflag != tar.TypeReg {
+			return fmt.Errorf("invalid archive entry for %s", library.name)
+		}
+		hash := sha256.New()
+		if _, err := io.Copy(io.MultiWriter(destination, hash), archive); err != nil {
+			return err
+		}
+		if fmt.Sprintf("%x", hash.Sum(nil)) != library.checksum {
+			return fmt.Errorf("bundled native engine checksum mismatch")
+		}
+		found = true
+	}
+	if !found {
+		return fmt.Errorf("archive does not contain %s", library.name)
+	}
+	// Consume the gzip trailer too, so a truncated archive cannot enter the cache.
+	_, err = io.Copy(io.Discard, compressed)
+	return err
+}
