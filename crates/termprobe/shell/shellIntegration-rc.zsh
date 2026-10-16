@@ -42,3 +42,4 @@ setopt PROMPT_SUBST
 PS1='%{$(__su_osc A)%}> %{$(__su_osc B)%}'
 
 add-zsh-hook preexec __su_preexec
+add-zsh-hook precmd __su_precmd
