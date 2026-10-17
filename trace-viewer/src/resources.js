@@ -38,3 +38,4 @@ export function createResources(model) {
     dispose();
     throw error;
   }
+}

@@ -43,3 +43,25 @@
   <div id="frame-notice" class="notice" hidden={!notice}>{notice}</div>
   <TerminalScreen {frame} url={imageError ? undefined : image?.url} {zoom} {geometry} {mismatches} {cell} {oninspect} {onmove} {onimageerror} />
   <div class="frame-controls">
+    <button id="previous-frame" aria-label="Previous retained frame" disabled={index <= 0} onclick={() => onframe(index - 1)}>Prev frame</button>
+    <button id="play" disabled={index < 0 || index >= frameCount - 1} onclick={onplay}>{playing ? "Pause" : "Play to next point"}</button>
+    <input id="frame-slider" type="range" min="0" max={Math.max(0, frameCount - 1)} value={Math.max(0, index)}
+      aria-label="Retained frame" disabled={!frameCount} oninput={(event) => onframe(event.currentTarget.valueAsNumber)} />
+    <button id="next-frame" aria-label="Next retained frame" disabled={!frameCount || index >= frameCount - 1} onclick={() => onframe(index + 1)}>Next frame</button>
+    <span id="frame-count" class="muted">{frame ? `${index + 1} / ${frameCount}` : "Unavailable"}</span>
+  </div>
+</section>
+
+<style>
+  .viewer { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--bg); }
+  .viewer-toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .viewer-toolbar strong { overflow-wrap: anywhere; min-width: 0; }
+  .zoom-label { font-size: 11px; color: var(--muted); }
+  .frame-meta { color: var(--muted); font-size: 11px; margin: 0; padding: 4px 10px; }
+  .frame-controls { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-top: 1px solid var(--border); }
+  .frame-controls button { white-space: nowrap; font-size: 11px; }
+  #frame-slider { flex: 1; min-width: 30px; accent-color: var(--blue); }
+  #frame-count { white-space: nowrap; }
+  @media (max-width: 850px) { .frame-controls { flex-wrap: wrap; } .viewer-toolbar { align-items: flex-start; } #frame-count { display: none; } }
+  @media (max-width: 600px) { .zoom-label { display: none; } }
+</style>
