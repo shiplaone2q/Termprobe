@@ -81,3 +81,98 @@ fn arg_json(arg: &Arg) -> Value {
     let positional = arg.is_positional();
     let is_flag = matches!(arg.get_action(), ArgAction::SetTrue | ArgAction::SetFalse);
 
+    let values: Vec<String> = arg
+        .get_possible_values()
+        .iter()
+        .map(|pv| pv.get_name().to_string())
+        .collect();
+
+    let kind = if is_flag {
+        "bool"
+    } else if !values.is_empty() {
+        "enum"
+    } else if positional {
+        "value"
+    } else {
+        "string"
+    };
+
+    let defaults: Vec<String> = arg
+        .get_default_values()
+        .iter()
+        .map(|v| v.to_string_lossy().into_owned())
+        .collect();
+
+    let mut obj = Map::new();
+    obj.insert("name".into(), json!(arg.get_id().as_str()));
+    obj.insert("type".into(), json!(kind));
+    if positional {
+        obj.insert("positional".into(), json!(true));
+    }
+    if let Some(long) = arg.get_long() {
+        obj.insert("long".into(), json!(format!("--{long}")));
+    }
+    if let Some(short) = arg.get_short() {
+        obj.insert("short".into(), json!(format!("-{short}")));
+    }
+    if let Some(help) = arg.get_help() {
+        obj.insert("help".into(), json!(help.to_string()));
+    }
+    if !values.is_empty() {
+        obj.insert("values".into(), json!(values));
+    }
+    if !defaults.is_empty() {
+        let default = if defaults.len() == 1 {
+            json!(defaults[0])
+        } else {
+            json!(defaults)
+        };
+        obj.insert("default".into(), default);
+    }
+    if arg.is_required_set() {
+        obj.insert("required".into(), json!(true));
+    }
+    if matches!(arg.get_action(), ArgAction::Append) {
+        obj.insert("repeatable".into(), json!(true));
+    }
+    Value::Object(obj)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn renders_versioned_schema_with_commands() {
+        let doc: Value = serde_json::from_str(&render()).unwrap();
+        assert_eq!(doc["schema_version"], json!(SCHEMA_VERSION));
+        assert_eq!(doc["name"], json!("termprobe"));
+        assert!(doc["commands"]["expect"].is_object());
+        assert_eq!(
+            doc["commands"]["monitor"]["args"][0]["long"],
+            json!("--interactive")
+        );
+        assert!(doc["commands"].get("__daemon").is_none());
+        assert!(doc["exit_codes"]["3"].is_string());
+        let globals = doc["global_flags"].as_array().unwrap();
+        assert!(globals.iter().any(|f| f["long"] == json!("--session")));
+    }
+
+    #[test]
+    fn enum_args_enumerate_their_values() {
+        let doc: Value = serde_json::from_str(&render()).unwrap();
+        let signal = &doc["commands"]["signal"]["args"][0];
+        assert_eq!(signal["type"], json!("enum"));
+        let values = signal["values"].as_array().unwrap();
+        assert!(values.contains(&json!("INT")));
+
+        let recording_format = doc["commands"]["record"]["subcommands"]["start"]["args"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|arg| arg["long"] == json!("--format"))
+            .unwrap();
+        let values = recording_format["values"].as_array().unwrap();
+        assert!(values.contains(&json!("mp4")));
+    }
+}

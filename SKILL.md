@@ -64,3 +64,55 @@ try {
 Use text and style locators for visible terminal state.
 
 ```python
+save = (
+    terminal
+    .get_by_text("Settings")
+    .get_by_text("Save", direction="after")
+    .unique()
+)
+
+await save.click()
+```
+
+- Use `first()`, `last()`, `nth()`, or `unique()` before an action when text repeats.
+- Use `get_by_style()` or `getByStyle()` for colors and attributes.
+- Use `direction="within"`, `"after"`, or `"before"` for relative matches.
+- Use `locations()` or `count()` for immediate reads.
+- Use `wait()`, `expect()`, or `click()` when the app may still be changing.
+
+## Wait for state
+
+| Need | Use |
+| --- | --- |
+| Visible or hidden text | Locator `wait()` or `expect()` |
+| Submitted command finished | `wait command`, `wait_command()`, `waitCommand()` |
+| Program exited | `wait exit`, `wait_exit()`, `waitExit()` |
+| Shell prompt ready | `wait ready`, `wait_ready()`, `waitReady()` |
+| Screen stopped changing | `wait idle`, `wait_idle()`, `waitIdle()` |
+| Clipboard changed or matched | `wait clipboard`, `wait_clipboard()`, `waitClipboard()` |
+| Bell fired | `wait bell`, `wait_bell()`, `waitBell()` |
+
+Do not use a fixed sleep when a wait can describe the state.
+
+## Keep tests stable
+
+- Give parallel tests unique sessions.
+- Use `open` for shell commands and `run` for an app.
+- Assert the exit code separately from visible text.
+- Keep the shell, terminal size, cwd, environment, and timeouts explicit when they affect output.
+- Use semantic mouse buttons: `left`, `middle`, or `right`.
+- Close every session. Prefer the Python and JavaScript test helpers.
+
+## Capture output
+
+Use `screenshot` for text, SVG, or PNG. SVG, PNG, APNG, and GIF support `--background COLOR` and `--transparent`. MP4 supports `--background` only. Use `record` for APNG, GIF, MP4, or asciinema. Configure `[trace]` with `mode = "on-failure"` and a `directory` for test artifacts, including agent-readable Markdown/JSON, an asciicast, and standalone HTML. Trace modes are `off` (default), `on`, and `on-failure`; `[recording]` only accepts `directory`.
+
+For a failed assertion that must be understood offline, add `--failure-artifacts <dir>`. Agents should read `failure.md` first, then `failure.json` for exact locator/process evidence and `timeline.json` for retained per-cell frame metadata. Users can open `failure.html` directly from disk to navigate assertion checkpoints, step frames, and inspect clicked cells. Missing history is explicit; sampled frames are not a complete recording. Add `--failure-artifact-recording` for a continuous cast only when terminal output is safe to retain; diagnostic bundles can contain sensitive terminal text, titles, and locator operands.
+
+## References
+
+- [CLI](references/cli.md)
+- [Python](references/python.md)
+- [JavaScript](references/javascript.md)
+- [Rust](references/rust.md)
+- [Recipes](references/recipes.md)
