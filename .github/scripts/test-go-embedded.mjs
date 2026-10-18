@@ -54,3 +54,4 @@ try {
   console.log(`README quick start: ${output.trim()}`);
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
+}
