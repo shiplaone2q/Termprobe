@@ -507,3 +507,1542 @@ macro_rules! emulator_conformance_tests {
             // `Option::None` in this scope.
             use $crate::terminal::cell::UnderlineStyle as U;
             for (seq, want) in [
+                (&b"\x1b[4m"[..], U::Single),
+                (&b"\x1b[4:2m"[..], U::Double),
+                (&b"\x1b[4:3m"[..], U::Curly),
+                (&b"\x1b[4:4m"[..], U::Dotted),
+                (&b"\x1b[4:5m"[..], U::Dashed),
+            ] {
+                let mut e = conformance_emu(10, 2, 100);
+                e.process(seq);
+                e.process(b"U");
+                let cell = e.viewable_rows()[0][0].clone();
+                assert_eq!(cell.underline, want, "{seq:?}");
+                assert_eq!(
+                    cell.underline_color, None,
+                    "no SGR 58 means it follows the fg"
+                );
+            }
+        }
+
+        /// SGR 58 colors the underline independently of the text.
+        #[test]
+        fn conformance_underline_color() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b[31;4;58;5;33mU");
+            let cell = e.viewable_rows()[0][0].clone();
+            assert_eq!(cell.fg, Some($crate::terminal::cell::Color::from_index(1)));
+            assert_eq!(
+                cell.underline_color,
+                Some($crate::terminal::cell::Color::from_index(33)),
+                "underline keeps its own color"
+            );
+        }
+
+        /// The underline's color is tracked separately from its shape, so
+        /// SGR 58 survives a cell that is not underlined and SGR 24 leaves it
+        /// alone. Only a full reset clears both.
+        #[test]
+        fn conformance_underline_color_outlives_the_underline() {
+            if CONFORMANCE_DIVERGENCES
+                .contains(&$crate::terminal::conformance::Divergence::UnderlineColorNeedsAStyle)
+            {
+                return;
+            }
+            use $crate::terminal::cell::{Color, UnderlineStyle as U};
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b[58;5;33mA\x1b[4mB\x1b[24mC\x1b[0mD");
+            let rows = e.viewable_rows();
+
+            assert_eq!(rows[0][0].underline, U::None, "58 alone does not underline");
+            assert_eq!(
+                rows[0][0].underline_color,
+                Some(Color::from_index(33)),
+                "but its color is still tracked"
+            );
+            assert_eq!(rows[0][1].underline, U::Single, "4 turns it on");
+            assert_eq!(rows[0][1].underline_color, Some(Color::from_index(33)));
+            assert_eq!(rows[0][2].underline, U::None, "24 turns it off");
+            assert_eq!(
+                rows[0][2].underline_color,
+                Some(Color::from_index(33)),
+                "24 clears the shape, not the color"
+            );
+            assert_eq!(rows[0][3].underline, U::None, "0 resets everything");
+            assert_eq!(rows[0][3].underline_color, None);
+        }
+
+        /// `OSC 8 ; params ; URI ST` opens a link, and the same sequence with
+        /// an empty URI closes it. Every cell written in between carries it.
+        #[test]
+        fn conformance_hyperlinks_cover_the_cells_they_open_over() {
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(b"a\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\b");
+            let rows = e.viewable_rows();
+
+            assert_eq!(rows[0][0].uri(), None, "text before the link is plain");
+            for x in 1..5 {
+                assert_eq!(
+                    rows[0][x].uri(),
+                    Some("https://example.com"),
+                    "column {x} is inside the link"
+                );
+            }
+            assert_eq!(rows[0][5].uri(), None, "an empty URI closes the link");
+        }
+
+        /// The `id=` parameter is reported as the child sent it. A link that
+        /// carried none reports none rather than an invented value: alacritty
+        /// and rio both synthesize an id for their own use, and letting that
+        /// through would put a backend's private counter in a snapshot.
+        #[test]
+        fn conformance_hyperlink_ids_are_only_what_the_child_sent() {
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(b"\x1b]8;;https://a.example\x1b\\A\x1b]8;;\x1b\\");
+            e.process(b"\x1b]8;id=anchor;https://b.example\x1b\\B\x1b]8;;\x1b\\");
+            let rows = e.viewable_rows();
+
+            let plain = rows[0][0].hyperlink.clone().expect("A is linked");
+            assert_eq!(plain.uri, "https://a.example");
+            assert_eq!(plain.id, None, "no id= was sent, so none is reported");
+
+            let anchored = rows[0][1].hyperlink.clone().expect("B is linked");
+            assert_eq!(anchored.uri, "https://b.example");
+            if !CONFORMANCE_DIVERGENCES
+                .contains(&$crate::terminal::conformance::Divergence::HyperlinkHasNoId)
+            {
+                assert_eq!(anchored.id.as_deref(), Some("anchor"));
+            }
+        }
+
+        /// A link is a property of the cell, not of the run: closing one and
+        /// opening another has to leave each cell pointing where it was
+        /// written, and text after the last link has to be plain again.
+        #[test]
+        fn conformance_adjacent_hyperlinks_stay_separate() {
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(
+                b"\x1b]8;;https://one.example\x1b\\1\x1b]8;;https://two.example\x1b\\2\x1b]8;;\x1b\\3",
+            );
+            let rows = e.viewable_rows();
+            assert_eq!(rows[0][0].uri(), Some("https://one.example"));
+            assert_eq!(rows[0][1].uri(), Some("https://two.example"));
+            assert_eq!(rows[0][2].uri(), None);
+        }
+
+        /// A link and an underline are independent: SGR 4 inside a link is
+        /// still a single underline, not whatever shape the backend happens
+        /// to draw links with.
+        #[test]
+        fn conformance_a_hyperlink_does_not_change_the_underline() {
+            use $crate::terminal::cell::UnderlineStyle as U;
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(b"\x1b]8;;https://example.com\x1b\\p\x1b[4mq\x1b[0m\x1b]8;;\x1b\\");
+            let rows = e.viewable_rows();
+
+            assert_eq!(rows[0][0].uri(), Some("https://example.com"));
+            assert_eq!(rows[0][0].underline, U::None, "a link is not an underline");
+            assert_eq!(rows[0][1].uri(), Some("https://example.com"));
+            assert_eq!(rows[0][1].underline, U::Single, "SGR 4 means single");
+        }
+
+        /// `SGR 0` does not close a hyperlink.
+        ///
+        /// A link looks like a style — it is opened by an escape sequence and
+        /// every cell written afterwards carries it — but it is not one, and
+        /// this is where the two come apart: the attribute reset that clears
+        /// every SGR attribute leaves the link running. Only `OSC 8` with an
+        /// empty URI closes it. That is why a link is recorded next to the
+        /// styles rather than as one of them.
+        #[test]
+        fn conformance_an_attribute_reset_does_not_close_a_hyperlink() {
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(b"\x1b]8;;https://example.com\x1b\\\x1b[1ma\x1b[0mb\x1b]8;;\x1b\\c");
+            let rows = e.viewable_rows();
+
+            assert!(rows[0][0].has($crate::terminal::cell::Attrs::BOLD));
+            assert_eq!(rows[0][0].uri(), Some("https://example.com"));
+            assert!(
+                !rows[0][1].has($crate::terminal::cell::Attrs::BOLD),
+                "SGR 0 clears the bold"
+            );
+            assert_eq!(
+                rows[0][1].uri(),
+                Some("https://example.com"),
+                "SGR 0 does not clear the link"
+            );
+            assert_eq!(rows[0][2].uri(), None, "only OSC 8 closes the link");
+        }
+
+        /// A child pushes Kitty keyboard modes with `CSI > Ps u` and pops them
+        /// with `CSI < u`. Every backend that implements the protocol has to
+        /// report the same flags, because `key press` encodes from them: a
+        /// backend that under-reports silently sends legacy keys to a child
+        /// that asked for `CSI u`.
+        #[test]
+        fn conformance_kitty_keyboard_modes_are_pushed_and_popped() {
+            if CONFORMANCE_DIVERGENCES
+                .contains(&$crate::terminal::conformance::Divergence::NoKittyKeyboard)
+            {
+                return;
+            }
+            use $crate::terminal::emu::KeyboardMode as K;
+            let mut e = conformance_emu(10, 2, 100);
+            assert_eq!(e.keyboard_mode(), K::empty(), "nothing is on to start");
+
+            e.process(b"\x1b[>3u");
+            assert_eq!(
+                e.keyboard_mode(),
+                K::DISAMBIGUATE_ESC_CODES | K::REPORT_EVENT_TYPES,
+                "1 and 2 are the two bits of 3"
+            );
+
+            e.process(b"\x1b[>31u");
+            assert_eq!(
+                e.keyboard_mode(),
+                K::DISAMBIGUATE_ESC_CODES
+                    | K::REPORT_EVENT_TYPES
+                    | K::REPORT_ALTERNATE_KEYS
+                    | K::REPORT_ALL_KEYS_AS_ESC
+                    | K::REPORT_ASSOCIATED_TEXT,
+                "every flag maps to its own bit"
+            );
+
+            e.process(b"\x1b[<u");
+            assert_eq!(
+                e.keyboard_mode(),
+                K::DISAMBIGUATE_ESC_CODES | K::REPORT_EVENT_TYPES,
+                "popping restores what was underneath"
+            );
+            e.process(b"\x1b[<u");
+            assert_eq!(
+                e.keyboard_mode(),
+                K::empty(),
+                "popping the last leaves none"
+            );
+        }
+
+        /// Every mode in the vocabulary turns on and off on every backend.
+        ///
+        /// This case is the reason the vocabulary is a closed set: a mode
+        /// earns a variant by passing here on all four backends, so the enum
+        /// is a claim this test keeps honest rather than a wish list.
+        #[test]
+        fn conformance_terminal_modes_turn_on_and_off() {
+            use $crate::terminal::emu::TerminalMode;
+            for mode in TerminalMode::ALL {
+                let mut e = conformance_emu(20, 4, 100);
+                assert_eq!(
+                    e.mode(mode),
+                    mode.default_enabled(),
+                    "{} starts at its documented default",
+                    mode.name()
+                );
+
+                e.process(mode.set_sequence());
+                assert!(e.mode(mode), "{} did not turn on", mode.name());
+
+                e.process(mode.reset_sequence());
+                assert!(!e.mode(mode), "{} did not turn off", mode.name());
+            }
+        }
+
+        /// Setting one mode leaves the others alone, so a backend that mapped
+        /// two of them onto the same flag fails here rather than silently
+        /// reporting one when a test asked about the other.
+        #[test]
+        fn conformance_terminal_modes_are_independent() {
+            use $crate::terminal::emu::TerminalMode;
+            for mode in TerminalMode::ALL {
+                let mut e = conformance_emu(20, 4, 100);
+                e.process(mode.set_sequence());
+                for other in TerminalMode::ALL {
+                    if other == mode {
+                        continue;
+                    }
+                    assert_eq!(
+                        e.mode(other),
+                        other.default_enabled(),
+                        "setting {} also changed {}",
+                        mode.name(),
+                        other.name()
+                    );
+                }
+            }
+        }
+
+        /// Resetting the underline color must not be confusable with setting
+        /// it to white.
+        ///
+        /// xterm.js stores `SGR 59` as an explicit RGB #ffffff rather than as
+        /// an absence, which reads back identically to a real
+        /// `58;2::255:255:255`. Whichever way that ambiguity is guessed at
+        /// read time, one of these two cells is wrong.
+        #[test]
+        fn conformance_resetting_the_underline_color_is_not_white() {
+            use $crate::terminal::cell::Color;
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b[0m\x1b[4;58;2;255;0;0mA\x1b[59mB\x1b[58;2;255;255;255mC");
+            let rows = e.viewable_rows();
+
+            assert_eq!(
+                rows[0][0].underline_color,
+                Some(Color::Rgb(255, 0, 0)),
+                "58 sets the underline color"
+            );
+            assert_eq!(
+                rows[0][1].underline_color, None,
+                "59 resets it, rather than painting white"
+            );
+            assert_eq!(
+                rows[0][2].underline_color,
+                Some(Color::Rgb(255, 255, 255)),
+                "a white underline is still addressable after a reset"
+            );
+        }
+
+        /// A cell carrying no attributes reports none of them.
+        ///
+        /// Backends are free to shortcut the all-default case rather than
+        /// asking a cell for each attribute in turn; this pins that the
+        /// shortcut and the long form agree, in both directions.
+        #[test]
+        fn conformance_default_and_styled_cells_do_not_blur_together() {
+            use $crate::terminal::cell::{Attrs, Color, UnderlineStyle as U};
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b[0mA\x1b[1;3;4;7;9;31;42mB\x1b[0mC");
+            let rows = e.viewable_rows();
+
+            for (x, label) in [(0usize, "before"), (2usize, "after")] {
+                let cell = &rows[0][x];
+                assert_eq!(cell.fg, None, "{label}: no foreground");
+                assert_eq!(cell.bg, None, "{label}: no background");
+                assert_eq!(cell.underline, U::None, "{label}: no underline");
+                assert_eq!(cell.underline_color, None, "{label}: no underline color");
+                assert_eq!(cell.attrs, Attrs::empty(), "{label}: no attributes");
+            }
+
+            let styled = &rows[0][1];
+            assert_eq!(styled.fg, Some(Color::from_index(1)));
+            assert_eq!(styled.bg, Some(Color::from_index(2)));
+            assert_eq!(styled.underline, U::Single);
+            assert!(styled.has(Attrs::BOLD), "bold survives the fast path");
+            assert!(styled.has(Attrs::ITALIC), "italic survives the fast path");
+            assert!(styled.has(Attrs::INVERSE), "inverse survives the fast path");
+            assert!(styled.has(Attrs::STRIKE), "strike survives the fast path");
+        }
+
+        /// Named, 256-palette, and 24-bit colors map onto the color vocabulary.
+        #[test]
+        fn conformance_colors() {
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(b"\x1b[31mR");
+            e.process(b"\x1b[38;5;196mP");
+            e.process(b"\x1b[38;2;10;20;30mT");
+            e.process(b"\x1b[0mD");
+            let rows = e.viewable_rows();
+            assert_eq!(
+                rows[0][0].fg,
+                Some($crate::terminal::cell::Color::Named(
+                    $crate::terminal::cell::NamedColor::Red
+                )),
+                "SGR 31 is the themeable red slot, not a fixed index"
+            );
+            assert_eq!(
+                rows[0][1].fg,
+                Some($crate::terminal::cell::Color::Idx(196)),
+                "256-color palette index stays an index"
+            );
+            assert_eq!(
+                rows[0][2].fg,
+                Some($crate::terminal::cell::Color::Rgb(10, 20, 30)),
+                "24-bit truecolor"
+            );
+            assert_eq!(rows[0][3].fg, None, "reset returns to the terminal default");
+        }
+
+        /// Background colors are tracked independently of foreground.
+        #[test]
+        fn conformance_background_color() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b[44mB");
+            let cell = e.viewable_rows()[0][0].clone();
+            assert_eq!(
+                cell.bg,
+                Some($crate::terminal::cell::Color::Named(
+                    $crate::terminal::cell::NamedColor::Blue
+                )),
+                "named blue background"
+            );
+            assert_eq!(cell.fg, None);
+        }
+
+        /// A double-width char owns both its columns: the second holds the
+        /// continuation marker, distinct from a blank cell's space, so text
+        /// extraction does not invent a column that the terminal never drew.
+        #[test]
+        fn conformance_wide_char_continuation() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process("你a".as_bytes());
+            let rows = e.viewable_rows();
+            assert_eq!(rows[0][0].ch, "你");
+            assert_eq!(
+                rows[0][1].ch,
+                $crate::terminal::cell::CONTINUATION,
+                "the second column of a wide char is a continuation, not a blank"
+            );
+            assert_eq!(rows[0][2].ch, "a", "next char sits after the continuation");
+            assert_eq!(rows[0][3].ch, " ", "an untouched cell is a blank space");
+            assert_eq!(
+                $crate::terminal::cell::rows_to_strings(&rows)[0],
+                "你a       ",
+                "the row is 10 columns wide, not 11"
+            );
+        }
+
+        /// A wide char that does not fit in the last column wraps whole to the
+        /// next row, and the column it left behind is a blank it still owns.
+        /// Backends mark that filler with a distinct flag from a real
+        /// continuation; conflating the two loses a column and every row after
+        /// the wrap renders shifted.
+        #[test]
+        fn conformance_wide_char_wraps_at_the_line_edge() {
+            let mut e = conformance_emu(5, 3, 100);
+            e.process("abcd你".as_bytes());
+            let rows = e.viewable_rows();
+            assert_eq!(
+                rows[0][4].ch, " ",
+                "the column the wide char vacated is a blank"
+            );
+            assert_eq!(
+                rows[1][0].ch, "你",
+                "the wide char moved to the next row whole"
+            );
+            assert_eq!(
+                rows[1][1].ch,
+                $crate::terminal::cell::CONTINUATION,
+                "and takes its continuation with it"
+            );
+            let text = $crate::terminal::cell::rows_to_strings(&rows);
+            assert_eq!(text[0], "abcd ", "the padded row is still 5 columns wide");
+            assert_eq!(text[1], "你   ", "the wrapped row is 5 columns wide too");
+        }
+
+        /// The snapshot serializer, run against a real backend grid rather
+        /// than hand-built rows. This is the pairing that broke in practice:
+        /// the grid was right and `serialize` was right on its own inputs, but
+        /// the frame still came out misaligned because they disagreed on what
+        /// a continuation renders as. Any backend whose wrapping is off by a
+        /// column shows up here as a row that overruns the box.
+        #[test]
+        fn conformance_snapshot_frames_a_wrapped_wide_char() {
+            let mut e = conformance_emu(5, 3, 100);
+            e.process("abcd你".as_bytes());
+            assert_eq!(
+                $crate::assert::snapshot::serialize(&e.viewable_rows(), 5, false, None),
+                concat!(
+                    "\u{256d}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{256e}\n",
+                    "\u{2502}abcd \u{2502}\n",
+                    "\u{2502}\u{4f60}   \u{2502}\n",
+                    "\u{2502}     \u{2502}\n",
+                    "\u{2570}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{256f}",
+                )
+            );
+        }
+
+        /// The whole grid after text wraps over several rows, wide char
+        /// included. Pinning every row at once catches the off-by-one column
+        /// errors a per-cell assertion reads past: here the wide char fits
+        /// mid-row, so no padding is involved and every row is 5 columns.
+        #[test]
+        fn conformance_wrap_grid_over_several_rows() {
+            let mut e = conformance_emu(5, 3, 100);
+            e.process("abcdefg你ij".as_bytes());
+            assert_eq!(
+                $crate::terminal::cell::rows_to_strings(&e.viewable_rows()),
+                // "fg你i" is 4 chars but 5 columns: 你 spans two.
+                ["abcde", "fg你i", "j    "]
+            );
+        }
+
+        /// A multi-byte character split across reads must still decode. The
+        /// reader fills a fixed 8 KiB buffer, so this happens on real output;
+        /// a backend that decoded each chunk independently would corrupt the
+        /// grid here while passing every other case.
+        #[test]
+        fn conformance_split_utf8_sequence() {
+            let mut e = conformance_emu(10, 2, 100);
+            let text = "héllo".as_bytes();
+            e.process(&text[..2]); // splits the two-byte 'é'
+            e.process(&text[2..]);
+            assert_eq!(conformance_text(&e.viewable_rows())[0], "héllo");
+        }
+
+        /// Cursor tracks writes and absolute positioning, 0-based as (x, y).
+        #[test]
+        fn conformance_cursor_position() {
+            let mut e = conformance_emu(10, 4, 100);
+            e.process(b"abc");
+            assert_eq!(e.cursor(), (3, 0), "cursor follows printed text");
+
+            e.process(b"\x1b[3;5H");
+            assert_eq!(e.cursor(), (4, 2), "CUP is 1-based, cursor() is 0-based");
+        }
+
+        /// Positioning past the edge clamps to the last cell, rather than
+        /// wrapping, saturating to zero, or escaping the grid.
+        #[test]
+        fn conformance_cursor_clamped_to_grid() {
+            let mut e = conformance_emu(10, 4, 100);
+            e.process(b"\x1b[999;999H");
+            assert_eq!(
+                e.cursor(),
+                (9, 3),
+                "out-of-range CUP clamps to the bottom-right cell"
+            );
+        }
+
+        /// Growing the terminal updates the reported size and keeps content.
+        #[test]
+        fn conformance_resize_grow_preserves_content() {
+            let mut e = conformance_emu(10, 4, 100);
+            e.process(b"hello");
+            e.resize(20, 6);
+
+            assert_eq!(e.size(), (20, 6));
+            let rows = e.viewable_rows();
+            assert_eq!(rows.len(), 6);
+            assert_eq!(rows[0].len(), 20);
+            assert_eq!(
+                conformance_text(&rows)[0],
+                "hello",
+                "growing must not discard existing content"
+            );
+        }
+
+        /// Shrinking reports the new size and keeps content that still fits.
+        ///
+        /// Reflow of content wider than the new width legitimately differs
+        /// between emulators, so this pins only the narrow, universal case.
+        #[test]
+        fn conformance_resize_shrink_keeps_fitting_content() {
+            let mut e = conformance_emu(20, 6, 100);
+            e.process(b"hey");
+            e.resize(10, 4);
+
+            assert_eq!(e.size(), (10, 4));
+            let rows = e.viewable_rows();
+            assert_eq!(rows.len(), 4);
+            assert_eq!(rows[0].len(), 10);
+            assert!(
+                conformance_text(&rows).iter().any(|r| r == "hey"),
+                "content narrower than the new width must survive shrinking"
+            );
+        }
+
+        /// Scrolled-off lines leave the viewport but stay in `full_rows`, and
+        /// `full_rows` ends with exactly the viewport. `grid(full = true)` in
+        /// the daemon depends on that ordering.
+        #[test]
+        fn conformance_scrollback_retained_and_ordered() {
+            let mut e = conformance_emu(10, 3, 100);
+            e.process(b"L1\r\nL2\r\nL3\r\nL4\r\nL5\r\nL6");
+
+            let view = e.viewable_rows();
+            let view_text = conformance_text(&view);
+            assert_eq!(view_text.len(), 3);
+            assert_eq!(view_text[2], "L6", "viewport shows the newest line");
+            assert!(
+                !view_text.iter().any(|r| r == "L1"),
+                "L1 must have scrolled out of the viewport"
+            );
+
+            let full = e.full_rows();
+            assert!(
+                full.len() > view.len(),
+                "full_rows must include scrollback: {} vs {}",
+                full.len(),
+                view.len()
+            );
+            assert!(
+                conformance_text(&full).iter().any(|r| r == "L1"),
+                "scrolled-off L1 must survive in full_rows"
+            );
+            assert_eq!(
+                &full[full.len() - view.len()..],
+                &view[..],
+                "full_rows must be history followed by exactly the viewport"
+            );
+        }
+
+        /// With no scrolling, history is empty and `full_rows` *is* the
+        /// viewport.
+        #[test]
+        fn conformance_full_rows_without_history() {
+            let mut e = conformance_emu(10, 4, 100);
+            e.process(b"only");
+            assert_eq!(
+                e.full_rows(),
+                e.viewable_rows(),
+                "no scroll means full_rows matches the viewport exactly"
+            );
+        }
+
+        /// The scrollback limit is honored. A backend that ignores it grows
+        /// without bound in a long-lived daemon session.
+        #[test]
+        fn conformance_scrollback_is_bounded() {
+            let rows = 3u16;
+            let scrollback = 2usize;
+            let mut e = conformance_emu(10, rows, scrollback);
+            for i in 0..20 {
+                e.process(format!("line{i}\r\n").as_bytes());
+            }
+            let total = e.full_rows().len();
+            assert!(
+                total >= rows as usize,
+                "full_rows ({total}) must still contain the viewport"
+            );
+            assert!(
+                total <= rows as usize + scrollback + 1,
+                "full_rows ({total}) must respect the {scrollback}-row scrollback limit"
+            );
+        }
+
+        /// Queries that require an answer are queued for the PTY, and draining
+        /// is destructive so replies are not sent twice. The reply must be
+        /// available as soon as `process` returns: a backend that parsed
+        /// asynchronously would hang every program that probes the terminal.
+        #[test]
+        fn conformance_pty_write_back() {
+            let mut e = conformance_emu(10, 4, 100);
+            // A backend may queue its own startup handshake; only the reply to
+            // our query matters.
+            let _ = e.take_pending_writes();
+
+            // Device Status Report: the terminal must answer with the cursor
+            // position, 1-based, as CSI <row> ; <col> R.
+            e.process(b"\x1b[3;5H\x1b[6n");
+            let reply = e.take_pending_writes();
+            assert_eq!(
+                String::from_utf8_lossy(&reply),
+                "\x1b[3;5R",
+                "DSR must report the cursor position, or programs hang waiting"
+            );
+            assert!(
+                e.take_pending_writes().is_empty(),
+                "draining must consume the queue"
+            );
+        }
+
+        /// Clipboard availability is explicit: supported backends start with
+        /// an empty value, while unsupported ones return an error.
+        #[test]
+        fn conformance_clipboard_support_is_explicit() {
+            use $crate::terminal::emu::ClipboardType;
+            let e = conformance_emu(10, 4, 100);
+            let clipboard = e.clipboard(ClipboardType::Clipboard);
+            let revision = e.clipboard_revision(ClipboardType::Clipboard);
+            if conformance_clipboard_unsupported() {
+                assert!(
+                    clipboard.is_err(),
+                    "an unsupported backend must return an error"
+                );
+                assert!(
+                    revision.is_err(),
+                    "an unsupported backend must not report a clipboard revision"
+                );
+                let mut e = e;
+                e.process(b"\x1b]52;c;?\x07");
+                let fault = e
+                    .fault()
+                    .expect("using OSC 52 on an unsupported backend must fault");
+                assert!(fault.contains("unavailable"), "unexpected fault: {fault}");
+            } else {
+                assert_eq!(
+                    clipboard.expect("clipboard support"),
+                    "",
+                    "a supported backend starts with an empty clipboard"
+                );
+                assert_eq!(revision.expect("clipboard revision support"), 0);
+            }
+        }
+
+        /// OSC 52 copies into a session-local clipboard and queries it back.
+        ///
+        /// The host clipboard is deliberately not involved: tests must be
+        /// deterministic, headless, and isolated from one another.
+        #[test]
+        fn conformance_osc_52_round_trips_clipboard_text() {
+            use $crate::terminal::emu::ClipboardType;
+            let mut e = conformance_emu(10, 4, 100);
+            if conformance_clipboard_unsupported() {
+                return;
+            }
+            let _ = e.take_pending_writes();
+
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "",
+                "a session starts with an empty clipboard"
+            );
+
+            e.process(b"\x1b]52;c;aGVsbG8=\x07");
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "hello"
+            );
+            assert_eq!(
+                e.clipboard_revision(ClipboardType::Clipboard)
+                    .expect("clipboard revision support"),
+                1
+            );
+
+            e.process(b"\x1b]52;c;?\x07");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]52;c;aGVsbG8=\x07",
+                "a query returns the clipboard as base64"
+            );
+        }
+
+        /// An empty base64 payload is a valid request to replace the current
+        /// clipboard contents with an empty string.
+        #[test]
+        fn conformance_osc_52_empty_payload_clears_clipboard() {
+            use $crate::terminal::emu::ClipboardType;
+            let mut e = conformance_emu(10, 4, 100);
+            if conformance_clipboard_unsupported() {
+                return;
+            }
+
+            e.process(b"\x1b]52;c;a2VlcCBtZQ==\x07");
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "keep me"
+            );
+
+            e.process(b"\x1b]52;c;\x07");
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "",
+                "a valid empty payload clears the clipboard"
+            );
+        }
+
+        /// A malformed payload is not clipboard text and must not replace the
+        /// last valid value.
+        #[test]
+        fn conformance_osc_52_invalid_base64_is_ignored() {
+            use $crate::terminal::emu::ClipboardType;
+            let mut e = conformance_emu(10, 4, 100);
+            if conformance_clipboard_unsupported() {
+                return;
+            }
+
+            e.process(b"\x1b]52;c;a2VlcCBtZQ==\x07");
+            e.process(b"\x1b]52;c;%%%\x07");
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "keep me"
+            );
+        }
+
+        /// Destinations outside the common clipboard/selection set must fail
+        /// explicitly. `process` runs on the PTY reader thread, so the fault is
+        /// recorded here and surfaced by the engine on the next operation.
+        #[test]
+        fn conformance_osc_52_unsupported_selection_records_a_fault() {
+            let mut e = conformance_emu(10, 4, 100);
+            if conformance_clipboard_unsupported() {
+                return;
+            }
+
+            e.process(b"\x1b]52;0;Y3V0IGJ1ZmZlcg==\x07");
+            let fault = e.fault().expect("unsupported selection must fault");
+            assert!(
+                fault.contains("clipboard selection") && fault.contains("unavailable"),
+                "unexpected fault: {fault}"
+            );
+        }
+
+        /// The standard clipboard and selection are independent, `p` and `s`
+        /// address the same selection, and an ST query is answered with ST.
+        #[test]
+        fn conformance_osc_52_selection_is_separate_and_preserves_terminator() {
+            use $crate::terminal::emu::ClipboardType;
+            let mut e = conformance_emu(10, 4, 100);
+            if conformance_clipboard_unsupported() {
+                return;
+            }
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]52;c;Y2xpcGJvYXJk\x07");
+            e.process(b"\x1b]52;p;c2VsZWN0aW9u\x07");
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "clipboard"
+            );
+            assert_eq!(
+                e.clipboard(ClipboardType::Selection)
+                    .expect("selection support"),
+                "selection"
+            );
+
+            e.process(b"\x1b]52;s;?\x1b\\");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]52;s;c2VsZWN0aW9u\x1b\\"
+            );
+        }
+
+        /// PTY reads may split anywhere, including in the base64 payload and
+        /// between the bytes of ST.
+        #[test]
+        fn conformance_osc_52_sequences_can_span_process_calls() {
+            use $crate::terminal::emu::ClipboardType;
+            let mut e = conformance_emu(10, 4, 100);
+            if conformance_clipboard_unsupported() {
+                return;
+            }
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]52;c;c3");
+            e.process(b"BsaXQ=\x1b");
+            e.process(b"\\");
+            assert_eq!(
+                e.clipboard(ClipboardType::Clipboard)
+                    .expect("clipboard support"),
+                "split"
+            );
+
+            e.process(b"\x1b]52;c;");
+            e.process(b"?\x1b");
+            e.process(b"\\");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]52;c;c3BsaXQ=\x1b\\"
+            );
+        }
+
+        /// A program can hide the cursor and show it again.
+        ///
+        /// Full-screen programs hide it while they repaint, so a backend that
+        /// ignored `DECTCEM` would leave a cursor in every screenshot taken
+        /// mid-draw, parked wherever the last write happened to end.
+        #[test]
+        fn conformance_the_cursor_can_be_hidden_and_shown() {
+            let mut e = conformance_emu(10, 3, 100);
+            assert!(
+                e.cursor_visible(),
+                "a terminal starts by showing its cursor"
+            );
+
+            e.process(b"\x1b[?25l");
+            assert!(!e.cursor_visible(), "DECTCEM off hides it");
+
+            e.process(b"\x1b[?25h");
+            assert!(e.cursor_visible(), "DECTCEM on shows it again");
+        }
+
+        /// The cursor takes the shape a program asks for with `DECSCUSR`.
+        ///
+        /// Each shape has a blinking and a steady form, and both report the
+        /// same shape: a screenshot is one moment, so the blink is not part of
+        /// what a backend has to agree on.
+        #[test]
+        fn conformance_the_cursor_takes_the_shape_it_is_given() {
+            use $crate::terminal::emu::CursorShape;
+            let mut e = conformance_emu(10, 3, 100);
+            assert_eq!(e.cursor_shape(), CursorShape::Block, "block is the default");
+
+            for (sequence, expected) in [
+                (&b"\x1b[3 q"[..], CursorShape::Underline),
+                (b"\x1b[4 q", CursorShape::Underline),
+                (b"\x1b[5 q", CursorShape::Bar),
+                (b"\x1b[6 q", CursorShape::Bar),
+                (b"\x1b[1 q", CursorShape::Block),
+                (b"\x1b[2 q", CursorShape::Block),
+            ] {
+                e.process(sequence);
+                assert_eq!(
+                    e.cursor_shape(),
+                    expected,
+                    "{:?} selects {expected:?}",
+                    String::from_utf8_lossy(sequence)
+                );
+            }
+        }
+
+        /// Hiding the cursor does not change its shape.
+        ///
+        /// `DECTCEM` and `DECSCUSR` are separate: one says whether the cursor
+        /// is drawn, the other says what it looks like when it is. A program
+        /// that hides the cursor for a redraw and shows it again has not asked
+        /// for a different shape, so the shape it chose has to survive.
+        #[test]
+        fn conformance_hiding_the_cursor_keeps_its_shape() {
+            use $crate::terminal::emu::CursorShape;
+            let mut e = conformance_emu(10, 3, 100);
+            e.process(b"\x1b[5 q");
+            assert_eq!(e.cursor_shape(), CursorShape::Bar);
+
+            e.process(b"\x1b[?25l");
+            assert!(!e.mode($crate::terminal::emu::TerminalMode::CursorVisible));
+            assert_eq!(
+                e.cursor_shape(),
+                CursorShape::Bar,
+                "a hidden cursor still has the shape it was given"
+            );
+
+            e.process(b"\x1b[?25h");
+            assert_eq!(
+                e.cursor_shape(),
+                CursorShape::Bar,
+                "and showing it again does not reset the shape"
+            );
+        }
+
+        /// A color query is answered with the session's configured color.
+        ///
+        /// Programs query the background to decide whether they are on a light
+        /// or a dark terminal. A backend that stays silent leaves them blocked
+        /// until they time out and guess.
+        #[test]
+        fn conformance_color_queries_are_answered() {
+            use $crate::profile::{Colors, Profile, Rgb};
+            let profile = Profile {
+                colors: Colors {
+                    background: Rgb::new(0x12, 0x34, 0x56),
+                    red: Rgb::new(0xab, 0xcd, 0xef),
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut e = conformance_emu_with(10, 4, profile);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]11;?\x07");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]11;rgb:1212/3434/5656\x07",
+                "OSC 11 must report the configured background"
+            );
+
+            e.process(b"\x1b]4;1;?\x07");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]4;1;rgb:abab/cdcd/efef\x07",
+                "OSC 4 must report the configured palette entry"
+            );
+        }
+
+        /// A query observes the color at the point where it appears in the
+        /// byte stream, not a set or reset that follows in the same read.
+        #[test]
+        fn conformance_color_queries_are_resolved_at_the_query_boundary() {
+            use $crate::profile::{ColorSlot, Rgb};
+            let mut e = conformance_emu(10, 4, 100);
+            let background = ColorSlot::Background;
+            let configured = e.color(background);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]11;?\x07\x1b]11;#123456\x07");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                format!(
+                    "\x1b]11;rgb:{0:02x}{0:02x}/{1:02x}{1:02x}/{2:02x}{2:02x}\x07",
+                    configured.r, configured.g, configured.b
+                ),
+                "the later set must not change the preceding answer"
+            );
+            assert_eq!(e.color(background), Rgb::new(0x12, 0x34, 0x56));
+
+            e.process(b"\x1b]11;?\x07\x1b]111\x07");
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]11;rgb:1212/3434/5656\x07",
+                "the later reset must not change the preceding answer"
+            );
+            assert_eq!(e.color(background), configured);
+        }
+
+        /// The dynamic colors are one list, and the OSC code only says where
+        /// in it to start: `OSC 10;a;b` sets the foreground and then the
+        /// background. Folding every parameter onto the first color would let
+        /// a sequence write somewhere it never named.
+        #[test]
+        fn conformance_one_dynamic_color_sequence_sets_successive_colors() {
+            use $crate::profile::{ColorSlot, Rgb};
+            let mut e = conformance_emu(10, 4, 100);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]10;#010203;#040506\x07");
+
+            assert_eq!(
+                e.color(ColorSlot::Foreground),
+                Rgb::new(0x01, 0x02, 0x03),
+                "the first parameter is the color the code names"
+            );
+            assert_eq!(
+                e.color(ColorSlot::Background),
+                Rgb::new(0x04, 0x05, 0x06),
+                "the second parameter is the next color in the list"
+            );
+        }
+
+        /// Each `?` in a dynamic color sequence is answered on its own, under
+        /// the code of the color it asked about.
+        #[test]
+        fn conformance_each_dynamic_color_query_is_answered_separately() {
+            let mut e = conformance_emu(10, 4, 100);
+            e.process(b"\x1b]10;#010203;#040506\x07");
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]10;?;?\x07");
+
+            assert_eq!(
+                String::from_utf8_lossy(&e.take_pending_writes()),
+                "\x1b]10;rgb:0101/0202/0303\x07\x1b]11;rgb:0404/0505/0606\x07",
+                "one reply per query, each under its own code"
+            );
+        }
+
+        /// A reply uses the terminator the query used. A program that reads
+        /// until the terminator it sent would otherwise wait for one that
+        /// never comes.
+        #[test]
+        fn conformance_a_color_reply_echoes_the_terminator() {
+            let mut e = conformance_emu(10, 4, 100);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]11;?\x07");
+            let bel = e.take_pending_writes();
+            assert!(
+                bel.ends_with(b"\x07"),
+                "a BEL query is answered with BEL: {:?}",
+                String::from_utf8_lossy(&bel)
+            );
+
+            e.process(b"\x1b]11;?\x1b\\");
+            let st = e.take_pending_writes();
+            assert!(
+                st.ends_with(b"\x1b\\"),
+                "an ST query is answered with ST: {:?}",
+                String::from_utf8_lossy(&st)
+            );
+        }
+
+        /// The terminator is recognised even when the read splits it.
+        ///
+        /// A PTY read ends wherever the kernel decides, which can be between
+        /// the two bytes of an `ST`. The terminator a reply echoes has to come
+        /// from the sequence, not from how the bytes happened to arrive.
+        #[test]
+        fn conformance_a_color_reply_echoes_a_terminator_split_across_reads() {
+            let mut e = conformance_emu(10, 4, 100);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]11;?\x1b");
+            e.process(b"\\");
+            let st = e.take_pending_writes();
+            assert!(
+                st.ends_with(b"\x1b\\"),
+                "a split ST query is answered with ST: {:?}",
+                String::from_utf8_lossy(&st)
+            );
+        }
+
+        /// A palette index that is not a number names no slot.
+        ///
+        /// `OSC 4` addresses a slot by number, and taking the leading digits
+        /// of one that is not would let a malformed sequence write to a slot
+        /// it never named.
+        #[test]
+        fn conformance_a_malformed_palette_index_sets_nothing() {
+            let mut e = conformance_emu(10, 4, 100);
+            let before = e.color(ColorSlot::Indexed(1));
+
+            e.process(b"\x1b]4;1x;#112233\x07");
+
+            assert_eq!(
+                e.color(ColorSlot::Indexed(1)),
+                before,
+                "a malformed index leaves the palette alone"
+            );
+        }
+
+        /// Replies leave in the order the program asked for them.
+        ///
+        /// A batch of queries is commonly ended with a device attributes
+        /// request, whose reply every terminal sends, and the reply to it is
+        /// read as the end of the batch. An answer that arrived after it would
+        /// look like the query went unanswered, and would then be read as
+        /// though the user had typed it.
+        #[test]
+        fn conformance_replies_keep_the_order_they_were_asked_in() {
+            let mut e = conformance_emu(10, 4, 100);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]11;?\x07\x1b[c");
+            let asked_color_first = e.take_pending_writes();
+            let color = asked_color_first
+                .windows(2)
+                .position(|w| w == b"]1")
+                .expect("a color reply");
+            let attributes = asked_color_first
+                .windows(2)
+                .position(|w| w == b"[?")
+                .expect("a device attributes reply");
+            assert!(
+                color < attributes,
+                "the color was asked for first, so it is answered first: {:?}",
+                String::from_utf8_lossy(&asked_color_first)
+            );
+
+            e.process(b"\x1b[c\x1b]11;?\x07");
+            let asked_color_second = e.take_pending_writes();
+            let color = asked_color_second
+                .windows(2)
+                .position(|w| w == b"]1")
+                .expect("a color reply");
+            let attributes = asked_color_second
+                .windows(2)
+                .position(|w| w == b"[?")
+                .expect("a device attributes reply");
+            assert!(
+                attributes < color,
+                "and asked for second, it is answered second: {:?}",
+                String::from_utf8_lossy(&asked_color_second)
+            );
+        }
+
+        /// A program can shadow a color, and a reset puts the configured one
+        /// back. The configured color is never reachable, so a reset always
+        /// has something to restore.
+        #[test]
+        fn conformance_a_color_set_is_undone_by_a_reset() {
+            use $crate::profile::{Colors, Profile, Rgb};
+            let configured = Rgb::new(0x11, 0x22, 0x33);
+            let profile = Profile {
+                colors: Colors {
+                    background: configured,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let mut e = conformance_emu_with(10, 4, profile);
+            let background = $crate::profile::ColorSlot::Background;
+            assert_eq!(e.color(background), configured);
+
+            e.process(b"\x1b]11;#654321\x07");
+            assert_eq!(
+                e.color(background),
+                Rgb::new(0x65, 0x43, 0x21),
+                "a set shadows the configured color"
+            );
+
+            e.process(b"\x1b]111\x07");
+            assert_eq!(
+                e.color(background),
+                configured,
+                "OSC 111 restores the configured color"
+            );
+
+            // The same for a palette entry, which resets with OSC 104.
+            e.process(b"\x1b]4;2;#010203\x07");
+            assert_eq!(
+                e.color($crate::profile::ColorSlot::Indexed(2)),
+                Rgb::new(1, 2, 3)
+            );
+            e.process(b"\x1b]104;2\x07");
+            assert_eq!(
+                e.color($crate::profile::ColorSlot::Indexed(2)),
+                Colors::default().green
+            );
+        }
+
+        /// Each dynamic color is addressed by its own sequence, and each is
+        /// reset by its own.
+        ///
+        /// `OSC 11` is the one programs reach for, so it is easy to wire that
+        /// up and leave the foreground or the cursor answering the wrong slot.
+        #[test]
+        fn conformance_each_dynamic_color_is_separately_addressable() {
+            use $crate::profile::ColorSlot;
+            let mut e = conformance_emu(10, 4, 100);
+            let before = [
+                e.color(ColorSlot::Foreground),
+                e.color(ColorSlot::Background),
+                e.color(ColorSlot::Cursor),
+            ];
+
+            // Set all three to distinct colors, then check none bled into
+            // another.
+            e.process(b"\x1b]10;#111111\x07\x1b]11;#222222\x07\x1b]12;#333333\x07");
+            assert_eq!(e.color(ColorSlot::Foreground), Rgb::new(0x11, 0x11, 0x11));
+            assert_eq!(e.color(ColorSlot::Background), Rgb::new(0x22, 0x22, 0x22));
+            assert_eq!(e.color(ColorSlot::Cursor), Rgb::new(0x33, 0x33, 0x33));
+
+            // And each reset frees only its own slot.
+            e.process(b"\x1b]110\x07");
+            assert_eq!(e.color(ColorSlot::Foreground), before[0], "110 resets fg");
+            assert_eq!(
+                e.color(ColorSlot::Background),
+                Rgb::new(0x22, 0x22, 0x22),
+                "110 must leave the background alone"
+            );
+
+            e.process(b"\x1b]112\x07");
+            assert_eq!(
+                e.color(ColorSlot::Cursor),
+                before[2],
+                "112 resets the cursor"
+            );
+            assert_eq!(
+                e.color(ColorSlot::Background),
+                Rgb::new(0x22, 0x22, 0x22),
+                "112 must leave the background alone"
+            );
+
+            e.process(b"\x1b]111\x07");
+            assert_eq!(e.color(ColorSlot::Background), before[1], "111 resets bg");
+        }
+
+        /// Every dynamic color answers a query, not just the background.
+        #[test]
+        fn conformance_every_dynamic_color_answers_a_query() {
+            let mut e = conformance_emu(10, 4, 100);
+            let _ = e.take_pending_writes();
+
+            e.process(b"\x1b]10;#010203\x07\x1b]11;#040506\x07\x1b]12;#070809\x07");
+            let _ = e.take_pending_writes();
+
+            for (query, expected) in [
+                (&b"\x1b]10;?\x07"[..], "\x1b]10;rgb:0101/0202/0303\x07"),
+                (b"\x1b]11;?\x07", "\x1b]11;rgb:0404/0505/0606\x07"),
+                (b"\x1b]12;?\x07", "\x1b]12;rgb:0707/0808/0909\x07"),
+            ] {
+                e.process(query);
+                assert_eq!(
+                    String::from_utf8_lossy(&e.take_pending_writes()),
+                    expected,
+                    "querying {:?}",
+                    String::from_utf8_lossy(query)
+                );
+            }
+        }
+
+        /// `OSC 104` with no index resets the whole palette, and leaves the
+        /// three dynamic colors alone: they have their own resets.
+        #[test]
+        fn conformance_a_bare_palette_reset_spares_the_dynamic_colors() {
+            use $crate::profile::ColorSlot;
+            let mut e = conformance_emu(10, 4, 100);
+            let configured_red = e.color(ColorSlot::Indexed(1));
+
+            e.process(b"\x1b]4;1;#111111;200;#222222\x07\x1b]11;#333333\x07");
+            assert_eq!(e.color(ColorSlot::Indexed(1)), Rgb::new(0x11, 0x11, 0x11));
+            assert_eq!(e.color(ColorSlot::Indexed(200)), Rgb::new(0x22, 0x22, 0x22));
+
+            e.process(b"\x1b]104\x07");
+            assert_eq!(e.color(ColorSlot::Indexed(1)), configured_red);
+            assert_eq!(
+                e.color(ColorSlot::Background),
+                Rgb::new(0x33, 0x33, 0x33),
+                "a palette reset is not a background reset"
+            );
+        }
+
+        /// An unconfigured palette entry still answers, from the table the
+        /// specification defines for it.
+        #[test]
+        fn conformance_an_unconfigured_index_resolves_from_the_spec_table() {
+            use $crate::profile::Rgb;
+            let e = conformance_emu(10, 4, 100);
+            assert_eq!(
+                e.color($crate::profile::ColorSlot::Indexed(196)),
+                Rgb::new(255, 0, 0),
+                "index 196 is pure red in the xterm color cube"
+            );
+            assert_eq!(
+                e.color($crate::profile::ColorSlot::Indexed(232)),
+                Rgb::new(8, 8, 8),
+                "the gray ramp starts at 8"
+            );
+        }
+
+        /// A cell records which slot it chose, never a color, so what it
+        /// paints follows whatever that slot currently holds.
+        #[test]
+        fn conformance_a_cell_follows_its_slot() {
+            use $crate::profile::Rgb;
+            let mut e = conformance_emu(10, 4, 100);
+            e.process(b"\x1b[31mR");
+            let cell = e.viewable_rows()[0][0].clone();
+
+            let before = e.resolve(cell.fg, true);
+            e.process(b"\x1b]4;1;#0a0b0c\x07");
+            assert_eq!(
+                e.resolve(cell.fg, true),
+                Rgb::new(0x0a, 0x0b, 0x0c),
+                "recoloring the slot recolors the cell that chose it"
+            );
+            assert_ne!(before, e.resolve(cell.fg, true));
+        }
+
+        /// The alternate screen hides primary content and restores it on exit.
+        #[test]
+        fn conformance_alt_screen_round_trip() {
+            let mut e = conformance_emu(10, 3, 100);
+            e.process(b"primary");
+            e.process(b"\x1b[?1049h");
+            let alt = conformance_text(&e.viewable_rows());
+            assert!(
+                !alt.iter().any(|r| r.contains("primary")),
+                "alt screen must start clear"
+            );
+
+            e.process(b"\x1b[?1049l");
+            let back = conformance_text(&e.viewable_rows());
+            assert!(
+                back.iter().any(|r| r.contains("primary")),
+                "leaving alt screen restores primary content"
+            );
+        }
+
+        /// A link spanning many cells is one allocation, not one per cell.
+        ///
+        /// Every cell of a run carries the same link, so a converter that
+        /// builds one per cell says the same thing N times at N allocations.
+        /// Pointer equality is the invariant: the cells share an `Arc`.
+        #[test]
+        fn conformance_a_link_run_shares_one_allocation() {
+            let mut e = conformance_emu(20, 3, 100);
+            e.process(b"\x1b]8;;https://example.com/a/long/path/past/inlining\x1b\\");
+            e.process(b"aaaaaaaaaaaaaaaaaaaa");
+            e.process(b"bbbbb");
+            e.process(b"\x1b]8;;\x1b\\");
+            let rows = e.viewable_rows();
+
+            let first = rows[0][0].hyperlink.clone().expect("the run is linked");
+            for (y, x) in [(0usize, 0usize), (0, 19), (1, 0), (1, 4)] {
+                let link = rows[y][x].hyperlink.clone().expect("cell is linked");
+                assert!(
+                    std::sync::Arc::ptr_eq(&first, &link),
+                    "cell {x},{y} rebuilt the link instead of sharing it"
+                );
+            }
+        }
+
+        /// Two links to the same place under different `id=` stay distinct.
+        ///
+        /// Reusing a link across cells must compare what identifies it, not
+        /// only where it points, or the second run would inherit the first
+        /// one's id.
+        #[test]
+        fn conformance_same_uri_under_different_ids_stays_distinct() {
+            let mut e = conformance_emu(20, 2, 100);
+            e.process(b"\x1b]8;id=one;https://example.com\x1b\\A");
+            e.process(b"\x1b]8;id=two;https://example.com\x1b\\B");
+            e.process(b"\x1b]8;;\x1b\\");
+            let rows = e.viewable_rows();
+
+            assert_eq!(rows[0][0].uri(), Some("https://example.com"));
+            assert_eq!(rows[0][1].uri(), Some("https://example.com"));
+            if !CONFORMANCE_DIVERGENCES
+                .contains(&$crate::terminal::conformance::Divergence::HyperlinkHasNoId)
+            {
+                let first = rows[0][0].hyperlink.clone().expect("A is linked");
+                let second = rows[0][1].hyperlink.clone().expect("B is linked");
+                assert_eq!(first.id.as_deref(), Some("one"));
+                assert_eq!(second.id.as_deref(), Some("two"));
+            }
+        }
+
+        /// Every way onto the alternate screen is reported as being on it,
+        /// and leaving it is reported too.
+        ///
+        /// `?1049` is what a full-screen program sends, and every backend
+        /// honors it. `?47` and `?1047` are the older spellings, without the
+        /// cursor save `?1049` bundles in; alacritty and rio ignore them
+        /// outright.
+        ///
+        /// What must hold everywhere is that the flag and the screen agree, in
+        /// both directions. The three spellings share one screen but have
+        /// independent mode bits, so on ghostty `?47h` then `?1049l` leaves
+        /// the `?47` bit set with the primary screen showing — reading mode
+        /// bits answers the wrong question, in one direction or the other.
+        #[test]
+        fn conformance_alt_screen_flag_follows_the_screen() {
+            use $crate::terminal::emu::TerminalMode;
+            let legacy_ignored = CONFORMANCE_DIVERGENCES
+                .contains(&$crate::terminal::conformance::Divergence::NoLegacyAlternateScreen);
+
+            for (sequence, always) in [
+                (&b"\x1b[?47h"[..], false),
+                (b"\x1b[?1047h", false),
+                (b"\x1b[?1049h", true),
+            ] {
+                let mut e = conformance_emu(10, 3, 100);
+                e.process(b"primary");
+                e.process(sequence);
+                let name = String::from_utf8_lossy(sequence).to_string();
+
+                let showing_alt = !conformance_text(&e.viewable_rows())
+                    .iter()
+                    .any(|r| r.contains("primary"));
+                assert_eq!(
+                    e.mode(TerminalMode::AlternateScreen),
+                    showing_alt,
+                    "{name}: alternate_screen must agree with the visible screen"
+                );
+                if always || !legacy_ignored {
+                    assert!(showing_alt, "{name} reaches the alternate screen");
+                } else {
+                    assert!(!showing_alt, "{name} is ignored by this backend");
+                }
+
+                // Leaving has to be reported as leaving, whichever spelling
+                // got there: `?1049l` is what a program sends on the way out.
+                e.process(b"\x1b[?1049l");
+                assert!(
+                    conformance_text(&e.viewable_rows())
+                        .iter()
+                        .any(|r| r.contains("primary")),
+                    "{name}: ?1049l restores the primary screen"
+                );
+                assert!(
+                    !e.mode(TerminalMode::AlternateScreen),
+                    "{name}: and alternate_screen says so"
+                );
+            }
+        }
+
+        /// Erase resets cells to fully default, not merely to a space.
+        #[test]
+        fn conformance_erase_clears_cells() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"abcdef");
+            e.process(b"\x1b[H\x1b[2J");
+            for (x, cell) in e.viewable_rows()[0].iter().enumerate() {
+                assert_eq!(
+                    cell,
+                    &$crate::terminal::cell::EmuCell::default(),
+                    "ED 2 must reset cell {x} to a default cell"
+                );
+            }
+        }
+
+        /// Erase to end of line clears from the cursor rightward only.
+        #[test]
+        fn conformance_erase_line_from_cursor() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"abcdef");
+            e.process(b"\x1b[1;4H\x1b[K");
+            assert_eq!(
+                conformance_text(&e.viewable_rows())[0],
+                "abc",
+                "EL clears from the cursor to end of line, keeping the prefix"
+            );
+        }
+
+        /// Byte-split escape sequences still parse; PTY reads chunk arbitrarily.
+        #[test]
+        fn conformance_split_escape_sequence() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b[");
+            e.process(b"31m");
+            e.process(b"R");
+            assert_eq!(
+                e.viewable_rows()[0][0].fg,
+                Some($crate::terminal::cell::Color::from_index(1)),
+                "a sequence split across process() calls must still apply"
+            );
+        }
+
+        /// `OSC 0` and `OSC 2` both set the window title, and either
+        /// terminator ends them. A backend that only accepted one spelling
+        /// would miss the title from whichever programs use the other.
+        #[test]
+        fn conformance_title_is_set_by_osc_0_and_2() {
+            let mut e = conformance_emu(10, 2, 100);
+            assert_eq!(e.title(), None, "a fresh terminal has no title");
+
+            e.process(b"\x1b]2;from osc 2\x07");
+            assert_eq!(e.title().as_deref(), Some("from osc 2"));
+
+            e.process(b"\x1b]0;from osc 0\x07");
+            assert_eq!(
+                e.title().as_deref(),
+                Some("from osc 0"),
+                "osc 0 sets the same title as osc 2"
+            );
+
+            e.process(b"\x1b]2;st terminated\x1b\\");
+            assert_eq!(
+                e.title().as_deref(),
+                Some("st terminated"),
+                "ST ends the sequence just as BEL does"
+            );
+        }
+
+        /// An empty title is a request for no title, not for a blank one.
+        ///
+        /// Programs clear the title this way on exit, so reporting `Some("")`
+        /// would leave a caller unable to tell a cleared title from one that
+        /// was never set without checking for a special case.
+        #[test]
+        fn conformance_an_empty_title_resets() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b]2;something\x07");
+            assert!(e.title().is_some());
+
+            e.process(b"\x1b]2;\x07");
+            assert_eq!(e.title(), None, "an empty title clears it");
+
+            e.process(b"\x1b]0;again\x07");
+            e.process(b"\x1b]0;\x07");
+            assert_eq!(e.title(), None, "and osc 0 clears it too");
+        }
+
+        /// The title survives output and is not tied to the grid: clearing the
+        /// screen is not clearing the title.
+        #[test]
+        fn conformance_title_outlives_screen_content() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b]2;kept\x07");
+            e.process(b"text\r\n\x1b[2J");
+            assert_eq!(
+                e.title().as_deref(),
+                Some("kept"),
+                "erasing the screen leaves the title alone"
+            );
+        }
+
+        /// The title stack (`CSI 22 t` pushes, `CSI 23 t` pops) lets a program
+        /// set a title and put back whatever was there before, which is how a
+        /// shell restores the title after running a command.
+        #[test]
+        fn conformance_title_stack_pushes_and_pops() {
+            let mut e = conformance_emu(10, 2, 100);
+            e.process(b"\x1b]2;shell\x07");
+            e.process(b"\x1b[22t");
+            e.process(b"\x1b]2;running a command\x07");
+            assert_eq!(e.title().as_deref(), Some("running a command"));
+
+            e.process(b"\x1b[23t");
+            assert_eq!(
+                e.title().as_deref(),
+                Some("shell"),
+                "popping restores the pushed title"
+            );
+        }
+    };
+}

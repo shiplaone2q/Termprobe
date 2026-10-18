@@ -105,3 +105,207 @@ fn add_interactive(manifest: &str, references: &[(&str, &str)]) -> Result<(), St
         Some(0) => AgentDirectory::Agents,
         Some(1) => AgentDirectory::Claude,
         Some(_) => unreachable!("directory picker returned an unknown item"),
+        None => return cancelled(),
+    };
+
+    let current_dir = std::env::current_dir()
+        .map_err(|error| format!("could not resolve current directory: {error}"))?;
+    let home = dirs::home_dir();
+    let path = install_path(scope, directory, &current_dir, home.as_deref())?;
+    write_skill(&path, manifest, references)?;
+    println!("Installed {SKILL_NAME} skill at {}", path.display());
+    Ok(())
+}
+
+fn cancelled() -> Result<(), String> {
+    println!("Skill installation cancelled.");
+    Ok(())
+}
+
+fn install_path(
+    scope: InstallScope,
+    directory: AgentDirectory,
+    current_dir: &Path,
+    home: Option<&Path>,
+) -> Result<PathBuf, String> {
+    let root = match scope {
+        InstallScope::Repository => current_dir,
+        InstallScope::Global => home.ok_or_else(|| {
+            "could not resolve the home directory for a global installation".to_string()
+        })?,
+    };
+    Ok(root
+        .join(directory.name())
+        .join("skills")
+        .join(SKILL_NAME)
+        .join("SKILL.md"))
+}
+
+fn write_manifest(path: &Path, manifest: &str) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("invalid skill path: {}", path.display()))?;
+    std::fs::create_dir_all(parent)
+        .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
+    std::fs::write(path, manifest)
+        .map_err(|error| format!("could not write {}: {error}", path.display()))
+}
+
+fn write_skill(
+    manifest_path: &Path,
+    manifest: &str,
+    references: &[(&str, &str)],
+) -> Result<(), String> {
+    write_manifest(manifest_path, manifest)?;
+    let root = manifest_path
+        .parent()
+        .ok_or_else(|| format!("invalid skill path: {}", manifest_path.display()))?;
+    for (relative_path, contents) in references {
+        write_manifest(&root.join(relative_path), contents)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn unique_dir(tag: &str) -> PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or(0);
+        std::env::temp_dir().join(format!(
+            "termprobe-skill-{tag}-{}-{nanos}",
+            std::process::id()
+        ))
+    }
+
+    #[test]
+    fn repository_agents_path_is_under_the_current_directory() {
+        let current_dir = Path::new("repo");
+        let path = install_path(
+            InstallScope::Repository,
+            AgentDirectory::Agents,
+            current_dir,
+            None,
+        )
+        .expect("repository path");
+        assert_eq!(
+            path,
+            current_dir
+                .join(".agents")
+                .join("skills")
+                .join("termprobe")
+                .join("SKILL.md")
+        );
+    }
+
+    #[test]
+    fn global_claude_path_is_under_the_home_directory() {
+        let home = Path::new("home").join("tester");
+        let path = install_path(
+            InstallScope::Global,
+            AgentDirectory::Claude,
+            Path::new("repo"),
+            Some(&home),
+        )
+        .expect("global path");
+        assert_eq!(
+            path,
+            home.join(".claude")
+                .join("skills")
+                .join("termprobe")
+                .join("SKILL.md")
+        );
+    }
+
+    #[test]
+    fn global_install_requires_a_home_directory() {
+        let error = install_path(
+            InstallScope::Global,
+            AgentDirectory::Agents,
+            Path::new("repo"),
+            None,
+        )
+        .expect_err("missing home must fail");
+        assert!(error.contains("home directory"));
+    }
+
+    #[test]
+    fn writing_manifest_creates_directories_and_replaces_existing_content() {
+        let root = unique_dir("write");
+        let path = root
+            .join(".agents")
+            .join("skills")
+            .join("termprobe")
+            .join("SKILL.md");
+        write_manifest(&path, "old").expect("initial write");
+        write_manifest(&path, "new").expect("replacement write");
+        assert_eq!(std::fs::read_to_string(&path).expect("read skill"), "new");
+        std::fs::remove_dir_all(root).expect("remove temp directory");
+    }
+
+    #[test]
+    fn writing_skill_installs_manifest_and_references() {
+        let root = unique_dir("references");
+        let path = root
+            .join(".agents")
+            .join("skills")
+            .join("termprobe")
+            .join("SKILL.md");
+        let references = [
+            ("references/python.md", "python"),
+            ("references/javascript.md", "javascript"),
+        ];
+
+        write_skill(&path, "router", &references).expect("write complete skill");
+
+        let skill_root = path.parent().expect("skill root");
+        assert_eq!(
+            std::fs::read_to_string(&path).expect("read skill"),
+            "router"
+        );
+        assert_eq!(
+            std::fs::read_to_string(skill_root.join("references/python.md"))
+                .expect("read Python reference"),
+            "python"
+        );
+        assert_eq!(
+            std::fs::read_to_string(skill_root.join("references/javascript.md"))
+                .expect("read JavaScript reference"),
+            "javascript"
+        );
+        std::fs::remove_dir_all(root).expect("remove temp directory");
+    }
+
+    #[test]
+    fn rendering_skill_includes_the_router_and_all_references() {
+        let references = [
+            (
+                "references/cli.md",
+                "# CLI reference\n\n[Router](../SKILL.md)",
+            ),
+            (
+                "references/python.md",
+                "# Python reference\n\n## Testing helpers\n",
+            ),
+        ];
+
+        let rendered = render(
+            "---\nname: termprobe\n---\n\n# termprobe\n\n\
+             [CLI](references/cli.md)\n\
+             [Testing](references/python.md#testing-helpers)\n",
+            &references,
+        );
+
+        assert_eq!(
+            rendered,
+            "---\nname: termprobe\n---\n\n# termprobe\n\n\
+             [CLI](#cli-reference)\n\
+             [Testing](#testing-helpers)\n\n---\n\n\
+             # CLI reference\n\n[Router](#termprobe)\n\n---\n\n\
+             # Python reference\n\n## Testing helpers\n"
+        );
+    }
+}
