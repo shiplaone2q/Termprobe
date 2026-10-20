@@ -21,3 +21,4 @@ def __su_prompt():
     # Keep them before a visible cell: prompt_toolkit drops trailing zero-width escapes.
     return f'\001\033]133;A\007{__su_cwd()}\033]133;B\007\002> '
 
+$PROMPT = __su_prompt

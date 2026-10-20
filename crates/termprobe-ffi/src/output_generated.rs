@@ -88,3 +88,50 @@ fn terminal_colors(s: &mut Storage, v: termprobe::api::TerminalColors) -> TuiTer
     }
 }
 #[allow(unused_variables)]
+fn cell(s: &mut Storage, v: termprobe::api::Cell) -> TuiCell {
+    TuiCell {
+        x: v.x,
+        y: v.y,
+        character: s.string(v.r#char),
+        fg: color(v.fg),
+        bg: color(v.bg),
+        bold: v.bold,
+        dim: v.dim,
+        italic: v.italic,
+        inverse: v.inverse,
+        invisible: v.invisible,
+        strike: v.strike,
+        blink: v.blink,
+        underline: v.underline,
+        underline_style: s.string(v.underline_style),
+        underline_color: color(v.underline_color),
+        link: s.string(v.link),
+        link_id: s.string(v.link_id),
+    }
+}
+#[allow(unused_variables)]
+fn text_position(s: &mut Storage, v: termprobe::api::TextPosition) -> TuiPosition {
+    TuiPosition {
+        row: v.row,
+        column: v.column,
+    }
+}
+#[allow(unused_variables)]
+fn text_span(s: &mut Storage, v: termprobe::api::TextSpan) -> TuiSpan {
+    TuiSpan {
+        row: v.row,
+        start: v.start,
+        end: v.end,
+    }
+}
+#[allow(unused_variables)]
+fn text_match(s: &mut Storage, v: termprobe::api::TextMatch) -> TuiMatch {
+    let spans = s.spans(v.spans);
+    TuiMatch {
+        text: s.string(v.text),
+        start: text_position(s, v.start),
+        end: text_position(s, v.end),
+        spans: spans.0,
+        spans_len: spans.1,
+    }
+}
