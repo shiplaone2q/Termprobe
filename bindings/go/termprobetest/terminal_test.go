@@ -57,3 +57,27 @@ func TestCleanupAndParallelIsolation(t *testing.T) {
 	}
 }
 
+func verifyClosedSessions(t *testing.T, names <-chan string) {
+	t.Helper()
+	remaining, err := termprobe.Sessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := ""
+	for name := range names {
+		if slices.Contains(remaining, name) {
+			t.Errorf("session %s survived cleanup", name)
+		}
+		if previous == name {
+			t.Errorf("parallel tests shared session %s", name)
+		}
+		previous = name
+	}
+}
+
+func TestTerminalSnapshot(t *testing.T) {
+	actual := termprobetest.TerminalSnapshot("one  \r\n two\t\n\n")
+	if actual != "one\n two" {
+		t.Fatalf("snapshot=%q", actual)
+	}
+}

@@ -97,3 +97,142 @@ type abiCursor struct {
 }
 type abiSize struct {
 	_    structs.HostLayout
+	cols uint16
+	rows uint16
+}
+type abiViewport struct {
+	_       structs.HostLayout
+	offset  uintptr
+	history uintptr
+}
+type abiBellEvent struct {
+	_         structs.HostLayout
+	sequence  uint64
+	elapsedMS uint64
+}
+type abiState struct {
+	_            structs.HostLayout
+	sessionShell abiString
+	cols         uint16
+	rows         uint16
+	cursor       abiCursor
+	title        abiString
+	cwd          abiString
+	lastCommand  abiString
+	lastExit     abiOptionalI32
+	exitSignal   abiString
+	exited       abiOptionalI32
+	ready        bool
+	bellCount    uint64
+	modes        *abiMode
+	modesLen     uintptr
+	mouseMode    abiString
+	colors       abiTerminalColors
+	timeouts     abiTimeouts
+	text         abiString
+}
+type abiTerminalColors struct {
+	_          structs.HostLayout
+	foreground abiString
+	background abiString
+	cursor     abiString
+	palette    *abiPair
+	paletteLen uintptr
+}
+type abiCell struct {
+	_              structs.HostLayout
+	x              uint16
+	y              uint16
+	character      abiString
+	fg             abiColor
+	bg             abiColor
+	bold           bool
+	dim            bool
+	italic         bool
+	inverse        bool
+	invisible      bool
+	strike         bool
+	blink          bool
+	underline      bool
+	underlineStyle abiString
+	underlineColor abiColor
+	link           abiString
+	linkID         abiString
+}
+type abiPosition struct {
+	_      structs.HostLayout
+	row    uint32
+	column uint16
+}
+type abiSpan struct {
+	_     structs.HostLayout
+	row   uint32
+	start uint16
+	end   uint16
+}
+type abiMatch struct {
+	_        structs.HostLayout
+	text     abiString
+	start    abiPosition
+	end      abiPosition
+	spans    *abiSpan
+	spansLen uintptr
+}
+type abiTimeouts struct {
+	_       structs.HostLayout
+	text    abiOptionalU64
+	idle    abiOptionalU64
+	command abiOptionalU64
+	exit    abiOptionalU64
+	ready   abiOptionalU64
+}
+type abiOpenOptions struct {
+	_                  structs.HostLayout
+	backend            abiString
+	shell              abiString
+	cols               abiOptionalU64
+	rows               abiOptionalU64
+	cwd                abiString
+	env                *abiPair
+	envLen             uintptr
+	waitReady          abiOptionalBool
+	restart            bool
+	scrollback         abiOptionalU64
+	colors             *abiPair
+	colorsLen          uintptr
+	timeouts           abiTimeouts
+	recordingMode      abiString
+	recordingDirectory abiString
+}
+type abiMouseOptions struct {
+	_      structs.HostLayout
+	button uint32
+	alt    bool
+	ctrl   bool
+	shift  bool
+}
+type abiWaitOptions struct {
+	_         structs.HostLayout
+	timeoutMS abiOptionalU64
+	regex     bool
+	not       bool
+}
+type abiRecordingOptions struct {
+	_             structs.HostLayout
+	path          abiString
+	format        abiString
+	fps           abiOptionalU64
+	speed         abiOptionalF64
+	idleTimeLimit abiOptionalF64
+	zoom          abiOptionalF64
+	background    abiString
+	transparent   bool
+}
+type abiScreenshotOptions struct {
+	_           structs.HostLayout
+	full        bool
+	path        abiString
+	zoom        abiOptionalF64
+	background  abiString
+	transparent bool
+}
