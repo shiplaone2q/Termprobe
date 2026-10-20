@@ -47,3 +47,64 @@ function publicationFixture(t) {
       fs.symlinkSync(path.join(scripts, "../node_modules"), path.join(workspace, "node_modules"), "junction");
       const result = spawnSync("bash", ["-c", script], {
         cwd: workspace, env: { ...process.env, RELEASE_TAG: version }, encoding: "utf8",
+      });
+      if (result.error) throw result.error;
+      return result;
+    },
+  };
+}
+
+test("publication creates a release-only tag and accepts identical retries", t => {
+  const p = publicationFixture(t);
+  let result = p.publish();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const tag = "refs/tags/bindings/go/v1.2.3";
+  const commit = p.ref(tag);
+  assert.equal(p.ref(`${tag}^`), p.fixture.revision);
+  assert.equal(p.ref("refs/heads/main"), p.fixture.revision);
+  assert.equal(p.ref("refs/tags/1.2.3"), p.fixture.revision);
+  const files = p.git(["ls-tree", "-r", "--name-only", tag], p.remote).trim().split("\n");
+  assert.equal(files.filter(name => name.endsWith(".tar.gz")).length, 7);
+  const module = directoryEntries(p.fixture.output);
+  const names = p.git(["ls-tree", "-r", "--name-only", `${tag}:bindings/go`], p.remote).trim().split("\n");
+  assert.deepEqual(new Set(names), new Set(module.keys()));
+  for (const [name, expected] of module) {
+    assert.deepEqual(p.git(["show", `${tag}:bindings/go/${name}`], p.remote, null), expected, name);
+  }
+  assert.match(p.git(["show", "-s", "--format=%B", tag], p.remote), /Signed-off-by:/);
+  result = p.publish();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /already contains the expected Go module/);
+  assert.equal(p.ref(tag), commit);
+});
+
+test("existing tags with different content or parent remain immutable", t => {
+  const p = publicationFixture(t);
+  fs.appendFileSync(path.join(p.fixture.source, "go.mod"), "// Conflicting release fixture\n");
+  p.git(["add", "bindings/go/go.mod"]);
+  p.git(["commit", "-q", "-s", "-m", "Different release fixture"]);
+  const conflicting = p.git(["rev-parse", "HEAD"]).trim();
+  const tag = "refs/tags/bindings/go/v1.2.3";
+  p.git(["push", "-q", "origin", `HEAD:${tag}`]);
+  let result = p.publish();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /refusing to replace/);
+  assert.equal(p.ref(tag), conflicting);
+  p.git(["update-ref", tag, p.fixture.revision], p.remote);
+  result = p.publish();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /refusing to replace/);
+  assert.equal(p.ref(tag), p.fixture.revision);
+});
+
+test("wrong release versions and changed modules cannot publish tags", t => {
+  const p = publicationFixture(t);
+  let result = p.publish("1.2.4");
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Release tag does not match/);
+  fs.writeFileSync(path.join(p.fixture.output, "go.mod"), "module changed\n");
+  result = p.publish();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /does not match the source revision/);
+  assert.equal(p.git(["for-each-ref", "--format=%(refname)", "refs/tags/bindings/go"], p.remote).trim(), "");
+});

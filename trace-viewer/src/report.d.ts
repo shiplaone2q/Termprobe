@@ -146,3 +146,167 @@ export interface FailureLocatorStageDetails {
   readonly raw_candidate_count: number;
   /** Candidates remaining after applying the requested styles. */
   readonly style_candidate_count: number;
+  readonly selected_count: number;
+  readonly candidates?: readonly FailureTextMatch[];
+  readonly candidates_truncated: boolean;
+  readonly mismatches?: readonly FailureCellMismatch[];
+  readonly mismatches_truncated: boolean;
+}
+
+export interface FailureLocatorDetails {
+  readonly search_scope: string;
+  readonly viewport_origin_y: number;
+  readonly stages: readonly FailureLocatorStageDetails[];
+  /** Candidates before the final occurrence is selected. */
+  readonly final_candidate_count: number;
+  readonly stages_truncated?: boolean;
+  readonly evaluation_error?: string;
+  readonly selected?: readonly FailureTextMatch[];
+  readonly failure_stage?: number;
+  readonly failure_reason?: LocatorFailureReason;
+}
+
+export interface FailureEvaluationTransition {
+  readonly elapsed_ms: number;
+  readonly screen_sequence: number;
+  readonly outcome: string;
+  readonly stage_index?: number;
+  readonly stage_counts: readonly number[];
+}
+
+export interface FailureOperationEvent {
+  readonly sequence: number;
+  readonly name: string;
+  readonly started_ms: number;
+  readonly ended_ms: number;
+  readonly result: string;
+  readonly screen_before: number;
+  readonly screen_at_return: number;
+  readonly safe_summary: string;
+  readonly is_assertion?: boolean;
+  readonly expectation?: OperationExpectation;
+  readonly input?: FailureInputDetails;
+}
+
+export interface FailureMouseOptions {
+  readonly button: "left" | "middle" | "right";
+  readonly alt: boolean;
+  readonly ctrl: boolean;
+  readonly shift: boolean;
+}
+
+export type FailureMouseTarget =
+  | { readonly kind: "position"; readonly x: number; readonly y: number }
+  | { readonly kind: "text"; readonly text: string }
+  | { readonly kind: "locator" };
+
+export type FailureInputArguments =
+  | { readonly kind: "write" | "submit"; readonly data: string }
+  | { readonly kind: "key"; readonly keys: readonly string[]; readonly action: "press" | "down" | "repeat" | "up" }
+  | { readonly kind: "mouse_click"; readonly target: FailureMouseTarget; readonly options: FailureMouseOptions; readonly clicks: number }
+  | { readonly kind: "mouse_move"; readonly x: number; readonly y: number }
+  | { readonly kind: "mouse_down" | "mouse_up"; readonly x: number; readonly y: number; readonly options: FailureMouseOptions }
+  | { readonly kind: "mouse_drag"; readonly x1: number; readonly y1: number; readonly x2: number; readonly y2: number; readonly options: FailureMouseOptions }
+  | { readonly kind: "mouse_scroll"; readonly direction: string; readonly amount: number }
+  | { readonly kind: "unavailable"; readonly reason: string };
+
+export interface FailureInputDetails {
+  readonly arguments: FailureInputArguments;
+  /** Empty when the protocol emits no bytes; absent when not sent or not retained. */
+  readonly sent_bytes?: readonly number[];
+  readonly mouse_position?: FailureTextPosition;
+}
+
+export interface FailureCursorDetails {
+  readonly column: number;
+  readonly row: number;
+  readonly visible: boolean;
+  readonly shape: string;
+}
+
+export interface FailureScreenSnapshot {
+  readonly sequence: number;
+  readonly first_seen_ms: number;
+  readonly last_seen_ms: number;
+  readonly repeat_count: number;
+  readonly changes: readonly string[];
+  readonly size: Size;
+  readonly cursor: FailureCursorDetails;
+  readonly title?: string;
+  readonly text: string;
+}
+
+export interface FailureTerminalDetails {
+  readonly size: Size;
+  readonly title?: string;
+  readonly cursor: FailureCursorDetails;
+  readonly last_visual_change_ms: number;
+  readonly unchanged_for_ms: number;
+  readonly screen_history: {
+    readonly limit: number;
+    readonly dropped_screen_count: number;
+    readonly dropped_row_count: number;
+    readonly dropped_checkpoint_count?: number;
+    readonly screens: readonly FailureScreenSnapshot[];
+    readonly checkpoints?: readonly FailureScreenSnapshot[];
+  };
+}
+
+export interface FailureProcessDetails {
+  readonly pid?: number;
+  readonly state: string;
+  readonly exit_code?: number;
+  readonly status_error?: string;
+  readonly cancelled: boolean;
+  readonly ready: boolean;
+  readonly command_running: boolean;
+  readonly last_command_exit?: number;
+}
+
+export interface FailureRuntimeDetails {
+  readonly session_name?: string;
+  readonly shell?: string;
+  readonly timeouts?: Readonly<EffectiveTimeouts>;
+  readonly termprobe_version: string;
+  readonly backend: string;
+  readonly target_os: string;
+  readonly target_arch: string;
+}
+
+export interface FailureRecordingDetails {
+  readonly mode: "disabled" | "on-failure" | "always";
+  readonly status: "disabled" | "unavailable" | "live" | "copied" | "omitted" | "failed";
+  readonly failure_offset_ms: number;
+  readonly last_committed_ms?: number;
+  readonly path?: string;
+  readonly bytes?: number;
+  readonly reason?: string;
+  readonly ephemeral: boolean;
+}
+
+export interface FailureReport {
+  readonly schema_version: number;
+  readonly signature: string;
+  readonly operation: FailureOperationDetails;
+  readonly reason: FailureReason;
+  readonly summary: string;
+  readonly outcome?: "passed" | "failed";
+  readonly locator?: FailureLocatorDetails;
+  readonly comparison?: {
+    readonly kind: string;
+    readonly expected?: string;
+    readonly actual?: string;
+  };
+  readonly evaluation_transitions?: readonly FailureEvaluationTransition[];
+  readonly recent_operations?: readonly FailureOperationEvent[];
+  readonly terminal?: FailureTerminalDetails;
+  readonly process?: FailureProcessDetails;
+  readonly runtime?: FailureRuntimeDetails;
+  readonly recording?: FailureRecordingDetails;
+  readonly hints?: readonly {
+    readonly code: string;
+    readonly message: string;
+  }[];
+  readonly context?: Readonly<Record<string, string>>;
+  readonly truncated: boolean;
+}
