@@ -78,3 +78,33 @@ await terminal.waitClipboard(/copied/i);
 ```
 
 ## Keep failure artifacts
+
+```sh
+termprobe --failure-artifacts artifacts/failures \
+  --failure-artifact-recording \
+  expect text "Ready" --timeout 5000
+```
+
+```python
+terminal = Termprobe(
+    artifacts={
+        "dir": "artifacts/failures",
+        "on_failure": "all",
+        "include_recording": True,
+    },
+    trace={"mode": "on-failure", "directory": "artifacts/traces"},
+)
+```
+
+```js
+const terminal = new Termprobe("test", {
+  artifacts: {
+    dir: "artifacts/failures",
+    onFailure: "all",
+    includeRecording: true,
+  },
+  trace: { mode: "on-failure", directory: "artifacts/traces" },
+});
+```
+
+Users can open `failure.html` to view the failure. Agents should read `failure.md`, `failure.json`, and `timeline.json` instead.

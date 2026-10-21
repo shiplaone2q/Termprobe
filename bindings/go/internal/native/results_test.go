@@ -39,3 +39,4 @@ func TestNativeCellsPreserveLinks(t *testing.T) {
 	if len(cells) != 1 || cells[0].Link != "https://example.test" || cells[0].LinkID != "docs" {
 		t.Fatalf("cells=%+v", cells)
 	}
+}

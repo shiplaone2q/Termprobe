@@ -27,3 +27,4 @@ Repository = "https://github.com/microsoft/termprobe"
 where = ["src"]
 
 [tool.setuptools.package-data]
+termprobe = ["*.pyi", "py.typed"]
