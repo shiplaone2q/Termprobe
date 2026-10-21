@@ -30,3 +30,4 @@
   .failure-button { color: var(--red); border-color: var(--red); white-space: nowrap; }
   @media (max-width: 850px) { .brand span { display: none; } .session-summary, .topbar { gap: 10px; } }
   @media (max-width: 600px) { .session-summary { gap: 0 8px; } .failure-button { font-size: 11px; } }
+</style>

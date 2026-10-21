@@ -29,3 +29,4 @@
   .attachment button { border: 0; padding-left: 0; color: var(--blue); }
   .attachment a { color: var(--blue); font-size: 11px; }
   @media (max-width: 600px) { .attachment-layout { grid-template-columns: 1fr; } }
+</style>

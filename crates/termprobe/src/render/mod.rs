@@ -11,3 +11,4 @@ mod font;
 pub mod raster;
 
 #[cfg(all(test, windows, feature = "recording-font-jetbrains-mono-styles"))]
+mod snapshot_tests;
