@@ -77,3 +77,76 @@ class FailureLocatorDetails:
         return cls(
             selectors=tuple(value["selectors"]),
             locations=tuple(FailureLocation(**item) for item in value["locations"]),
+            mismatches=tuple(FailureCellMismatch.from_dict(item) for item in value["mismatches"]),
+            reason=value.get("reason"),
+            stage_index=value.get("stage_index"),
+        )
+
+
+@dataclass(frozen=True)
+class FailureComparison:
+    kind: str
+    expected: Optional[str] = None
+    actual: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class FailureDetails:
+    schema_version: int
+    operation: str
+    reason: FailureReason
+    summary: str
+    locator: Optional[FailureLocatorDetails] = None
+    comparison: Optional[FailureComparison] = None
+    truncated: bool = False
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "FailureDetails":
+        if not isinstance(value["operation"], str) or not isinstance(value["summary"], str):
+            raise TypeError("failure operation and summary must be strings")
+        locator = value.get("locator")
+        comparison = value.get("comparison")
+        return cls(
+            schema_version=value["schema_version"],
+            operation=value["operation"],
+            reason=FailureReason(value["reason"]),
+            summary=value["summary"],
+            locator=FailureLocatorDetails.from_dict(locator) if locator is not None else None,
+            comparison=FailureComparison(**comparison) if comparison is not None else None,
+            truncated=value["truncated"],
+        )
+
+
+@dataclass(frozen=True)
+class FailureArtifactRef:
+    status: FailureArtifactStatus
+    directory: str
+    manifest: Optional[str] = None
+    report: Optional[str] = None
+    screen_text: Optional[str] = None
+    screen_svg: Optional[str] = None
+    recording: Optional[str] = None
+    errors: Tuple[str, ...] = ()
+    report_html: Optional[str] = None
+    timeline: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "FailureArtifactRef":
+        directory = value["directory"]
+        if not isinstance(directory, str):
+            raise TypeError("artifact directory must be a string")
+        errors = value.get("errors", [])
+        if not isinstance(errors, list) or not all(isinstance(item, str) for item in errors):
+            raise TypeError("artifact errors must be an array of strings")
+        return cls(
+            status=FailureArtifactStatus(value["status"]),
+            directory=directory,
+            manifest=_optional_string(value.get("manifest")),
+            report=_optional_string(value.get("report")),
+            report_html=_optional_string(value.get("report_html")),
+            timeline=_optional_string(value.get("timeline")),
+            screen_text=_optional_string(value.get("screen_text")),
+            screen_svg=_optional_string(value.get("screen_svg")),
+            recording=_optional_string(value.get("recording")),
+            errors=tuple(errors),
+        )

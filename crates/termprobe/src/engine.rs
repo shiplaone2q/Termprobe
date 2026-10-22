@@ -1140,3 +1140,5489 @@ impl Engine {
                         );
                     }
                 }
+                if !is_trace || error.artifact.is_none() {
+                    error.artifact = Some(Box::new(artifact));
+                }
+            }
+        }
+        details.truncated |= exports_truncated;
+        let failure = details.failure_details();
+        error.message = failure.summary.clone();
+        error.details = Some(Box::new(failure));
+    }
+
+    fn finish_trace(
+        &self,
+        context: &ExecutionContext,
+        failed: Option<bool>,
+    ) -> Result<(), TermprobeError> {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let session = self.lock_session();
+            if let Some(session) = session.as_ref() {
+                self.finish_trace_with_session(session, context, failed)?;
+            } else {
+                self.finish_failed_startup_trace(failed)?;
+            }
+            Ok(())
+        }))
+        .unwrap_or_else(|payload| {
+            Err(TermprobeError::internal(format!(
+                "terminal trace finalization panicked: {}",
+                panic_message(payload.as_ref())
+            )))
+        })
+    }
+
+    fn finish_failed_startup_trace(&self, failed: Option<bool>) -> Result<(), TermprobeError> {
+        let Some(failed) = failed else {
+            return Ok(());
+        };
+        let mode = {
+            let trace = self
+                .trace
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if !trace.pending_startup_outcome {
+                return Ok(());
+            }
+            trace.options.mode
+        };
+        if !failed && mode == TraceMode::OnFailure {
+            self.discard_trace_artifacts()?;
+        }
+        let mut recording = self
+            .recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if !failed && recording.mode == AutomaticRecordingMode::OnFailure {
+            if let Some(path) = &recording.path {
+                match std::fs::remove_file(path) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(error) => {
+                        return Err(TermprobeError::internal(format!(
+                            "failed to discard automatic recording {}: {error}",
+                            path.display()
+                        )));
+                    }
+                }
+            }
+        }
+        recording.failed = failed;
+        Ok(())
+    }
+
+    fn discard_trace_artifacts(&self) -> Result<(), TermprobeError> {
+        let mut trace = self
+            .trace
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        while let Some(directory) = trace.owned_directories.last() {
+            std::fs::remove_dir_all(directory).map_err(|error| {
+                TermprobeError::internal(format!(
+                    "failed to discard superseded trace {}: {error}",
+                    directory.display()
+                ))
+            })?;
+            trace.owned_directories.pop();
+        }
+        trace.artifact = None;
+        Ok(())
+    }
+
+    fn finish_trace_with_session(
+        &self,
+        session: &TerminalSession,
+        context: &ExecutionContext,
+        failed: Option<bool>,
+    ) -> Result<(), TermprobeError> {
+        let previous_failed = self
+            .recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .failed;
+        if failed.is_some_and(|failed| failed != previous_failed) {
+            self.discard_trace_artifacts()?;
+        }
+        let failed = failed.unwrap_or(previous_failed);
+        self.recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .failed = failed;
+        let options = {
+            let trace = self
+                .trace
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if trace.options.mode == TraceMode::Off || trace.artifact.is_some() {
+                return Ok(());
+            }
+            trace.options.clone()
+        };
+        if options.mode == TraceMode::OnFailure && !failed {
+            return Ok(());
+        }
+        let observation = capture_failure_observation(session);
+        let mut details = FailureReport::new(
+            "test",
+            None,
+            if failed {
+                FailureReason::TestFailed
+            } else {
+                FailureReason::Completed
+            },
+            if failed {
+                "Test failed outside a terminal assertion."
+            } else {
+                "Session completed successfully."
+            },
+        );
+        details.outcome = Some(if failed {
+            TraceOutcome::Failed
+        } else {
+            TraceOutcome::Passed
+        });
+        details.operation.failed_screen_sequence = observation.screen_sequence;
+        details.operation.elapsed_ms = observation.captured_ms;
+        details.terminal = Some(observation.terminal());
+        details.runtime = Some(RuntimeDiagnostics {
+            session_name: Some(self.name.clone()),
+            ..observation.runtime.clone()
+        });
+        details.process = Some(observation.process.clone());
+        details.recording = Some(self.recording_diagnostics(&observation));
+        details.context = self
+            .trace
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .diagnostic_context(context);
+        details.recent_operations = self
+            .operation_history
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .snapshot();
+        details.truncated = details.recent_operations.iter().any(|event| {
+            matches!(
+                event.expectation,
+                Some(OperationExpectation::Unavailable { .. })
+            ) || event
+                .input
+                .as_ref()
+                .is_some_and(InputDetails::is_unavailable)
+        });
+        details.finish_signature();
+        let directory = allocate_trace_directory(&options.directory).map_err(|error| {
+            TermprobeError::internal(format!("failed to allocate trace directory: {error}"))
+        })?;
+        let recording =
+            self.prepare_recording_artifact(session, &observation, &directory, &mut details);
+        let artifact = write_failure_artifact(
+            &options.artifact_options(),
+            ArtifactInputs {
+                details: &mut details,
+                observation: &observation,
+                recording,
+            },
+            directory.clone(),
+        );
+        {
+            let mut trace = self
+                .trace
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            trace.artifact = Some(artifact.clone());
+            trace.owned_directories.push(directory);
+        }
+        if artifact.status != FailureArtifactStatus::Written {
+            let mut error = TermprobeError::internal(format!(
+                "trace could not be fully written at {}: {}",
+                artifact.directory,
+                if artifact.errors.is_empty() {
+                    "evidence was omitted; see the manifest for details".to_string()
+                } else {
+                    artifact.errors.join("; ")
+                }
+            ));
+            error.artifact = Some(Box::new(artifact));
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    fn prepare_recording_artifact(
+        &self,
+        session: &TerminalSession,
+        observation: &FailureObservation,
+        directory: &std::path::Path,
+        details: &mut FailureReport,
+    ) -> Option<PreparedRecording> {
+        if details
+            .recording
+            .as_ref()
+            .is_some_and(|recording| recording.status == RecordingStatus::Disabled)
+        {
+            return None;
+        }
+        let state = session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if details.outcome.is_none()
+            && (state.visual_revision != observation.output_revision
+                || state.screen_dirty
+                || state.screen_history.current_sequence() != observation.screen_sequence)
+        {
+            if let Some(recording) = details.recording.as_mut() {
+                recording.status = RecordingStatus::Omitted;
+                recording.reason = Some(
+                    "terminal output advanced after the pinned failure observation".to_string(),
+                );
+            }
+            return None;
+        }
+        let temporary_path = recording_temp_path(directory);
+        let result =
+            session.snapshot_automatic_recording(temporary_path.clone(), RECORDING_COPY_LIMIT);
+        drop(state);
+        match result {
+            Ok(snapshot) => {
+                if let Some(recording) = details.recording.as_mut() {
+                    recording.status = RecordingStatus::Live;
+                    recording.last_committed_ms = snapshot.last_committed_ms;
+                    recording.path = None;
+                    recording.bytes = Some(snapshot.bytes);
+                    recording.reason = None;
+                    recording.ephemeral = false;
+                }
+                Some(PreparedRecording {
+                    temporary_path,
+                    bytes: snapshot.bytes,
+                    sha256: snapshot.sha256,
+                })
+            }
+            Err(error) => {
+                let message = capture_error_message(&error);
+                if let Some(recording) = details.recording.as_mut() {
+                    recording.status = if message.contains("maximum byte limit") {
+                        RecordingStatus::Omitted
+                    } else {
+                        RecordingStatus::Failed
+                    };
+                    recording.reason = Some(message);
+                }
+                None
+            }
+        }
+    }
+
+    fn recording_diagnostics(&self, observation: &FailureObservation) -> RecordingDiagnostics {
+        let recording = self
+            .recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let (status, reason) = match (&recording.mode, &recording.path) {
+            (AutomaticRecordingMode::Disabled, _) => {
+                (RecordingStatus::Disabled, Some("disabled".to_string()))
+            }
+            (_, Some(_)) => (RecordingStatus::Live, None),
+            _ => (
+                RecordingStatus::Unavailable,
+                Some("automatic recording could not be created".to_string()),
+            ),
+        };
+        RecordingDiagnostics {
+            mode: recording.mode,
+            status,
+            failure_offset_ms: observation.captured_ms,
+            last_committed_ms: None,
+            path: None,
+            bytes: None,
+            reason,
+            ephemeral: false,
+        }
+    }
+
+    pub fn status(&self) -> RuntimeStatus {
+        let guard = self.lock_session();
+        match guard.as_ref() {
+            Some(session) => {
+                let state = session
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                RuntimeStatus {
+                    session: self.name.clone(),
+                    shell_pid: session.pid(),
+                    cols: Some(state.emu.size().0),
+                    rows: Some(state.emu.size().1),
+                    shell: session.shell.map(|value| value.as_str().to_string()),
+                    exited: state.exited,
+                    timeouts: Some(effective_timeouts(session)),
+                }
+            }
+            None => RuntimeStatus {
+                session: self.name.clone(),
+                shell_pid: None,
+                cols: None,
+                rows: None,
+                shell: None,
+                exited: None,
+                timeouts: None,
+            },
+        }
+    }
+
+    pub fn frame(&self) -> Option<LiveFrame> {
+        let live = self
+            .live
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        live.as_ref().map(|target| {
+            let state = target
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            LiveFrame {
+                grid: highlighted_rows(&state, false),
+                cursor: state
+                    .emu
+                    .viewport_cursor()
+                    .unwrap_or_else(|| state.emu.cursor()),
+                cursor_visible: state.emu.viewport_cursor().is_some(),
+                size: state.emu.size(),
+                keyboard_mode: state.emu.keyboard_mode(),
+                cursor_key_application: state.emu.cursor_key_application(),
+                bracketed_paste: state.emu.mode(TerminalMode::BracketedPaste),
+                mouse_mode: if state.emu.viewport().offset == 0 {
+                    state.mouse_mode.relayable()
+                } else {
+                    MouseMode::None
+                },
+                exited: state.exited,
+                shell: target.shell,
+            }
+        })
+    }
+
+    pub fn monitor_mouse_size(&self) -> Option<(u16, u16)> {
+        let live = self
+            .live
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        live.as_ref().and_then(|target| {
+            let state = target
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            (state.mouse_mode.relayable() != MouseMode::None && state.emu.viewport().offset == 0)
+                .then(|| state.emu.size())
+        })
+    }
+
+    /// Write viewer keystrokes straight to the pty: untracked and unlogged, so
+    /// a human watching cannot disturb what the agent is waiting on.
+    pub fn write_monitor_input_raw(&self, data: &[u8]) -> Result<(), TermprobeError> {
+        self.write_monitor_input(data, false)
+    }
+
+    /// Forward a remapped mouse report only while the live screen accepts mouse input.
+    pub fn write_monitor_mouse_raw(&self, data: &[u8]) -> Result<(), TermprobeError> {
+        self.write_monitor_input(data, true)
+    }
+
+    fn write_monitor_input(&self, data: &[u8], mouse: bool) -> Result<(), TermprobeError> {
+        let Some((state, pty, viewport_input)) = ({
+            let live = self
+                .live
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            live.as_ref().map(|target| {
+                (
+                    Arc::clone(&target.state),
+                    Arc::clone(&target.pty),
+                    Arc::clone(&target.viewport_input),
+                )
+            })
+        }) else {
+            return Ok(());
+        };
+        let exited = || {
+            state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .exited
+                .is_some()
+        };
+        if exited() {
+            return Ok(());
+        }
+        let _input = viewport_input
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if !data.is_empty() {
+            let mut state = state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if mouse {
+                if state.emu.viewport().offset != 0
+                    || state.mouse_mode.relayable() == MouseMode::None
+                {
+                    return Err(TermprobeError::usage(
+                        "monitor mouse input requires a live viewport with mouse tracking enabled",
+                    ));
+                }
+            } else {
+                scroll_emulator_and_record(&mut state, ScrollTarget::Bottom)?;
+            }
+        }
+        // A child that exits mid-write is a normal race, not a failure.
+        let written = pty.write(data);
+        match written {
+            Err(error)
+                if !matches!(
+                    error.kind(),
+                    std::io::ErrorKind::BrokenPipe | std::io::ErrorKind::NotConnected
+                ) && !exited() =>
+            {
+                Err(TermprobeError::internal(error.to_string()))
+            }
+            _ => Ok(()),
+        }
+    }
+
+    pub fn log_event(&self, message: &str) {
+        self.logger.event(message);
+    }
+
+    pub fn interrupt(&self) {
+        let target = {
+            let target = self
+                .interrupt
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            self.interrupt_generation.fetch_add(1, Ordering::AcqRel);
+            if let Some(target) = target.as_ref() {
+                target.cancelled.store(true, Ordering::Release);
+            }
+            target.clone()
+        };
+        if let Some(target) = target {
+            target.pty.kill();
+        }
+    }
+
+    pub(crate) fn lifecycle_request(&self) -> impl Drop + '_ {
+        LifecycleRequest::new(&self.pending_lifecycle)
+    }
+
+    pub(crate) fn interrupt_for_operation(&self, operation: &Operation) {
+        match operation {
+            Operation::Close => self.interrupt(),
+            Operation::Signal { name }
+                if matches!(
+                    name.trim_start_matches("SIG").to_uppercase().as_str(),
+                    "TERM" | "KILL" | "QUIT"
+                ) =>
+            {
+                let target = self
+                    .interrupt
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
+                if let Some(target) = target {
+                    target.pty.kill();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.lock_session().is_some()
+    }
+
+    pub fn recording_path(&self) -> Option<PathBuf> {
+        self.recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .path
+            .clone()
+    }
+
+    pub(crate) fn retained_recording_path(&self) -> Option<PathBuf> {
+        let recording = self
+            .recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let retain = match recording.mode {
+            AutomaticRecordingMode::Disabled => false,
+            AutomaticRecordingMode::OnFailure => recording.failed,
+            AutomaticRecordingMode::Always => true,
+        };
+        retain
+            .then(|| recording.path.clone())
+            .flatten()
+            .filter(|path| path.is_file())
+    }
+
+    pub fn flush_recording(&self) -> Result<(), TermprobeError> {
+        let _lifecycle = self
+            .lifecycle
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _operation = self
+            .operations
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if self.recording_path().is_none() {
+            return Err(TermprobeError::usage("automatic recording is disabled"));
+        }
+        let guard = self.lock_session();
+        if let Some(session) = guard.as_ref() {
+            return session.flush_recording();
+        }
+        if self.recording_path().is_some_and(|path| path.is_file()) {
+            Ok(())
+        } else {
+            Err(TermprobeError::no_session())
+        }
+    }
+
+    fn resolve_recording_path(
+        &self,
+        recording: &AutomaticRecording,
+    ) -> Result<Option<PathBuf>, TermprobeError> {
+        if recording.mode == AutomaticRecordingMode::Disabled {
+            return Ok(None);
+        }
+        let Some(directory) = &recording.directory else {
+            return Ok(Some(self.default_recording_path.clone()));
+        };
+        if directory.as_os_str().is_empty() {
+            return Err(TermprobeError::usage(
+                "automatic recording directory must not be empty",
+            ));
+        }
+        let directory = if directory.is_absolute() {
+            directory.clone()
+        } else {
+            std::env::current_dir()
+                .map_err(|error| {
+                    TermprobeError::internal(format!(
+                        "failed to resolve automatic recording directory: {error}"
+                    ))
+                })?
+                .join(directory)
+        };
+        let name = self
+            .default_recording_path
+            .file_name()
+            .ok_or_else(|| TermprobeError::internal("automatic recording path has no file name"))?;
+        Ok(Some(directory.join(name)))
+    }
+
+    fn recording_path_string(&self) -> String {
+        self.recording_path()
+            .map(|path| path.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    }
+
+    fn cleanup_recording(&self) {
+        let recording = self
+            .recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let keep = match recording.mode {
+            AutomaticRecordingMode::Disabled => false,
+            AutomaticRecordingMode::OnFailure => recording.failed,
+            AutomaticRecordingMode::Always => true,
+        };
+        if !keep {
+            if let Some(path) = &recording.path {
+                let _ = std::fs::remove_file(path);
+            }
+        }
+    }
+
+    fn discard_recording(&self) {
+        if let Some(path) = self
+            .recording
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .path
+            .as_ref()
+        {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+
+    fn lock_session(&self) -> RwLockReadGuard<'_, Option<TerminalSession>> {
+        self.session
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn write_session(&self) -> RwLockWriteGuard<'_, Option<TerminalSession>> {
+        self.session
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+}
+
+impl Drop for Engine {
+    fn drop(&mut self) {
+        if let Err(error) = self.finish_trace(
+            &ExecutionContext::default(),
+            std::thread::panicking().then_some(true),
+        ) {
+            eprintln!("failed to finish terminal trace: {error}");
+        }
+        if let Ok(session) = self.session.get_mut() {
+            if let Some(session) = session.take() {
+                session.kill();
+                drop(session);
+            }
+        }
+        self.cleanup_recording();
+    }
+}
+
+fn capture_failure_observation(session: &TerminalSession) -> FailureObservation {
+    let mut state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    capture_failure_observation_locked(session, &mut state)
+}
+
+fn safe_capture_failure_observation(session: &TerminalSession) -> Option<FailureObservation> {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        capture_failure_observation(session)
+    })) {
+        Ok(observation) => Some(observation),
+        Err(payload) => {
+            let message = format!(
+                "terminal diagnostic capture panicked: {}",
+                panic_message(payload.as_ref())
+            );
+            let mut state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if state.diagnostic_error.is_none() {
+                state.diagnostic_error = Some(message);
+            }
+            None
+        }
+    }
+}
+
+fn capture_failure_observation_locked(
+    session: &TerminalSession,
+    state: &mut TermState,
+) -> FailureObservation {
+    let screen_sequence = capture_visual_state(state, true);
+    state.screen_history.pin_current();
+    let snapshot = svg_snapshot_from(state.emu.as_ref(), false);
+    let captured_ms = elapsed_ms(state.started_at);
+    let last_visual_change_ms = state.last_visual_change_ms;
+    let cancelled = session.cancelled.load(std::sync::atomic::Ordering::Acquire);
+    let process_state = if cancelled {
+        "cancelled"
+    } else if state.exited.is_some() {
+        "exited"
+    } else if state.exit_error.is_some() {
+        "unknown"
+    } else {
+        "running"
+    };
+    let process = ProcessDiagnostics {
+        pid: session.child_pid,
+        state: process_state.to_string(),
+        exit_code: state.exited,
+        status_error: state.exit_error.clone(),
+        cancelled,
+        ready: !cancelled && state.is_ready(),
+        command_running: state.tracker.executing(),
+        last_command_exit: state.tracker.last_exit(),
+    };
+    let runtime = RuntimeDiagnostics {
+        session_name: None,
+        shell: session.shell.map(|shell| shell.as_str().to_string()),
+        timeouts: Some(effective_timeouts(session)),
+        termprobe_version: env!("CARGO_PKG_VERSION").to_string(),
+        backend: session.backend.as_str().to_string(),
+        target_os: std::env::consts::OS.to_string(),
+        target_arch: std::env::consts::ARCH.to_string(),
+    };
+    FailureObservation {
+        rows: snapshot.rows,
+        cols: snapshot.cols,
+        title: snapshot.title,
+        cursor: snapshot.cursor,
+        cursor_position: state
+            .emu
+            .viewport_cursor()
+            .unwrap_or_else(|| state.emu.cursor()),
+        cursor_visible: state.emu.viewport_cursor().is_some(),
+        cursor_shape: state.emu.cursor_shape(),
+        render_state: snapshot.render_state,
+        style: state.style.clone(),
+        screen_sequence,
+        output_revision: state.visual_revision,
+        captured_ms,
+        last_visual_change_ms,
+        history: state.screen_history.clone(),
+        process,
+        runtime,
+    }
+}
+
+fn open_ready_timeout(session: &TerminalSession) -> u64 {
+    session
+        .timeouts
+        .get(config::TimeoutClass::Ready)
+        .or_else(|| config::TimeoutClass::Ready.env_ms())
+        .unwrap_or(config::OPEN_READY_CAP_MS)
+}
+
+fn startup_readiness_error(operation: &str, timeout_ms: u64) -> TermprobeError {
+    let message = format!(
+        "open: the session started but reported no prompt within \
+         {timeout_ms}ms; pass --no-wait-ready if it has no shell \
+         integration"
+    );
+    TermprobeError::assertion(message.clone()).with_report(FailureReport::new(
+        operation,
+        Some(timeout_ms),
+        FailureReason::TimedOut,
+        message,
+    ))
+}
+
+fn await_ready(session: &TerminalSession, timeout_ms: u64, cancelled: &dyn Fn() -> bool) -> bool {
+    let start = Instant::now();
+    let cap = Duration::from_millis(timeout_ms);
+    loop {
+        if cancelled()
+            || session.cancelled.load(Ordering::Acquire)
+            || !session.is_alive().unwrap_or(false)
+        {
+            return false;
+        }
+        {
+            let state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if state.exited.is_some() || state.exit_error.is_some() {
+                return false;
+            }
+            if state.is_ready() {
+                return true;
+            }
+        }
+        if start.elapsed() >= cap {
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(POLL_DELAY_MS));
+    }
+}
+
+fn viewable(session: &TerminalSession) -> Vec<Vec<EmuCell>> {
+    session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .emu
+        .viewable_rows()
+}
+
+fn grid(session: &TerminalSession, full: bool) -> Vec<Vec<EmuCell>> {
+    let state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if full {
+        state.emu.full_rows()
+    } else {
+        state.emu.viewable_rows()
+    }
+}
+
+fn highlighted_rows(state: &TermState, full: bool) -> Vec<Vec<EmuCell>> {
+    let mut rows = if full {
+        state.emu.full_rows()
+    } else {
+        state.emu.viewable_rows()
+    };
+    apply_highlight(&mut rows, state.highlight.as_ref(), full);
+    rows
+}
+
+fn apply_highlight(rows: &mut [Vec<EmuCell>], highlight: Option<&TextHighlight>, full: bool) {
+    let Some(highlight) = highlight else {
+        return;
+    };
+    let row_offset = if full { 0 } else { highlight.viewport_offset };
+    for &(x, absolute_y) in &highlight.cells {
+        let Some(y) = absolute_y.checked_sub(row_offset) else {
+            continue;
+        };
+        if let Some(cell) = rows.get_mut(y).and_then(|row| row.get_mut(x)) {
+            cell.attrs.toggle(Attrs::INVERSE);
+        }
+    }
+}
+
+fn text_of(rows: &[Vec<EmuCell>]) -> String {
+    rows_to_strings(rows)
+        .iter()
+        .map(|line| line.trim_end())
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim_end()
+        .to_string()
+}
+
+fn dispatch(
+    session: &TerminalSession,
+    operation: Operation,
+    input: &mut Option<InputDetails>,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<OperationResult, TermprobeError> {
+    let waiting = WaitContext {
+        session,
+        request_cancelled: cancelled,
+    };
+    match operation {
+        Operation::State => Ok(OperationResult::State(Box::new(state(session)))),
+        Operation::Text { full } => Ok(OperationResult::Text(text_of(&grid(session, full)))),
+        Operation::PackedScreen { full } => {
+            Ok(OperationResult::PackedScreen(packed_screen(session, full)))
+        }
+        Operation::Cells { x, y, w, h } => Ok(OperationResult::Cells(cells(session, x, y, w, h))),
+        Operation::GetCommand => Ok(OperationResult::Command(
+            session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .tracker
+                .last_command()
+                .map(str::to_string),
+        )),
+        Operation::GetOutput => Ok(OperationResult::Output(
+            session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .tracker
+                .last_output()
+                .map(str::to_string),
+        )),
+        Operation::GetExitCode => Ok(OperationResult::ExitCode(
+            session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .tracker
+                .last_exit(),
+        )),
+        Operation::GetCwd => Ok(OperationResult::Cwd(
+            session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .tracker
+                .cwd()
+                .map(str::to_string),
+        )),
+        Operation::GetTitle => Ok(OperationResult::Title(title_of(session))),
+        Operation::GetClipboard => Ok(OperationResult::Clipboard(get_clipboard(session)?)),
+        Operation::GetCursor => {
+            let state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            Ok(OperationResult::Cursor(cursor_model(state.emu.as_ref())))
+        }
+        Operation::GetColors => {
+            let state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            Ok(OperationResult::Colors(colors_of(
+                state.emu.as_ref(),
+                &state.profile,
+            )))
+        }
+        Operation::ExpectColors {
+            foreground,
+            background,
+            cursor,
+            palette,
+            timeout_ms,
+        } => {
+            expect_colors(
+                &waiting,
+                foreground.as_deref(),
+                background.as_deref(),
+                cursor.as_deref(),
+                &palette,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::GetModes => {
+            let state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            Ok(OperationResult::Modes(modes_of(state.emu.as_ref())))
+        }
+        Operation::ExpectMode {
+            mode,
+            enabled,
+            timeout_ms,
+        } => {
+            expect_mode(
+                &waiting,
+                &mode,
+                enabled,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::ExpectCursor {
+            visible,
+            shape,
+            x,
+            y,
+            timeout_ms,
+        } => {
+            expect_cursor(
+                &waiting,
+                visible,
+                shape.as_deref(),
+                x,
+                y,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::GetSize => {
+            let (cols, rows) = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .emu
+                .size();
+            Ok(OperationResult::Size(Size { cols, rows }))
+        }
+        Operation::GetViewport => {
+            let state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            Ok(OperationResult::Viewport(state.emu.viewport()))
+        }
+        Operation::Scroll { target } => {
+            session.scroll(target)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::GetBellCount => Ok(OperationResult::BellCount(session.bells.count())),
+        Operation::GetBellEvents => {
+            Ok(OperationResult::BellEvents(session.bells.snapshot().events))
+        }
+        Operation::Write { data } => {
+            write_input(session, data.as_bytes(), input, None)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::Submit { data } => {
+            let mut bytes = data.unwrap_or_default().into_bytes();
+            let enter = session
+                .shell
+                .map(|shell| shell.return_char())
+                .unwrap_or("\r");
+            bytes.extend_from_slice(enter.as_bytes());
+            write_input(session, &bytes, input, None)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::Key { keys, action } => {
+            key_action(session, keys, action, input)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::Mouse { action } => {
+            mouse_action(session, action, input)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::Resize { cols, rows } => {
+            session.resize(cols, rows)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::Signal { name } => {
+            act(session.pty.signal(&name))?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitTitle {
+            text,
+            regex,
+            timeout_ms,
+            not,
+        } => {
+            wait_title(
+                &waiting,
+                &text,
+                regex,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+                not,
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitClipboard { timeout_ms } => {
+            wait_clipboard_change(
+                &waiting,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitClipboardMatch {
+            pattern,
+            timeout_ms,
+        } => {
+            wait_clipboard_match(
+                &waiting,
+                &pattern,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitIdle { timeout_ms } => {
+            wait_idle(
+                &waiting,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Idle)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitCommand { timeout_ms } => {
+            wait_command(
+                &waiting,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Command)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitExit { timeout_ms } => {
+            wait_exit(
+                &waiting,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Exit)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitReady { timeout_ms } => {
+            wait_ready(
+                &waiting,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Ready)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::WaitBell { timeout_ms } => {
+            wait_bell(
+                &waiting,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::FindLocator { query } => Ok(OperationResult::Matches(find_locator(
+            session, &query, false,
+        )?)),
+        Operation::ResolveLocator { query } => Ok(OperationResult::Matches(find_locator(
+            session, &query, true,
+        )?)),
+        Operation::WaitLocator {
+            query,
+            not,
+            timeout_ms,
+        } => {
+            wait_locator(
+                &waiting,
+                &query,
+                not,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::ClickLocator {
+            query,
+            options,
+            clicks,
+            timeout_ms,
+        } => {
+            click_locator(
+                &waiting,
+                &query,
+                options,
+                clicks,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+                input,
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::HighlightLocator { query, timeout_ms } => {
+            Ok(OperationResult::Matches(highlight_locator(
+                &waiting,
+                &query,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?))
+        }
+        Operation::ExpectTitle {
+            text,
+            regex,
+            not,
+            timeout_ms,
+        } => {
+            expect_title(
+                &waiting,
+                &text,
+                regex,
+                not,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::ExpectExitCode { code, timeout_ms } => {
+            expect_exit_code(
+                &waiting,
+                code,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Command)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::ExpectOutput { text, regex } => {
+            expect_output(session, &text, regex)?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::ExpectBellCount { count, timeout_ms } => {
+            expect_bell_count(
+                &waiting,
+                count,
+                timeout_ms.unwrap_or_else(|| session.timeout_for(config::TimeoutClass::Text)),
+            )?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::Snapshot {
+            name,
+            update,
+            include_style,
+            include_title,
+            cwd,
+        } => Ok(OperationResult::Snapshot(do_snapshot(
+            session,
+            &name,
+            update,
+            include_style,
+            include_title,
+            cwd,
+        )?)),
+        Operation::Screenshot {
+            full,
+            path,
+            zoom,
+            background,
+        } => Ok(OperationResult::Screenshot(screenshot(
+            session, full, path, zoom, background,
+        )?)),
+        Operation::StartRecording {
+            path,
+            format,
+            fps,
+            speed,
+            idle_time_limit,
+            zoom,
+            background,
+        } => {
+            session.start_recording(crate::session::ManualRecordingOptions {
+                path,
+                format,
+                fps,
+                speed,
+                idle_time_limit,
+                zoom,
+                background,
+            })?;
+            Ok(OperationResult::Unit)
+        }
+        Operation::StopRecording => Ok(OperationResult::Recording(session.stop_recording()?)),
+        Operation::Open(_)
+        | Operation::Run(_)
+        | Operation::Restart { .. }
+        | Operation::Close
+        | Operation::FinishTrace { .. } => {
+            Err(TermprobeError::internal("unsupported nested operation"))
+        }
+    }
+}
+
+fn act(result: anyhow::Result<()>) -> Result<(), TermprobeError> {
+    result.map_err(|error| TermprobeError::internal(error.to_string()))
+}
+
+fn state(session: &TerminalSession) -> crate::api::State {
+    let state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let (cols, rows) = state.emu.size();
+    let bells = session.bells.snapshot();
+    crate::api::State {
+        session_shell: session.shell.map(|value| value.as_str().to_string()),
+        cols,
+        rows,
+        cursor: cursor_model(state.emu.as_ref()),
+        title: state.emu.title(),
+        cwd: state.tracker.cwd().map(str::to_string),
+        last_command: state.tracker.last_command().map(str::to_string),
+        last_exit: state.tracker.last_exit(),
+        exit_signal: state.exit_signal.clone(),
+        exited: state.exited,
+        ready: !session.cancelled.load(Ordering::Acquire) && state.is_ready(),
+        bell_count: bells.count,
+        modes: crate::terminal::emu::TerminalMode::ALL
+            .into_iter()
+            .map(|mode| (mode.name().to_string(), state.emu.mode(mode)))
+            .collect(),
+        mouse_mode: state.mouse_mode.mode().name().to_string(),
+        colors: colors_of(state.emu.as_ref(), &state.profile),
+        timeouts: effective_timeouts(session),
+        text: text_of(&state.emu.viewable_rows()),
+    }
+}
+
+fn effective_timeouts(session: &TerminalSession) -> EffectiveTimeouts {
+    use config::TimeoutClass::*;
+    EffectiveTimeouts {
+        text: session.timeout_for(Text),
+        idle: session.timeout_for(Idle),
+        command: session.timeout_for(Command),
+        exit: session.timeout_for(Exit),
+        ready: session.timeout_for(Ready),
+    }
+}
+
+fn packed_screen(session: &TerminalSession, full: bool) -> PackedScreen {
+    let state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let rows = if full {
+        state.emu.full_rows()
+    } else {
+        state.emu.viewable_rows()
+    };
+    PackedScreen {
+        cols: state.emu.size().0,
+        rows: rows.len().min(u16::MAX as usize) as u16,
+        utf8: rows_to_strings(&rows).join("\n").into_bytes(),
+    }
+}
+
+fn cells(session: &TerminalSession, x: u16, y: u16, w: u16, h: u16) -> Vec<Cell> {
+    let rows = viewable(session);
+    let mut out = Vec::new();
+    for row in y..y.saturating_add(h.max(1)) {
+        for col in x..x.saturating_add(w.max(1)) {
+            if let Some(cell) = rows
+                .get(row as usize)
+                .and_then(|line| line.get(col as usize))
+            {
+                out.push(cell_model(col, row, cell));
+            }
+        }
+    }
+    out
+}
+
+fn cell_model(x: u16, y: u16, cell: &EmuCell) -> Cell {
+    Cell {
+        x,
+        y,
+        char: cell.ch.to_string(),
+        fg: cell_color(cell.fg),
+        bg: cell_color(cell.bg),
+        bold: cell.has(Attrs::BOLD),
+        dim: cell.has(Attrs::DIM),
+        italic: cell.has(Attrs::ITALIC),
+        inverse: cell.has(Attrs::INVERSE),
+        invisible: cell.has(Attrs::INVISIBLE),
+        strike: cell.has(Attrs::STRIKE),
+        blink: cell.has(Attrs::BLINK),
+        underline: cell.underline.is_underlined(),
+        underline_style: cell.underline.name().to_string(),
+        underline_color: cell_color(cell.underline_color),
+        link: cell.uri().unwrap_or_default().to_string(),
+        link_id: cell
+            .hyperlink
+            .as_ref()
+            .and_then(|link| link.id.as_deref())
+            .unwrap_or_default()
+            .to_string(),
+    }
+}
+
+/// Resolve a mode name, so an unknown one is a usage error naming the set
+/// rather than a silent `false`.
+fn parse_mode(name: &str) -> Result<TerminalMode, TermprobeError> {
+    TerminalMode::ALL
+        .into_iter()
+        .find(|mode| mode.name() == name)
+        .ok_or_else(|| {
+            let known = TerminalMode::ALL
+                .iter()
+                .map(|mode| mode.name())
+                .collect::<Vec<_>>()
+                .join(", ");
+            TermprobeError::usage(format!(
+                "unknown terminal mode '{name}'; expected one of: {known}"
+            ))
+        })
+}
+
+/// The terminal's colors, resolved through the profile so a slot nothing
+/// has overridden still has an answer.
+///
+/// The three defaults (`OSC 10/11/12`) are always reported. Palette entries
+/// (`OSC 4`) are reported only where they differ from the profile, so the
+/// answer names what a program changed instead of all 256 slots.
+fn colors_of(emu: &dyn Emulator, profile: &crate::profile::Profile) -> crate::api::TerminalColors {
+    let colors = emu.colors();
+    crate::api::TerminalColors {
+        foreground: colors.foreground.to_hex(),
+        background: colors.background.to_hex(),
+        cursor: colors.cursor.to_hex(),
+        palette: colors
+            .palette
+            .iter()
+            .enumerate()
+            .filter_map(|(index, now)| {
+                let index = index as u8;
+                (*now != profile.colors.rgb(index)).then(|| (index, now.to_hex()))
+            })
+            .collect(),
+    }
+}
+
+/// Resolve a color a caller named into a concrete value.
+///
+/// Takes the same spellings `--fg` and `--bg` do, minus `default`: a terminal
+/// color is what `default` would resolve *to*, so there is nothing for it to
+/// refer to. An ANSI index resolves through the session's own palette, so
+/// `--background 0` means the black this profile paints rather than a fixed
+/// one.
+fn resolve_expected_color(
+    spec: &str,
+    emu: &dyn Emulator,
+) -> Result<crate::profile::Rgb, TermprobeError> {
+    use crate::assert::color::Expected;
+    use crate::profile::ColorSlot;
+    // Not the parse error itself: it offers `default` as a spelling, which the
+    // next arm rejects, so a typo would be answered with advice that fails.
+    let invalid = || {
+        TermprobeError::usage(format!(
+            "terminal color must be ansi256 (0-255), hex (#rrggbb), or rgb (r,g,b) (got: {spec:?})"
+        ))
+    };
+    match Expected::parse(spec).map_err(|_| invalid())? {
+        Expected::Default => Err(TermprobeError::usage(
+            "'default' has no meaning for a terminal color; name a hex value or an ANSI index"
+                .to_string(),
+        )),
+        Expected::Ansi256(index) => Ok(emu.color(ColorSlot::Indexed(index))),
+        Expected::Hex(r, g, b) | Expected::Rgb(r, g, b) => Ok(crate::profile::Rgb::new(r, g, b)),
+    }
+}
+
+/// Wait for the terminal's colors to match every slot the caller named.
+///
+/// The three defaults (`OSC 10/11/12`) and any number of palette entries
+/// (`OSC 4`) are matched together, so a program that recolors several slots
+/// at once is asserted as a single state rather than a race between polls.
+fn expect_colors(
+    session: &WaitContext<'_>,
+    foreground: Option<&str>,
+    background: Option<&str>,
+    cursor: Option<&str>,
+    palette: &[(u8, String)],
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    use crate::profile::ColorSlot;
+    if foreground.is_none() && background.is_none() && cursor.is_none() && palette.is_empty() {
+        return Err(TermprobeError::usage(
+            "expect colors needs at least one of --foreground, --background, --cursor, or --palette",
+        ));
+    }
+    // Resolve once, so a malformed color is a usage error rather than a wait
+    // that can never succeed, and an indexed color is read against the
+    // palette in force now rather than re-resolved on every poll.
+    let (wanted, wanted_palette) = {
+        let state = session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let resolve = |spec: Option<&str>| -> Result<Option<crate::profile::Rgb>, TermprobeError> {
+            spec.map(|spec| resolve_expected_color(spec, state.emu.as_ref()))
+                .transpose()
+        };
+        let defaults = [resolve(foreground)?, resolve(background)?, resolve(cursor)?];
+        let entries = palette
+            .iter()
+            .map(|(index, spec)| Ok((*index, resolve_expected_color(spec, state.emu.as_ref())?)))
+            .collect::<Result<Vec<_>, TermprobeError>>()?;
+        (defaults, entries)
+    };
+
+    let mut matched = false;
+    let mut last = None;
+    poll_until(
+        session,
+        || {
+            let (actual, actual_palette) = {
+                let state = session
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let defaults = [
+                    state.emu.color(ColorSlot::Foreground),
+                    state.emu.color(ColorSlot::Background),
+                    state.emu.color(ColorSlot::Cursor),
+                ];
+                let entries = wanted_palette
+                    .iter()
+                    .map(|(index, _)| (*index, state.emu.color(ColorSlot::Indexed(*index))))
+                    .collect::<Vec<_>>();
+                (defaults, entries)
+            };
+            matched = wanted
+                .iter()
+                .zip(actual)
+                .all(|(expected, actual)| expected.is_none_or(|expected| expected == actual))
+                && wanted_palette
+                    .iter()
+                    .zip(&actual_palette)
+                    .all(|((_, expected), (_, actual))| expected == actual);
+            last = Some((actual, actual_palette));
+            matched || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if matched {
+        return Ok(());
+    }
+    let ([fg, bg, cur], entries) = last.expect("the colors are read at least once");
+    // Only the slots that were asked about: naming a foreground the caller
+    // never mentioned invites reading it as the thing that failed.
+    let mut parts = Vec::new();
+    for (label, wanted, actual) in [
+        ("foreground", wanted[0], fg),
+        ("background", wanted[1], bg),
+        ("cursor", wanted[2], cur),
+    ] {
+        if let Some(wanted) = wanted {
+            parts.push(format!(
+                "{label} {} (wanted {})",
+                actual.to_hex(),
+                wanted.to_hex()
+            ));
+        }
+    }
+    for ((index, wanted), (_, actual)) in wanted_palette.iter().zip(&entries) {
+        parts.push(format!(
+            "palette {index} {} (wanted {})",
+            actual.to_hex(),
+            wanted.to_hex()
+        ));
+    }
+    Err(TermprobeError::assertion(format!(
+        "colors did not match within {timeout_ms}ms; {}",
+        parts.join(", ")
+    )))
+}
+
+fn modes_of(emu: &dyn Emulator) -> std::collections::BTreeMap<String, bool> {
+    TerminalMode::ALL
+        .into_iter()
+        .map(|mode| (mode.name().to_string(), emu.mode(mode)))
+        .collect()
+}
+
+fn expect_mode(
+    session: &WaitContext<'_>,
+    name: &str,
+    enabled: bool,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    let mode = parse_mode(name)?;
+    let reached = |session: &TerminalSession| {
+        session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .emu
+            .mode(mode)
+            == enabled
+    };
+    let mut matched = false;
+    poll_until(
+        session,
+        || {
+            matched = reached(session);
+            matched || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if matched {
+        return Ok(());
+    }
+    Err(TermprobeError::assertion(format!(
+        "{} did not turn {} within {timeout_ms}ms",
+        mode.name(),
+        if enabled { "on" } else { "off" }
+    )))
+}
+
+fn expect_cursor(
+    session: &WaitContext<'_>,
+    visible: Option<bool>,
+    shape: Option<&str>,
+    x: Option<u16>,
+    y: Option<u16>,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    if let Some(shape) = shape {
+        if CursorShape::parse(shape).is_none() {
+            return Err(TermprobeError::usage(format!(
+                "unknown cursor shape '{shape}'; expected block, underline, or bar"
+            )));
+        }
+    }
+    let mut last = None;
+    let mut matched = false;
+    poll_until(
+        session,
+        || {
+            let cursor = {
+                let state = session
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                cursor_model(state.emu.as_ref())
+            };
+            matched = visible.is_none_or(|want| want == cursor.visible)
+                && shape.is_none_or(|want| want == cursor.shape)
+                && x.is_none_or(|want| want == cursor.x)
+                && y.is_none_or(|want| want == cursor.y);
+            last = Some(cursor);
+            matched || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if matched {
+        return Ok(());
+    }
+    let cursor = last.expect("the cursor is read at least once");
+    Err(TermprobeError::assertion(format!(
+        "cursor did not match within {timeout_ms}ms; it is at {},{}, {}, shape {}",
+        cursor.x,
+        cursor.y,
+        if cursor.visible { "visible" } else { "hidden" },
+        cursor.shape
+    )))
+}
+
+/// The cursor as a caller sees it: where it is, and how it is drawn.
+fn cursor_model(emu: &dyn Emulator) -> Cursor {
+    let (x, y) = emu.cursor();
+    Cursor {
+        x,
+        y,
+        visible: emu.cursor_visible(),
+        shape: emu.cursor_shape().name().to_string(),
+        color: emu.color(crate::profile::ColorSlot::Cursor).to_hex(),
+    }
+}
+
+pub(crate) fn cell_color(color: Option<Color>) -> CellColor {
+    match color {
+        None => CellColor::Default,
+        Some(Color::Rgb(r, g, b)) => CellColor::Rgb(r, g, b),
+        Some(color) => CellColor::Indexed(color.to_index()),
+    }
+}
+
+fn write_input(
+    session: &TerminalSession,
+    bytes: &[u8],
+    input: &mut Option<InputDetails>,
+    position: Option<(u16, u16)>,
+) -> Result<(), TermprobeError> {
+    let _input = session
+        .viewport_input
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if !bytes.is_empty() {
+        let mut state = session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if position.is_none() {
+            scroll_emulator_and_record(&mut state, ScrollTarget::Bottom)?;
+        } else if state.emu.viewport().offset != 0 {
+            return Err(TermprobeError::usage(
+                "mouse input cannot target scrollback; scroll to the bottom first",
+            ));
+        }
+    }
+    act(session.write(bytes))?;
+    if let Some(input) = input {
+        input.record_sent(bytes, position);
+    }
+    Ok(())
+}
+
+fn key_action(
+    session: &TerminalSession,
+    tokens: Vec<String>,
+    action: crate::api::KeyAction,
+    input: &mut Option<InputDetails>,
+) -> Result<(), TermprobeError> {
+    // A backend with its own key encoder is preferred, per token, because it
+    // reads terminal state the shared encoder does not model: ghostty's
+    // applies keypad application mode, `modifyOtherKeys`, and the alt-escape
+    // prefix. A backend that has no encoder, or cannot express a particular
+    // event, answers `None` and that token falls back.
+    let mut sequence: Vec<u8> = Vec::new();
+    {
+        let state = session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let modes = keys::InputModes {
+            keyboard: state.emu.keyboard_mode(),
+            cursor_key_application: state.emu.cursor_key_application(),
+        };
+        for token in &tokens {
+            let presses = keys::token_to_presses(token, action)
+                .map_err(|error| TermprobeError::usage(error.to_string()))?;
+            let encoded: Option<Vec<Vec<u8>>> = presses
+                .iter()
+                .map(|press| state.emu.encode_key(press))
+                .collect();
+            match encoded {
+                // All or nothing per token: a token half-encoded by the
+                // backend and half by the fallback would interleave two
+                // encodings of the same keypress.
+                Some(parts) => sequence.extend(parts.concat()),
+                None => {
+                    let text = keys::token_to_seq_for_action_with_mode(token, action, modes)
+                        .map_err(|error| TermprobeError::usage(error.to_string()))?;
+                    sequence.extend_from_slice(text.as_bytes());
+                }
+            }
+        }
+    }
+    if sequence.is_empty() {
+        if let Some(input) = input {
+            input.record_sent(&[], None);
+        }
+        Ok(())
+    } else {
+        write_input(session, &sequence, input, None)
+    }
+}
+
+fn mouse_action(
+    session: &TerminalSession,
+    action: crate::api::MouseAction,
+    input: &mut Option<InputDetails>,
+) -> Result<(), TermprobeError> {
+    let position;
+    let sequence = match action {
+        crate::api::MouseAction::Click {
+            x,
+            y,
+            on_text,
+            options,
+            clicks,
+        } => {
+            let (x, y) = if let Some(text) = on_text {
+                locate_center(session, &text).ok_or_else(|| {
+                    TermprobeError::assertion(format!("text not found on screen: {text}"))
+                })?
+            } else {
+                (x.unwrap_or(0), y.unwrap_or(0))
+            };
+            position = (x, y);
+            let mut out = String::new();
+            for _ in 0..clicks.max(1) {
+                out.push_str(&mouse::click(x, y, options));
+            }
+            out
+        }
+        crate::api::MouseAction::Move { x, y } => {
+            position = (x, y);
+            mouse::motion(x, y)
+        }
+        crate::api::MouseAction::Down { x, y, options } => {
+            position = (x, y);
+            mouse::down(x, y, options)
+        }
+        crate::api::MouseAction::Up { x, y, options } => {
+            position = (x, y);
+            mouse::up(x, y, options)
+        }
+        crate::api::MouseAction::Drag {
+            x1,
+            y1,
+            x2,
+            y2,
+            options,
+        } => {
+            position = (x2, y2);
+            format!(
+                "{}{}{}",
+                mouse::down(x1, y1, options),
+                mouse::drag_motion(x2, y2, options),
+                mouse::up(x2, y2, options)
+            )
+        }
+        crate::api::MouseAction::Scroll { direction, amount } => {
+            position = (0, 0);
+            let up = direction.eq_ignore_ascii_case("up");
+            (0..amount.max(1))
+                .map(|_| mouse::scroll(0, 0, up))
+                .collect()
+        }
+    };
+    write_input(session, sequence.as_bytes(), input, Some(position))
+}
+
+fn locate_center(session: &TerminalSession, text: &str) -> Option<(u16, u16)> {
+    let mut query = LocatorQuery::text(text);
+    query.occurrence = crate::api::MatchOccurrence::First;
+    let evaluated = evaluate_locator(session, &query, false).ok()?;
+    matched_center(evaluated.evaluation.matches.first()?)
+        .and_then(|(x, y)| Some((u16::try_from(x).ok()?, u16::try_from(y).ok()?)))
+}
+
+fn poll_until<F: FnMut() -> bool>(
+    session: &WaitContext<'_>,
+    mut predicate: F,
+    timeout_ms: u64,
+) -> Result<bool, TermprobeError> {
+    let start = Instant::now();
+    loop {
+        session.check_cancelled()?;
+        if predicate() {
+            return Ok(true);
+        }
+        if start.elapsed() >= Duration::from_millis(timeout_ms) {
+            return Ok(false);
+        }
+        std::thread::sleep(Duration::from_millis(POLL_DELAY_MS));
+    }
+}
+
+fn session_stopped(session: &TerminalSession) -> bool {
+    session.cancelled.load(std::sync::atomic::Ordering::Acquire)
+        || session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .exited
+            .is_some()
+}
+
+/// The window title the terminal is currently reporting.
+fn title_of(session: &TerminalSession) -> Option<String> {
+    session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .emu
+        .title()
+}
+
+fn clipboard_error(error: anyhow::Error) -> TermprobeError {
+    TermprobeError::internal(error.to_string())
+}
+
+fn get_clipboard(session: &TerminalSession) -> Result<String, TermprobeError> {
+    let mut state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let value = state
+        .emu
+        .clipboard(ClipboardType::Clipboard)
+        .map_err(clipboard_error)?;
+    state.observed_clipboard_revision = state
+        .emu
+        .clipboard_revision(ClipboardType::Clipboard)
+        .map_err(clipboard_error)?;
+    Ok(value)
+}
+
+fn wait_clipboard_match(
+    session: &WaitContext<'_>,
+    pattern: &ClipboardPattern,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    let mut matched = false;
+    let mut read_error = None;
+    poll_until(
+        session,
+        || {
+            let mut state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let value = state
+                .emu
+                .clipboard(ClipboardType::Clipboard)
+                .map_err(clipboard_error);
+            let revision = state
+                .emu
+                .clipboard_revision(ClipboardType::Clipboard)
+                .map_err(clipboard_error);
+            match (value, revision) {
+                (Ok(value), Ok(revision)) if pattern.matches(&value) => {
+                    state.observed_clipboard_revision = revision;
+                    matched = true;
+                }
+                (Err(error), _) | (_, Err(error)) => read_error = Some(error),
+                _ => {}
+            }
+            drop(state);
+            matched || read_error.is_some() || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if let Some(error) = read_error {
+        Err(error)
+    } else if matched {
+        Ok(())
+    } else if session_stopped(session) {
+        Err(TermprobeError::assertion(format!(
+            "session exited before the clipboard matched '{}'",
+            pattern.as_str()
+        )))
+    } else {
+        Err(TermprobeError::assertion(format!(
+            "wait clipboard: timed out after {} waiting for '{}'",
+            format_timeout(timeout_ms),
+            pattern.as_str()
+        )))
+    }
+}
+
+fn wait_clipboard_change(session: &WaitContext<'_>, timeout_ms: u64) -> Result<(), TermprobeError> {
+    session.check_cancelled()?;
+    let baseline = {
+        let mut state = session
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let current = state
+            .emu
+            .clipboard_revision(ClipboardType::Clipboard)
+            .map_err(clipboard_error)?;
+        if current != state.observed_clipboard_revision {
+            state.observed_clipboard_revision = current;
+            return Ok(());
+        }
+        current
+    };
+    let mut changed = false;
+    let mut read_error = None;
+    poll_until(
+        session,
+        || {
+            let mut state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            match state
+                .emu
+                .clipboard_revision(ClipboardType::Clipboard)
+                .map_err(clipboard_error)
+            {
+                Ok(current) if current != baseline => {
+                    state.observed_clipboard_revision = current;
+                    changed = true;
+                }
+                Ok(_) => {}
+                Err(error) => read_error = Some(error),
+            }
+            drop(state);
+            changed || read_error.is_some() || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if let Some(error) = read_error {
+        Err(error)
+    } else if changed {
+        Ok(())
+    } else if session_stopped(session) {
+        Err(TermprobeError::assertion(
+            "session exited before the clipboard changed",
+        ))
+    } else {
+        Err(TermprobeError::assertion(format!(
+            "wait clipboard: timed out after {} without a change",
+            format_timeout(timeout_ms)
+        )))
+    }
+}
+
+/// Whether the title matches now. An unset title matches nothing, so `--not`
+/// on a session that never set one succeeds.
+fn title_matches(session: &TerminalSession, pattern: &Pattern) -> bool {
+    title_of(session).is_some_and(|title| pattern.matches(&title))
+}
+
+fn wait_title(
+    session: &WaitContext<'_>,
+    text: &str,
+    regex: bool,
+    timeout_ms: u64,
+    not: bool,
+) -> Result<(), TermprobeError> {
+    let pattern = Pattern::new(text, regex)
+        .map_err(|error| TermprobeError::usage(format!("invalid regex: {error}")))?;
+    let mut matched = false;
+    poll_until(
+        session,
+        || {
+            matched = title_matches(session, &pattern) != not;
+            matched || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if matched {
+        Ok(())
+    } else if session_stopped(session) {
+        Err(TermprobeError::assertion(format!(
+            "session exited before the title '{}' became {}",
+            pattern.describe(),
+            if not { "hidden" } else { "visible" }
+        )))
+    } else {
+        let expected = pattern.describe();
+        // Share immutable history until a mismatch needs public diagnostics. The
+        // compared grid and its history stay pinned even if output advances during I/O.
+        let observation = capture_failure_observation(session);
+        let actual = observation.title.clone();
+        let message =
+            title_timeout_message_from_actual(actual.as_deref(), &expected, timeout_ms, not);
+        let mut error = comparison_failure(
+            "wait.title",
+            Some(timeout_ms),
+            FailureReason::TimedOut,
+            message,
+            "title",
+            Some(expected),
+            actual,
+        );
+        error.observation = Some(Box::new(observation));
+        Err(error)
+    }
+}
+
+fn expect_title(
+    session: &WaitContext<'_>,
+    text: &str,
+    regex: bool,
+    not: bool,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    let pattern = Pattern::new(text, regex)
+        .map_err(|error| TermprobeError::usage(format!("invalid regex: {error}")))?;
+    let mut matched = false;
+    poll_until(
+        session,
+        || {
+            matched = title_matches(session, &pattern) != not;
+            matched || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if matched {
+        Ok(())
+    } else if session_stopped(session) {
+        Err(TermprobeError::assertion(format!(
+            "session exited before the title '{}' became {}",
+            pattern.describe(),
+            if not { "hidden" } else { "visible" }
+        )))
+    } else {
+        let expected = pattern.describe();
+        let observation = capture_failure_observation(session);
+        let actual = observation.title.clone();
+        let message =
+            title_timeout_message_from_actual(actual.as_deref(), &expected, timeout_ms, not);
+        let mut error = comparison_failure(
+            "expect.title",
+            Some(timeout_ms),
+            FailureReason::TimedOut,
+            message,
+            "title",
+            Some(expected),
+            actual,
+        );
+        error.observation = Some(Box::new(observation));
+        Err(error)
+    }
+}
+
+fn wait_idle(session: &WaitContext<'_>, timeout_ms: u64) -> Result<(), TermprobeError> {
+    let quiet = Duration::from_millis(250);
+    let mut capture_error = None;
+    let settled = poll_until(
+        session,
+        || {
+            if session.cancelled.load(Ordering::Acquire) {
+                return true;
+            }
+            let mut state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            capture_error = try_capture_visual_state(&mut state, true).err();
+            capture_error.is_some() || state.last_change.elapsed() >= quiet
+        },
+        timeout_ms,
+    )?;
+    if let Some(error) = capture_error {
+        Err(TermprobeError::internal(error))
+    } else if session.cancelled.load(Ordering::Acquire) {
+        Err(TermprobeError::assertion("wait idle: session was cancelled"))
+    } else if settled {
+        Ok(())
+    } else {
+        Err(TermprobeError::assertion(
+            "wait idle: screen kept changing until timeout",
+        ))
+    }
+}
+
+fn command_settled(session: &TerminalSession, baseline: u64) -> bool {
+    const QUIET: Duration = Duration::from_millis(300);
+    if session.cancelled.load(std::sync::atomic::Ordering::Acquire) {
+        return true;
+    }
+    let mut state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if state.exited.is_some() {
+        return true;
+    }
+    if !state.tracker.started() {
+        let _ = try_capture_visual_state(&mut state, true);
+        return state.last_change.elapsed() >= QUIET;
+    }
+    if state.awaiting_command_start() {
+        return false;
+    }
+    let tracker = &state.tracker;
+    tracker.finished_count() > baseline || !tracker.executing()
+}
+
+fn wait_command(session: &WaitContext<'_>, timeout_ms: u64) -> Result<(), TermprobeError> {
+    let baseline = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .tracker
+        .finished_count();
+    let settled = poll_until(session, || command_settled(session, baseline), timeout_ms)?;
+    if session.cancelled.load(Ordering::Acquire) {
+        Err(TermprobeError::assertion(
+            "wait command: session was cancelled",
+        ))
+    } else if settled {
+        Ok(())
+    } else {
+        Err(TermprobeError::assertion(format!(
+            "wait command: timed out after {timeout_ms}ms; {}",
+            stall_reason(session)
+        )))
+    }
+}
+
+fn stall_reason(session: &TerminalSession) -> String {
+    let state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if state.awaiting_command_start() {
+        "the shell never started a command for the input that was sent, so there \
+         is nothing to wait for (was the line submitted?)"
+            .to_string()
+    } else {
+        "the command was still running".to_string()
+    }
+}
+
+fn wait_exit(session: &WaitContext<'_>, timeout_ms: u64) -> Result<(), TermprobeError> {
+    let start = Instant::now();
+    loop {
+        session.check_cancelled()?;
+        let (exited, exit_error) = {
+            let state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            (state.exited.is_some(), state.exit_error.clone())
+        };
+        if session.cancelled.load(Ordering::Acquire) {
+            return Err(TermprobeError::assertion("wait exit: session was cancelled"));
+        }
+        if exited {
+            return Ok(());
+        }
+        if let Some(error) = exit_error {
+            return Err(TermprobeError::internal(format!(
+                "wait exit: failed to query process status: {error}"
+            )));
+        }
+        if start.elapsed() >= Duration::from_millis(timeout_ms) {
+            return Err(TermprobeError::assertion(
+                "wait exit: session still running at timeout",
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(POLL_DELAY_MS));
+    }
+}
+
+fn wait_ready(session: &WaitContext<'_>, timeout_ms: u64) -> Result<(), TermprobeError> {
+    if await_ready(session, timeout_ms, session.request_cancelled) {
+        Ok(())
+    } else {
+        Err(TermprobeError::assertion(
+            "wait ready: no prompt was reported within timeout",
+        ))
+    }
+}
+
+fn wait_bell(session: &WaitContext<'_>, timeout_ms: u64) -> Result<(), TermprobeError> {
+    let baseline = session.bells.sequence();
+    let mut rang = false;
+    poll_until(
+        session,
+        || {
+            rang = session.bells.sequence() != baseline;
+            rang || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if rang {
+        Ok(())
+    } else if session_stopped(session) {
+        Err(TermprobeError::assertion(
+            "session exited before a bell was received",
+        ))
+    } else {
+        Err(TermprobeError::assertion(format!(
+            "wait bell: timed out after {timeout_ms}ms without receiving a bell"
+        )))
+    }
+}
+
+fn validate_locator_query(query: &LocatorQuery) -> Result<(), TermprobeError> {
+    validate_locator_node(query, 0, &mut 0)
+}
+
+fn validate_locator_node(
+    query: &LocatorQuery,
+    depth: usize,
+    count: &mut usize,
+) -> Result<(), TermprobeError> {
+    *count += 1;
+    if depth >= 64 || *count > 4096 {
+        return Err(TermprobeError::usage(
+            "locator expression exceeds the size or depth limit",
+        ));
+    }
+    if query.within.is_none() && query.direction != crate::api::LocatorDirection::Within {
+        return Err(TermprobeError::usage(
+            "locator direction requires a preceding locator",
+        ));
+    }
+    match &query.selector {
+        LocatorSelector::Text(selector) => validate_selector(selector)?,
+        LocatorSelector::Style(selector) => {
+            if selector.style.is_empty() {
+                return Err(TermprobeError::usage(
+                    "getByStyle requires at least one style property",
+                ));
+            }
+            validate_style(&selector.style)?;
+        }
+        LocatorSelector::Link(_) => {}
+        LocatorSelector::And { .. }
+        | LocatorSelector::Or { .. }
+        | LocatorSelector::Filter { .. } => {
+            if query.within.is_some() || !query.style.is_empty() {
+                return Err(TermprobeError::usage(
+                    "composition nodes do not accept scope or style fields",
+                ));
+            }
+            if let LocatorSelector::Filter {
+                has: None,
+                has_not: None,
+                ..
+            } = &query.selector
+            {
+                return Err(TermprobeError::usage("filter requires has or hasNot"));
+            }
+            for child in query.selector.children() {
+                validate_locator_node(child, depth + 1, count)?;
+            }
+        }
+    }
+    if let Some(parent) = query.within.as_deref() {
+        validate_locator_node(parent, depth + 1, count)?;
+    }
+    validate_style(&query.style)?;
+    Ok(())
+}
+
+struct EvaluatedLocator {
+    evaluation: locator::LocatorEvaluation,
+    screen_sequence: u64,
+    visible_rows: usize,
+    scrolled: bool,
+}
+
+fn evaluate_locator_in_state_with_requirement(
+    state: &mut TermState,
+    query: &LocatorQuery,
+    require_one: bool,
+) -> anyhow::Result<EvaluatedLocator> {
+    let screen_sequence = capture_visual_state(state, true);
+    let visible_rows = state.emu.viewable_rows();
+    let visible_len = visible_rows.len();
+    let full = query.uses_full_grid();
+    let rows = if full {
+        state.emu.full_rows()
+    } else {
+        visible_rows
+    };
+    let mut evaluation = locator::evaluate_query(
+        &rows,
+        query,
+        require_one,
+        &mut |cell, style, x, y, budget| {
+            evaluate_cell_style(cell, style, state.emu.as_ref(), x, y, budget)
+        },
+    )?;
+    if full {
+        evaluation.diagnostics.viewport_origin_y =
+            state.emu.viewport().origin().min(u32::MAX as usize) as u32;
+    }
+    Ok(EvaluatedLocator {
+        evaluation,
+        screen_sequence,
+        visible_rows: visible_len,
+        scrolled: state.emu.viewport().offset != 0,
+    })
+}
+
+fn evaluate_locator(
+    session: &TerminalSession,
+    query: &LocatorQuery,
+    require_one: bool,
+) -> Result<EvaluatedLocator, TermprobeError> {
+    validate_locator_query(query)?;
+    let mut state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    evaluate_locator_in_state_with_requirement(&mut state, query, require_one)
+        .map_err(|error| TermprobeError::assertion(error.to_string()))
+}
+
+fn evaluate_locator_with_observation(
+    session: &TerminalSession,
+    query: &LocatorQuery,
+    require_one: bool,
+) -> Result<(EvaluatedLocator, FailureObservation), TermprobeError> {
+    validate_locator_query(query)?;
+    let mut state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let evaluated = evaluate_locator_in_state_with_requirement(&mut state, query, require_one)
+        .map_err(|error| TermprobeError::assertion(error.to_string()))?;
+    let observation = capture_failure_observation_locked(session, &mut state);
+    Ok((evaluated, observation))
+}
+
+fn find_locator(
+    session: &TerminalSession,
+    query: &LocatorQuery,
+    require_one: bool,
+) -> Result<Vec<TextMatch>, TermprobeError> {
+    validate_locator_query(query)?;
+    let mut state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let evaluated = evaluate_locator_in_state_with_requirement(&mut state, query, require_one)
+        .map_err(|error| TermprobeError::assertion(error.to_string()))?;
+    let failure = evaluated.evaluation.diagnostics.failure_reason;
+    if matches!(
+        failure,
+        Some(LocatorFailureReason::Ambiguous | LocatorFailureReason::AnchorAmbiguous)
+    ) || (require_one && evaluated.evaluation.matches.len() != 1)
+    {
+        let observation = capture_failure_observation_locked(session, &mut state);
+        drop(state);
+        let message = locator_failure_message(query, &evaluated.evaluation.diagnostics);
+        return Err(locator_failure_error(
+            if require_one {
+                "locator.location"
+            } else {
+                "locator.find"
+            },
+            None,
+            message,
+            evaluated,
+            Vec::new(),
+            false,
+            Some(observation),
+        ));
+    }
+    drop(state);
+    Ok(evaluated
+        .evaluation
+        .matches
+        .into_iter()
+        .map(|matched| matched.value)
+        .collect())
+}
+
+fn wait_locator(
+    session: &WaitContext<'_>,
+    query: &LocatorQuery,
+    not: bool,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    validate_locator_query(query)?;
+    let description = query.selector.description();
+    let started = Instant::now();
+    let mut transitions = Vec::new();
+    let mut last_signature = None;
+    loop {
+        session.check_cancelled()?;
+        let evaluated = evaluate_locator(session, query, false)?;
+        let ambiguous = matches!(
+            evaluated.evaluation.diagnostics.failure_reason,
+            Some(LocatorFailureReason::Ambiguous | LocatorFailureReason::AnchorAmbiguous)
+        );
+        let visible = !evaluated.evaluation.matches.is_empty() && !ambiguous;
+        let matched = !ambiguous && visible != not;
+        push_evaluation_transition(
+            &mut transitions,
+            &mut last_signature,
+            &evaluated,
+            if ambiguous {
+                "ambiguous"
+            } else if visible {
+                "matched"
+            } else {
+                "no_match"
+            },
+            started.elapsed().as_millis() as u64,
+        );
+        if matched {
+            return Ok(());
+        }
+        if session_stopped(session) || started.elapsed() >= Duration::from_millis(timeout_ms) {
+            let (final_evaluated, observation) =
+                evaluate_locator_with_observation(session, query, false)?;
+            let final_ambiguous = matches!(
+                final_evaluated.evaluation.diagnostics.failure_reason,
+                Some(LocatorFailureReason::Ambiguous | LocatorFailureReason::AnchorAmbiguous)
+            );
+            let final_visible = !final_evaluated.evaluation.matches.is_empty() && !final_ambiguous;
+            if !final_ambiguous && final_visible != not {
+                return Ok(());
+            }
+            push_evaluation_transition(
+                &mut transitions,
+                &mut last_signature,
+                &final_evaluated,
+                if final_ambiguous {
+                    "ambiguous"
+                } else if final_visible {
+                    "matched"
+                } else {
+                    "no_match"
+                },
+                started.elapsed().as_millis() as u64,
+            );
+            let stopped = observation.process.cancelled || observation.process.exit_code.is_some();
+            let message = if stopped {
+                format!(
+                    "session exited before '{description}' became {}",
+                    if not { "hidden" } else { "visible" }
+                )
+            } else if matches!(
+                final_evaluated.evaluation.diagnostics.failure_reason,
+                Some(
+                    LocatorFailureReason::Ambiguous
+                        | LocatorFailureReason::AnchorAmbiguous
+                        | LocatorFailureReason::AnchorNotFound
+                )
+            ) {
+                locator_failure_message(query, &final_evaluated.evaluation.diagnostics)
+            } else {
+                timeout_message(&description, timeout_ms, not)
+            };
+            return Err(locator_failure_error(
+                "locator.wait",
+                Some(timeout_ms),
+                message,
+                final_evaluated,
+                transitions,
+                not,
+                Some(observation),
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(POLL_DELAY_MS));
+    }
+}
+
+fn push_evaluation_transition(
+    transitions: &mut Vec<crate::diagnostics::EvaluationTransition>,
+    last_signature: &mut Option<String>,
+    evaluated: &EvaluatedLocator,
+    outcome: &str,
+    elapsed_ms: u64,
+) {
+    let stage_counts = evaluated
+        .evaluation
+        .diagnostics
+        .stages
+        .iter()
+        .map(|stage| stage.selected_count)
+        .collect::<Vec<_>>();
+    let signature = format!(
+        "{outcome}:{:?}:{stage_counts:?}",
+        evaluated.evaluation.diagnostics.failure_reason
+    );
+    if last_signature.as_deref() == Some(signature.as_str()) {
+        return;
+    }
+    *last_signature = Some(signature);
+    transitions.push(crate::diagnostics::EvaluationTransition {
+        elapsed_ms,
+        screen_sequence: evaluated.screen_sequence,
+        outcome: outcome.to_string(),
+        stage_index: evaluated.evaluation.diagnostics.failure_stage,
+        stage_counts,
+    });
+    if transitions.len() > 16 {
+        transitions.remove(0);
+    }
+}
+
+fn locator_failure_error(
+    operation: &str,
+    timeout_ms: Option<u64>,
+    message: String,
+    evaluated: EvaluatedLocator,
+    transitions: Vec<crate::diagnostics::EvaluationTransition>,
+    negated: bool,
+    observation: Option<FailureObservation>,
+) -> TermprobeError {
+    let reason = if negated && !evaluated.evaluation.matches.is_empty() {
+        FailureReason::UnexpectedMatch
+    } else {
+        match evaluated.evaluation.diagnostics.failure_reason {
+            Some(LocatorFailureReason::Ambiguous | LocatorFailureReason::AnchorAmbiguous) => {
+                FailureReason::LocatorAmbiguous
+            }
+            Some(LocatorFailureReason::OutsideViewport)
+            | Some(LocatorFailureReason::MatchedNoCells) => FailureReason::MatchNotActionable,
+            _ => FailureReason::LocatorNoMatch,
+        }
+    };
+    let mut details = FailureReport::new(operation, timeout_ms, reason, message.clone());
+    details.operation.failed_screen_sequence = evaluated.screen_sequence;
+    details.locator = Some(evaluated.evaluation.diagnostics);
+    details.evaluation_transitions = transitions;
+    let mut error = TermprobeError::assertion(message).with_report(details);
+    error.observation = observation.map(Box::new);
+    error
+}
+
+#[allow(clippy::too_many_arguments)]
+fn observed_comparison_failure(
+    session: &TerminalSession,
+    operation: &str,
+    timeout_ms: Option<u64>,
+    reason: FailureReason,
+    message: String,
+    kind: &str,
+    expected: Option<String>,
+    actual: Option<String>,
+) -> TermprobeError {
+    let mut error = comparison_failure(
+        operation, timeout_ms, reason, message, kind, expected, actual,
+    );
+    error.observation = Some(Box::new(capture_failure_observation(session)));
+    error
+}
+
+fn resolve_locator_click_point(
+    session: &WaitContext<'_>,
+    query: &LocatorQuery,
+    timeout_ms: u64,
+) -> Result<(u16, u16), TermprobeError> {
+    validate_locator_query(query)?;
+    let description = query.selector.description();
+    let started = Instant::now();
+    let mut transitions = Vec::new();
+    let mut last_signature = None;
+    loop {
+        session.check_cancelled()?;
+        let (evaluated, outcome) = {
+            let mut state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let visible_len = state.emu.viewable_rows().len();
+            let evaluated = evaluate_locator_in_state_with_requirement(&mut state, query, true)
+                .map_err(|error| TermprobeError::assertion(error.to_string()))?;
+            let full = query.uses_full_grid();
+            let viewport_offset = evaluated.evaluation.diagnostics.viewport_origin_y as usize;
+            let outcome = click_point_from_candidates(
+                evaluated.evaluation.matches.clone(),
+                &description,
+                full,
+                viewport_offset,
+                visible_len,
+                evaluated.scrolled,
+            );
+            (evaluated, outcome)
+        };
+        match outcome {
+            Ok(Some(point)) => return Ok(point),
+            Ok(None) => push_evaluation_transition(
+                &mut transitions,
+                &mut last_signature,
+                &evaluated,
+                "no_match",
+                started.elapsed().as_millis() as u64,
+            ),
+            Err(_) => push_evaluation_transition(
+                &mut transitions,
+                &mut last_signature,
+                &evaluated,
+                "not_actionable",
+                started.elapsed().as_millis() as u64,
+            ),
+        }
+        if session_stopped(session) || started.elapsed() >= Duration::from_millis(timeout_ms) {
+            let (mut final_evaluated, observation) =
+                evaluate_locator_with_observation(session, query, true)?;
+            let full = query.uses_full_grid();
+            let viewport_offset = final_evaluated.evaluation.diagnostics.viewport_origin_y as usize;
+            let actionability = click_point_from_candidates(
+                final_evaluated.evaluation.matches.clone(),
+                &description,
+                full,
+                viewport_offset,
+                final_evaluated.visible_rows,
+                final_evaluated.scrolled,
+            );
+            let actionability_error = match actionability {
+                Ok(Some(point)) => return Ok(point),
+                Ok(None) => None,
+                Err(error) => Some(error),
+            };
+            let message =
+                if observation.process.cancelled || observation.process.exit_code.is_some() {
+                    format!("session exited before '{description}' could be clicked")
+                } else if let Some(error) = actionability_error {
+                    let reason = if error.message.contains("outside the visible viewport")
+                        || error.message.contains("in scrollback")
+                    {
+                        LocatorFailureReason::OutsideViewport
+                    } else {
+                        LocatorFailureReason::MatchedNoCells
+                    };
+                    final_evaluated.evaluation.diagnostics.failure_reason = Some(reason);
+                    final_evaluated.evaluation.diagnostics.failure_stage = final_evaluated
+                        .evaluation
+                        .diagnostics
+                        .stages
+                        .len()
+                        .checked_sub(1);
+                    error.message
+                } else if matches!(
+                    final_evaluated.evaluation.diagnostics.failure_reason,
+                    Some(
+                        LocatorFailureReason::Ambiguous
+                            | LocatorFailureReason::AnchorAmbiguous
+                            | LocatorFailureReason::AnchorNotFound
+                    )
+                ) {
+                    locator_failure_message(query, &final_evaluated.evaluation.diagnostics)
+                } else {
+                    format!(
+                        "timed out after {} waiting for exactly one '{description}' match",
+                        format_timeout(timeout_ms),
+                    )
+                };
+            return Err(locator_failure_error(
+                "locator.click",
+                Some(timeout_ms),
+                message,
+                final_evaluated,
+                transitions,
+                false,
+                Some(observation),
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(POLL_DELAY_MS));
+    }
+}
+
+fn click_locator(
+    session: &WaitContext<'_>,
+    query: &LocatorQuery,
+    options: crate::api::MouseOptions,
+    clicks: u8,
+    timeout_ms: u64,
+    input: &mut Option<InputDetails>,
+) -> Result<(), TermprobeError> {
+    let (x, y) = resolve_locator_click_point(session, query, timeout_ms)?;
+    let mut sequence = String::new();
+    for _ in 0..clicks.max(1) {
+        sequence.push_str(&mouse::click(x, y, options));
+    }
+    session.check_cancelled()?;
+    write_input(session, sequence.as_bytes(), input, Some((x, y)))
+}
+
+fn click_point_from_candidates(
+    mut candidates: Vec<locator::LocatedMatch>,
+    description: &str,
+    full: bool,
+    viewport_offset: usize,
+    visible_rows: usize,
+    scrolled: bool,
+) -> Result<Option<(u16, u16)>, TermprobeError> {
+    if candidates.len() > 1 {
+        return Err(TermprobeError::assertion(format!(
+            "click requires one match for '{description}', but found {}",
+            candidates.len()
+        )));
+    }
+    let Some(matched) = candidates.pop() else {
+        return Ok(None);
+    };
+    if scrolled {
+        return Err(TermprobeError::assertion(format!(
+            "'{description}' matched while the viewport is in scrollback and cannot be clicked; scroll to the bottom first"
+        )));
+    }
+    let (x, absolute_y) = matched_center(&matched).ok_or_else(|| {
+        TermprobeError::assertion(format!("'{description}' matched no terminal cells"))
+    })?;
+    let y = if full {
+        absolute_y.checked_sub(viewport_offset).ok_or_else(|| {
+            TermprobeError::assertion(format!(
+                "'{description}' matched in scrollback outside the visible viewport and cannot be clicked"
+            ))
+        })?
+    } else {
+        absolute_y
+    };
+    if y >= visible_rows {
+        return Err(TermprobeError::assertion(format!(
+            "'{description}' matched outside the visible viewport and cannot be clicked"
+        )));
+    }
+    let x = u16::try_from(x)
+        .map_err(|_| TermprobeError::internal("matched column is outside terminal coordinates"))?;
+    let y = u16::try_from(y)
+        .map_err(|_| TermprobeError::internal("matched row is outside terminal coordinates"))?;
+    Ok(Some((x, y)))
+}
+
+fn matched_center(matched: &locator::LocatedMatch) -> Option<(usize, usize)> {
+    matched
+        .cells
+        .get(matched.cells.len() / 2)
+        .map(|cell| (cell.x, cell.y))
+}
+
+fn highlight_locator(
+    session: &WaitContext<'_>,
+    query: &LocatorQuery,
+    timeout_ms: u64,
+) -> Result<Vec<TextMatch>, TermprobeError> {
+    validate_locator_query(query)?;
+    let description = query.selector.description();
+    let mut resolved = None;
+    poll_until(
+        session,
+        || {
+            let outcome = {
+                let mut state = session
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let full_rows = state.emu.full_rows();
+                let visible_rows = state.emu.viewable_rows();
+                let viewport_offset = state.emu.viewport().origin();
+                let full = query.uses_full_grid();
+                let rows = if full { &full_rows } else { &visible_rows };
+                match locator::locate_query(rows, query, &mut |cell, style| {
+                    cell_matches_style(cell, style, state.emu.as_ref())
+                }) {
+                    Ok(candidates) if candidates.is_empty() => Ok(None),
+                    Ok(candidates) => {
+                        let row_offset = if full { 0 } else { viewport_offset };
+                        state.highlight = Some(TextHighlight {
+                            cells: candidates
+                                .iter()
+                                .flat_map(|matched| {
+                                    matched
+                                        .cells
+                                        .iter()
+                                        .map(|cell| (cell.x, row_offset.saturating_add(cell.y)))
+                                })
+                                .collect(),
+                            viewport_offset,
+                        });
+                        Ok(Some(
+                            candidates
+                                .into_iter()
+                                .map(|matched| matched.value)
+                                .collect(),
+                        ))
+                    }
+                    Err(error) => Err(TermprobeError::assertion(error.to_string())),
+                }
+            };
+            if let Ok(Some(matches)) = outcome {
+                resolved = Some(matches);
+            }
+            resolved.is_some() || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if let Some(matches) = resolved {
+        Ok(matches)
+    } else {
+        let (evaluated, observation, final_matches) = {
+            let mut state = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let evaluated = evaluate_locator_in_state_with_requirement(&mut state, query, false)
+                .map_err(|error| TermprobeError::assertion(error.to_string()))?;
+            let final_matches = if evaluated.evaluation.matches.is_empty()
+                || matches!(
+                    evaluated.evaluation.diagnostics.failure_reason,
+                    Some(LocatorFailureReason::Ambiguous | LocatorFailureReason::AnchorAmbiguous)
+                ) {
+                None
+            } else {
+                let viewport_offset = state.emu.viewport().origin();
+                let row_offset = if query.uses_full_grid() {
+                    0
+                } else {
+                    viewport_offset
+                };
+                state.highlight = Some(TextHighlight {
+                    cells: evaluated
+                        .evaluation
+                        .matches
+                        .iter()
+                        .flat_map(|matched| {
+                            matched
+                                .cells
+                                .iter()
+                                .map(|cell| (cell.x, row_offset.saturating_add(cell.y)))
+                        })
+                        .collect(),
+                    viewport_offset,
+                });
+                Some(
+                    evaluated
+                        .evaluation
+                        .matches
+                        .iter()
+                        .map(|matched| matched.value.clone())
+                        .collect::<Vec<_>>(),
+                )
+            };
+            let observation = capture_failure_observation_locked(session, &mut state);
+            (evaluated, observation, final_matches)
+        };
+        if let Some(matches) = final_matches {
+            return Ok(matches);
+        }
+        let message = if observation.process.cancelled || observation.process.exit_code.is_some() {
+            format!("session exited before '{description}' could be highlighted")
+        } else if matches!(
+            evaluated.evaluation.diagnostics.failure_reason,
+            Some(
+                LocatorFailureReason::Ambiguous
+                    | LocatorFailureReason::AnchorAmbiguous
+                    | LocatorFailureReason::AnchorNotFound
+            )
+        ) {
+            locator_failure_message(query, &evaluated.evaluation.diagnostics)
+        } else {
+            format!(
+                "timed out after {} waiting for a '{description}' match to highlight",
+                format_timeout(timeout_ms),
+            )
+        };
+        Err(locator_failure_error(
+            "locator.highlight",
+            Some(timeout_ms),
+            message,
+            evaluated,
+            Vec::new(),
+            false,
+            Some(observation),
+        ))
+    }
+}
+
+fn validate_selector(selector: &TextSelector) -> Result<(), TermprobeError> {
+    let validate = |text: &str, regex: bool| {
+        Pattern::new(text, regex)
+            .map(|_| ())
+            .map_err(|error| TermprobeError::usage(format!("invalid regex: {error}")))
+    };
+    validate(&selector.text, selector.regex)?;
+    for TextAnchor { text, regex, .. } in [
+        selector.scope.after.as_ref(),
+        selector.scope.before.as_ref(),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        validate(text, *regex)?;
+    }
+    Ok(())
+}
+
+fn validate_style(style: &TextStyle) -> Result<(), TermprobeError> {
+    for spec in [&style.foreground, &style.background, &style.underline_color]
+        .into_iter()
+        .flatten()
+    {
+        Expected::parse(spec).map_err(|error| TermprobeError::usage(error.to_string()))?;
+    }
+    if let Some(style) = &style.underline_style {
+        if !matches!(
+            style.as_str(),
+            "none" | "single" | "double" | "curly" | "dotted" | "dashed"
+        ) {
+            return Err(TermprobeError::usage(format!(
+                "invalid underline style '{style}'"
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn cell_matches_style(cell: &EmuCell, style: &TextStyle, colors: &dyn Emulator) -> bool {
+    evaluate_cell_style(cell, style, colors, 0, 0, 0).matched
+}
+
+fn evaluate_cell_style(
+    cell: &EmuCell,
+    style: &TextStyle,
+    colors: &dyn Emulator,
+    x: usize,
+    y: usize,
+    mismatch_limit: usize,
+) -> CellStyleEvaluation {
+    let mut result = CellStyleEvaluation {
+        matched: true,
+        mismatches: Vec::new(),
+        mismatches_truncated: false,
+    };
+    for (property, expected, actual) in [
+        ("bold", style.bold, cell.has(Attrs::BOLD)),
+        ("dim", style.dim, cell.has(Attrs::DIM)),
+        ("italic", style.italic, cell.has(Attrs::ITALIC)),
+        ("inverse", style.inverse, cell.has(Attrs::INVERSE)),
+        ("hidden", style.hidden, cell.has(Attrs::INVISIBLE)),
+        (
+            "strikethrough",
+            style.strikethrough,
+            cell.has(Attrs::STRIKE),
+        ),
+        ("blink", style.blink, cell.has(Attrs::BLINK)),
+    ] {
+        if let Some(expected) = expected {
+            if expected != actual
+                && !result.reject(mismatch_limit, || {
+                    style_mismatch(
+                        cell,
+                        x,
+                        y,
+                        property,
+                        expected.to_string(),
+                        actual.to_string(),
+                        None,
+                    )
+                })
+            {
+                return result;
+            }
+        }
+    }
+    if let Some(expected) = style.underline_style.as_deref() {
+        let actual = cell.underline.name();
+        if expected != actual
+            && !result.reject(mismatch_limit, || {
+                style_mismatch(
+                    cell,
+                    x,
+                    y,
+                    "underline_style",
+                    expected.to_string(),
+                    actual.to_string(),
+                    None,
+                )
+            })
+        {
+            return result;
+        }
+    }
+    for (property, spec, actual, foreground) in [
+        ("foreground", &style.foreground, cell.fg, true),
+        ("background", &style.background, cell.bg, false),
+        (
+            "underline_color",
+            &style.underline_color,
+            cell.underline_color,
+            true,
+        ),
+    ] {
+        if let Some(spec) = spec {
+            if let Ok(expected) = Expected::parse(spec) {
+                if !color::matches(actual, &expected, colors, foreground)
+                    && !result.reject(mismatch_limit, || {
+                        style_mismatch(
+                            cell,
+                            x,
+                            y,
+                            property,
+                            expected.describe(),
+                            logical_color(actual),
+                            Some(colors.resolve(actual, foreground).to_hex()),
+                        )
+                    })
+                {
+                    return result;
+                }
+            }
+        }
+    }
+    result
+}
+
+fn style_mismatch(
+    cell: &EmuCell,
+    x: usize,
+    y: usize,
+    property: &str,
+    expected: String,
+    actual: String,
+    resolved: Option<String>,
+) -> CellMismatch {
+    CellMismatch {
+        location: crate::api::TextPosition {
+            row: y.min(u32::MAX as usize) as u32,
+            column: x.min(u16::MAX as usize) as u16,
+        },
+        grapheme: cell.ch.to_string(),
+        property: property.to_string(),
+        operator: "equals".to_string(),
+        expected,
+        actual,
+        resolved,
+        reason: "value_mismatch".to_string(),
+    }
+}
+
+fn logical_color(color: Option<Color>) -> String {
+    match color {
+        None => "default".to_string(),
+        Some(Color::Rgb(r, g, b)) => format!("#{r:02x}{g:02x}{b:02x}"),
+        Some(color) => color.to_index().to_string(),
+    }
+}
+
+fn expect_exit_code(
+    session: &WaitContext<'_>,
+    code: i32,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    let baseline = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .tracker
+        .finished_count();
+    if !poll_until(session, || command_settled(session, baseline), timeout_ms)? {
+        return Err(TermprobeError::assertion(format!(
+            "expected exit code {code}: timed out after {timeout_ms}ms; {}",
+            stall_reason(session)
+        )));
+    }
+    if session.cancelled.load(Ordering::Acquire) {
+        return Err(TermprobeError::assertion(format!(
+            "expected exit code {code}: session was cancelled"
+        )));
+    }
+    let actual = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .command_exit_code();
+    match actual {
+        Some(actual) if actual == code => Ok(()),
+        Some(actual) => Err(observed_comparison_failure(
+            session,
+            "expect.exit_code",
+            Some(timeout_ms),
+            FailureReason::ScalarMismatch,
+            format!("expected exit code {code}, got {actual}"),
+            "exit_code",
+            Some(code.to_string()),
+            Some(actual.to_string()),
+        )),
+        None => Err(observed_comparison_failure(
+            session,
+            "expect.exit_code",
+            Some(timeout_ms),
+            FailureReason::ScalarMismatch,
+            "no command exit code tracked yet".to_string(),
+            "exit_code",
+            Some(code.to_string()),
+            None,
+        )),
+    }
+}
+
+fn expect_output(session: &TerminalSession, text: &str, regex: bool) -> Result<(), TermprobeError> {
+    let output = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .tracker
+        .last_output()
+        .map(str::to_string)
+        .ok_or_else(|| TermprobeError::assertion("no command output tracked yet"))?;
+    let matched = if regex {
+        regex::Regex::new(text)
+            .map_err(|error| TermprobeError::usage(format!("invalid regex: {error}")))?
+            .is_match(&output)
+    } else {
+        output.contains(text)
+    };
+    if matched {
+        Ok(())
+    } else {
+        Err(TermprobeError::assertion(format!(
+            "output did not contain '{text}'\n---\n{output}\n---"
+        )))
+    }
+}
+
+fn expect_bell_count(
+    session: &WaitContext<'_>,
+    expected: u64,
+    timeout_ms: u64,
+) -> Result<(), TermprobeError> {
+    let mut actual = session.bells.count();
+    poll_until(
+        session,
+        || {
+            actual = session.bells.count();
+            actual >= expected || session_stopped(session)
+        },
+        timeout_ms,
+    )?;
+    if actual >= expected {
+        Ok(())
+    } else if session_stopped(session) {
+        Err(TermprobeError::assertion(format!(
+            "session exited at bell count {actual} before reaching {expected}"
+        )))
+    } else {
+        Err(observed_comparison_failure(
+            session,
+            "expect.bell_count",
+            Some(timeout_ms),
+            FailureReason::TimedOut,
+            format!(
+                "expected bell count {expected}: timed out after {timeout_ms}ms; current count is {actual}"
+            ),
+            "bell_count",
+            Some(expected.to_string()),
+            Some(actual.to_string()),
+        ))
+    }
+}
+
+fn do_snapshot(
+    session: &TerminalSession,
+    name: &str,
+    update: bool,
+    include_style: bool,
+    include_title: bool,
+    cwd: Option<String>,
+) -> Result<SnapshotResult, TermprobeError> {
+    // The title is off by default: a shell prompt routinely sets it to a
+    // username, hostname, and absolute path, which would pin every baseline to
+    // one machine and make it change on `cd` while the screen stayed the same.
+    let observation = capture_failure_observation(session);
+    let title = include_title.then(|| observation.title.clone()).flatten();
+    let content = snapshot::serialize(
+        &observation.rows,
+        observation.cols,
+        include_style,
+        title.as_deref(),
+    );
+    let base = cwd
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_default();
+    match snapshot::compare(&base, name, &content, update) {
+        Ok(SnapshotStatus::Passed) => Ok(SnapshotResult::Passed),
+        Ok(SnapshotStatus::Written) => Ok(SnapshotResult::Written),
+        Ok(SnapshotStatus::Updated) => Ok(SnapshotResult::Updated),
+        Ok(SnapshotStatus::Failed { expected, actual }) => {
+            let message = format!(
+                "snapshot mismatch\n--- expected ---\n{expected}\n--- actual ---\n{actual}"
+            );
+            let mut error = comparison_failure(
+                "expect.snapshot",
+                None,
+                FailureReason::SnapshotMismatch,
+                message,
+                "snapshot",
+                Some(expected),
+                Some(actual),
+            );
+            error.observation = Some(Box::new(observation));
+            Err(error)
+        }
+        Err(error) => Err(TermprobeError::internal(error.to_string())),
+    }
+}
+
+/// Where to draw the cursor within `rows`, or `None` when the terminal is not
+/// showing one.
+///
+/// Full screenshots use the active cursor; viewport captures project and clip it.
+fn cursor_in(emu: &dyn crate::terminal::emu::Emulator, full: bool) -> Option<(u16, usize)> {
+    if !full {
+        return emu.viewport_cursor().map(|(x, y)| (x, usize::from(y)));
+    }
+    if !emu.cursor_visible() {
+        return None;
+    }
+    let (x, y) = emu.cursor();
+    // Counted in `usize`: a full render is as long as the scrollback, which a
+    // profile can set past what a `u16` row would hold, and a wrapped offset
+    // draws the cursor on a plausible but wrong line.
+    let history = emu.viewport().history;
+    Some((x, history + y as usize))
+}
+
+struct SvgSnapshot {
+    rows: Vec<Vec<EmuCell>>,
+    cols: u16,
+    title: Option<String>,
+    cursor: Option<(u16, usize)>,
+    render_state: crate::render::svg::RenderState,
+}
+
+fn svg_snapshot_from(emu: &dyn Emulator, full: bool) -> SvgSnapshot {
+    let rows = if full {
+        emu.full_rows()
+    } else {
+        emu.viewable_rows()
+    };
+    SvgSnapshot {
+        cols: emu.size().0,
+        title: emu.title(),
+        cursor: cursor_in(emu, full),
+        render_state: crate::render::svg::RenderState::capture(emu),
+        rows,
+    }
+}
+
+/// Capture everything the SVG renderer can observe while the emulator is
+/// locked, then release the reader before doing the expensive string work.
+fn svg_snapshot(session: &TerminalSession, full: bool) -> SvgSnapshot {
+    let state = session
+        .state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut snapshot = svg_snapshot_from(state.emu.as_ref(), full);
+    apply_highlight(&mut snapshot.rows, state.highlight.as_ref(), full);
+    snapshot
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScreenshotFormat {
+    Svg,
+    Png,
+}
+
+impl ScreenshotFormat {
+    fn infer(path: &str) -> Result<Self, TermprobeError> {
+        let extension = std::path::Path::new(path)
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(str::to_ascii_lowercase);
+        match extension.as_deref() {
+            None | Some("svg") => Ok(Self::Svg),
+            Some("png") => Ok(Self::Png),
+            Some(extension) => Err(TermprobeError::usage(format!(
+                "unsupported screenshot extension '.{extension}'; use .svg or .png"
+            ))),
+        }
+    }
+}
+
+fn screenshot(
+    session: &TerminalSession,
+    full: bool,
+    path: Option<String>,
+    zoom: Option<f64>,
+    background: Option<crate::api::CaptureBackground>,
+) -> Result<ScreenshotResult, TermprobeError> {
+    match path {
+        Some(path) => {
+            let zoom = crate::api::resolve_zoom(zoom)?;
+            let format = ScreenshotFormat::infer(&path)?;
+            let snapshot = svg_snapshot(session, full);
+            let style = session
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .style
+                .clone();
+            match format {
+                ScreenshotFormat::Svg => {
+                    let svg = crate::render::svg::render_svg(
+                        &snapshot.rows,
+                        snapshot.cols,
+                        &snapshot.render_state,
+                        snapshot.cursor,
+                        snapshot.title.as_deref(),
+                        &style,
+                        zoom,
+                        background,
+                    );
+                    std::fs::write(&path, svg)
+                        .map_err(|error| TermprobeError::internal(error.to_string()))?;
+                }
+                ScreenshotFormat::Png => {
+                    #[cfg(feature = "recording-raster")]
+                    {
+                        let rows = snapshot.rows.len();
+                        let frame = crate::record::frames::Frame {
+                            grid: snapshot.rows,
+                            title: snapshot.title,
+                            duration: Duration::ZERO,
+                            render_state: snapshot.render_state,
+                            cursor: snapshot.cursor,
+                        };
+                        let mut renderer = crate::render::raster::GridRenderer::for_screenshot(
+                            snapshot.cols,
+                            rows,
+                            zoom,
+                            style,
+                            background,
+                        )
+                        .map_err(|error| TermprobeError::internal(error.to_string()))?;
+                        crate::render::encode::encode_png(
+                            std::path::Path::new(&path),
+                            &frame,
+                            &mut renderer,
+                        )
+                        .map_err(|error| TermprobeError::internal(error.to_string()))?;
+                    }
+                    #[cfg(not(feature = "recording-raster"))]
+                    {
+                        return Err(TermprobeError::usage(
+                            "PNG screenshots require the termprobe 'recording-raster' feature",
+                        ));
+                    }
+                }
+            }
+            Ok(ScreenshotResult::Path(path))
+        }
+        None if zoom.is_some() || background.is_some() => Err(TermprobeError::usage(
+            "screenshot zoom and background options require an output path",
+        )),
+        None => Ok(ScreenshotResult::Text(text_of(&grid(session, full)))),
+    }
+}
+
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> &str {
+    if let Some(message) = payload.downcast_ref::<&'static str>() {
+        message
+    } else if let Some(message) = payload.downcast_ref::<String>() {
+        message.as_str()
+    } else {
+        "unknown panic"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::api::{
+        AutomaticRecording, AutomaticRecordingMode, TextPosition, TextSpan, Timeouts,
+    };
+    use crate::profile::Profile;
+    use crate::terminal::alacritty::AlacrittyEmu;
+    use crate::terminal::cell::{NamedColor, UnderlineStyle};
+    use crate::terminal::emu::Emulator;
+
+    fn sleeping_program(wait_ready: bool) -> RunOptions {
+        let (program, args) = if cfg!(windows) {
+            (
+                "powershell.exe",
+                vec!["-NoProfile", "-Command", "Start-Sleep -Seconds 30"],
+            )
+        } else {
+            ("sh", vec!["-c", "sleep 30"])
+        };
+        let defaults = OpenOptions::default();
+        RunOptions {
+            program: program.into(),
+            args: args.into_iter().map(str::to_string).collect(),
+            backend: defaults.backend,
+            profile: defaults.profile,
+            style: defaults.style,
+            cols: 80,
+            rows: 24,
+            cwd: None,
+            env: Vec::new(),
+            wait_ready: Some(wait_ready),
+            restart: false,
+            timeouts: crate::api::Timeouts {
+                ready: Some(20),
+                ..Default::default()
+            },
+            recording: AutomaticRecording {
+                mode: AutomaticRecordingMode::Disabled,
+                directory: None,
+            },
+        }
+    }
+
+    #[test]
+    fn viewport_snapshots_preserve_full_cells_and_application_cursor() {
+        for &backend in crate::Backend::ALL {
+            let mut emu = backend.build(12, 3, &Profile::default()).unwrap();
+            emu.process(b"row0\r\nrow1\r\nrow2\r\nrow3\r\nrow4\r\n");
+            emu.process("\x1b[1;31m\u{4f60}e\u{301}\x1b[0m\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\".as_bytes());
+            let full = svg_snapshot_from(emu.as_ref(), true);
+            let application = cursor_model(emu.as_ref());
+            emu.scroll(ScrollTarget::Top);
+            let viewport = svg_snapshot_from(emu.as_ref(), false);
+            let scrolled_full = svg_snapshot_from(emu.as_ref(), true);
+            assert_eq!(viewport.rows, full.rows[..3], "{backend:?}");
+            assert_eq!(viewport.cursor, None);
+            assert_eq!(scrolled_full.rows, full.rows);
+            assert_eq!(scrolled_full.cursor, full.cursor);
+            assert_eq!(cursor_model(emu.as_ref()).x, application.x);
+            assert_eq!(cursor_model(emu.as_ref()).y, application.y);
+            assert_eq!(cursor_model(emu.as_ref()).visible, application.visible);
+            assert_eq!(emu.fault(), None);
+        }
+    }
+
+    #[test]
+    fn viewport_operations_refresh_observation_and_keyboard_returns_to_bottom() {
+        let engine = Engine::new(
+            "viewport-operations".into(),
+            Arc::new(Logger::disabled()),
+            PathBuf::new(),
+        );
+        let mut options = sleeping_program(false);
+        options.cols = 12;
+        options.rows = 3;
+        engine.execute(Operation::Run(options)).unwrap();
+        let sequence = {
+            let guard = engine.lock_session();
+            let mut state = guard.as_ref().unwrap().state.lock().unwrap();
+            state
+                .emu
+                .process(b"row0\r\nrow1\r\nrow2\r\nrow3\r\nrow4\r\nrow5");
+            state.screen_dirty = true;
+            state.last_change = Instant::now() - Duration::from_secs(1);
+            capture_visual_state(&mut state, true)
+        };
+        let before_scroll = Instant::now();
+        engine
+            .execute(Operation::Scroll {
+                target: ScrollTarget::Lines(2),
+            })
+            .unwrap();
+        let OperationResult::Viewport(viewport) = engine.execute(Operation::GetViewport).unwrap()
+        else {
+            panic!("expected viewport");
+        };
+        assert_eq!(
+            viewport,
+            crate::api::Viewport {
+                offset: 2,
+                history: 3
+            }
+        );
+        let query = LocatorQuery::text("row1");
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let mut state = session.state.lock().unwrap();
+            assert!(state.screen_history.current_sequence() > sequence);
+            assert!(state.last_change >= before_scroll);
+            assert_eq!(
+                state.awaiting_start, None,
+                "scroll must not act as child input"
+            );
+            let evaluated =
+                evaluate_locator_in_state_with_requirement(&mut state, &query, true).unwrap();
+            assert_eq!(evaluated.evaluation.matches[0].value.start.row, 0);
+            let mut full_query = query.clone();
+            full_query.selector = LocatorSelector::Text(TextSelector {
+                text: "row1".into(),
+                full: true,
+                ..Default::default()
+            });
+            let evaluated =
+                evaluate_locator_in_state_with_requirement(&mut state, &full_query, true).unwrap();
+            assert_eq!(evaluated.evaluation.diagnostics.viewport_origin_y, 1);
+            assert_eq!(evaluated.evaluation.matches[0].value.start.row, 1);
+            assert!(!capture_failure_observation_locked(session, &mut state).cursor_visible);
+        }
+        engine
+            .execute(Operation::HighlightLocator {
+                query: query.clone(),
+                timeout_ms: Some(0),
+            })
+            .unwrap();
+        {
+            let guard = engine.lock_session();
+            let state = guard.as_ref().unwrap().state.lock().unwrap();
+            assert!(highlighted_rows(&state, false)[0][0].has(Attrs::INVERSE));
+            assert!(highlighted_rows(&state, true)[1][0].has(Attrs::INVERSE));
+        }
+        let error = engine
+            .execute(Operation::ClickLocator {
+                query,
+                options: crate::api::MouseOptions::default(),
+                clicks: 1,
+                timeout_ms: Some(0),
+            })
+            .unwrap_err();
+        assert!(error.message.contains("scrollback"), "{error:?}");
+        let error = engine
+            .execute(Operation::Mouse {
+                action: crate::api::MouseAction::Move { x: 1, y: 1 },
+            })
+            .unwrap_err();
+        assert!(error.message.contains("scrollback"), "{error:?}");
+        for operation in [
+            Operation::Write { data: "x".into() },
+            Operation::Key {
+                keys: vec!["a".into()],
+                action: crate::api::KeyAction::Down,
+            },
+            Operation::Submit { data: None },
+        ] {
+            engine
+                .execute(Operation::Scroll {
+                    target: ScrollTarget::Top,
+                })
+                .unwrap();
+            engine.execute(operation).unwrap();
+            let OperationResult::Viewport(viewport) =
+                engine.execute(Operation::GetViewport).unwrap()
+            else {
+                panic!("expected viewport");
+            };
+            assert_eq!(viewport.offset, 0);
+        }
+        engine.execute(Operation::Close).unwrap();
+    }
+
+    #[test]
+    fn failed_pty_resize_preserves_emulator_and_restart_dimensions() {
+        let engine = Engine::new(
+            "failed-resize".into(),
+            Arc::new(Logger::disabled()),
+            PathBuf::new(),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        {
+            let guard = engine.lock_session();
+            guard.as_ref().unwrap().pty.close();
+        }
+        let error = engine
+            .execute(Operation::Resize { cols: 90, rows: 30 })
+            .unwrap_err();
+        assert_eq!(error.kind, ErrorKind::Internal);
+        assert!(error.message.contains("PTY is closed"));
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let mut state = session.state.lock().unwrap();
+            assert_eq!(state.emu.size(), (80, 24));
+            assert!(state.emu.fault().is_none());
+            state.emu.process(b"still valid");
+            state.screen_dirty = true;
+            assert!(try_capture_visual_state(&mut state, true).is_ok());
+        }
+        {
+            let guard = engine.spawn_spec.lock().unwrap();
+            let SpawnCommand::Run(options) = &guard.as_ref().unwrap().command else {
+                panic!("expected run metadata");
+            };
+            assert_eq!((options.cols, options.rows), (80, 24));
+        }
+        engine.execute(Operation::Close).unwrap();
+    }
+
+    #[test]
+    fn monitor_mouse_write_rechecks_viewport_after_remapping() {
+        struct RecordingWriter(Arc<Mutex<Vec<u8>>>);
+
+        impl std::io::Write for RecordingWriter {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                self.0.lock().unwrap().extend_from_slice(bytes);
+                Ok(bytes.len())
+            }
+
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let engine = Engine::new(
+            "monitor-mouse-scroll".into(),
+            Arc::new(Logger::disabled()),
+            PathBuf::new(),
+        );
+        let mut options = sleeping_program(false);
+        options.cols = 12;
+        options.rows = 3;
+        engine.execute(Operation::Run(options)).unwrap();
+        let written = Arc::new(Mutex::new(Vec::new()));
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let mut state = session.state.lock().unwrap();
+            state
+                .emu
+                .process(b"row0\r\nrow1\r\nrow2\r\nrow3\r\nrow4\r\nrow5");
+            state.mouse_mode.process(b"\x1b[?1000h\x1b[?1006h");
+            state.screen_dirty = true;
+            session
+                .pty
+                .replace_test_writer(Box::new(RecordingWriter(written.clone())));
+        }
+        assert_eq!(engine.monitor_mouse_size(), Some((12, 3)));
+        let remapped = b"\x1b[<0;1;1M";
+        engine
+            .execute(Operation::Scroll {
+                target: ScrollTarget::Top,
+            })
+            .unwrap();
+        let result = engine.write_monitor_mouse_raw(remapped);
+        let viewport = engine.execute(Operation::GetViewport).unwrap();
+        let mouse_bytes = written.lock().unwrap().clone();
+        engine.write_monitor_input_raw(b"hello").unwrap();
+        let after_keyboard = engine.execute(Operation::GetViewport).unwrap();
+        engine.write_monitor_mouse_raw(remapped).unwrap();
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            session
+                .state
+                .lock()
+                .unwrap()
+                .mouse_mode
+                .process(b"\x1b[?1000l");
+        }
+        let disabled = engine.write_monitor_mouse_raw(remapped);
+        engine.execute(Operation::Close).unwrap();
+        assert!(result.is_err(), "stale monitor mouse report was forwarded");
+        assert!(
+            disabled.is_err(),
+            "mouse report reached a mouse-disabled application"
+        );
+        assert!(mouse_bytes.is_empty());
+        assert!(matches!(viewport, OperationResult::Viewport(viewport) if viewport.offset > 0));
+        assert!(
+            matches!(after_keyboard, OperationResult::Viewport(viewport) if viewport.offset == 0)
+        );
+        assert_eq!(&*written.lock().unwrap(), b"hello\x1b[<0;1;1M");
+    }
+
+    #[test]
+    fn scroll_waits_for_a_concurrent_locator_mouse_write() {
+        use std::sync::mpsc;
+
+        struct PausedWriter {
+            entered: mpsc::Sender<()>,
+            release: mpsc::Receiver<()>,
+            state: Arc<Mutex<TermState>>,
+            observed: mpsc::Sender<usize>,
+        }
+
+        impl std::io::Write for PausedWriter {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                self.entered.send(()).unwrap();
+                self.release.recv_timeout(Duration::from_secs(5)).unwrap();
+                self.observed
+                    .send(self.state.lock().unwrap().emu.viewport().offset)
+                    .unwrap();
+                Ok(bytes.len())
+            }
+
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let engine = Arc::new(Engine::new(
+            "concurrent-click-scroll".into(),
+            Arc::new(Logger::disabled()),
+            PathBuf::new(),
+        ));
+        let mut options = sleeping_program(false);
+        options.cols = 12;
+        options.rows = 3;
+        engine.execute(Operation::Run(options)).unwrap();
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let (observed_tx, observed_rx) = mpsc::channel();
+        let state = {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let mut state = session.state.lock().unwrap();
+            state
+                .emu
+                .process(b"row0\r\nrow1\r\nrow2\r\nrow3\r\nrow4\r\nclick");
+            state.screen_dirty = true;
+            session.pty.replace_test_writer(Box::new(PausedWriter {
+                entered: entered_tx,
+                release: release_rx,
+                state: session.state.clone(),
+                observed: observed_tx,
+            }));
+            session.state.clone()
+        };
+        let click_engine = engine.clone();
+        let click = std::thread::spawn(move || {
+            click_engine.execute(Operation::ClickLocator {
+                query: LocatorQuery::text("click"),
+                options: crate::api::MouseOptions::default(),
+                clicks: 1,
+                timeout_ms: Some(1_000),
+            })
+        });
+        entered_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        let state_is_unlocked = state.try_lock().is_ok();
+        let (scroll_started_tx, scroll_started_rx) = mpsc::channel();
+        let (scrolled_tx, scrolled_rx) = mpsc::channel();
+        let scroll_engine = engine.clone();
+        let scroll = std::thread::spawn(move || {
+            scroll_started_tx.send(()).unwrap();
+            let result = scroll_engine.execute(Operation::Scroll {
+                target: ScrollTarget::Top,
+            });
+            scrolled_tx.send(()).unwrap();
+            result
+        });
+        scroll_started_rx
+            .recv_timeout(Duration::from_secs(5))
+            .unwrap();
+        let scrolled_during_write = scrolled_rx.recv_timeout(Duration::from_millis(200)).is_ok();
+        release_tx.send(()).unwrap();
+        click.join().unwrap().unwrap();
+        scroll.join().unwrap().unwrap();
+        let offset_at_write = observed_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        let final_viewport = state.lock().unwrap().emu.viewport();
+        engine.execute(Operation::Close).unwrap();
+        assert!(state_is_unlocked, "PTY input must not hold terminal state");
+        assert!(
+            !scrolled_during_write,
+            "scroll overtook a pending mouse write"
+        );
+        assert_eq!(
+            offset_at_write, 0,
+            "mouse input reached a historical viewport"
+        );
+        assert!(
+            final_viewport.offset > 0,
+            "scroll must complete after the write"
+        );
+    }
+
+    #[test]
+    fn lifecycle_controls_cancel_an_operation_blocked_in_native_input() {
+        for control in ["interrupt", "close", "kill"] {
+            let engine = Arc::new(Engine::new(
+                format!("blocked-input-{control}"),
+                Arc::new(Logger::disabled()),
+                PathBuf::new(),
+            ));
+            let mut options = sleeping_program(false);
+            options.program = std::env::current_exe()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned();
+            options.args = vec![
+                "--exact".into(),
+                "terminal::pty::tests::unread_input_fixture".into(),
+                "--nocapture".into(),
+            ];
+            options.env = vec![("TERMPROBE__UNREAD_PTY_FIXTURE".into(), "1".into())];
+            engine.execute(Operation::Run(options)).unwrap();
+            engine
+                .execute(Operation::WaitLocator {
+                    query: LocatorQuery::text("unread-input-ready"),
+                    not: false,
+                    timeout_ms: Some(5_000),
+                })
+                .unwrap();
+            let pty = engine.lock_session().as_ref().unwrap().pty.clone();
+            let writer_engine = engine.clone();
+            let (written_tx, written_rx) = std::sync::mpsc::channel();
+            let writer = std::thread::spawn(move || {
+                let result = writer_engine.execute(Operation::Write {
+                    data: "x".repeat(8 * 1024 * 1024),
+                });
+                let _ = written_tx.send(result);
+            });
+            std::thread::sleep(Duration::from_millis(100));
+            let blocked = matches!(
+                written_rx.try_recv(),
+                Err(std::sync::mpsc::TryRecvError::Empty)
+            );
+            let control_engine = engine.clone();
+            let (controlled_tx, controlled_rx) = std::sync::mpsc::channel();
+            let controller = std::thread::spawn(move || {
+                let result = match control {
+                    "interrupt" => {
+                        control_engine.interrupt();
+                        Ok(OperationResult::Unit)
+                    }
+                    "close" => control_engine.execute(Operation::Close),
+                    _ => control_engine.execute(Operation::Signal {
+                        name: "KILL".into(),
+                    }),
+                };
+                let _ = controlled_tx.send(result);
+            });
+            let controlled = controlled_rx.recv_timeout(Duration::from_secs(2));
+            if controlled.is_err() {
+                pty.kill();
+            }
+            let written = written_rx.recv_timeout(Duration::from_secs(2));
+            writer.join().unwrap();
+            controller.join().unwrap();
+            engine.execute(Operation::Close).unwrap();
+            assert!(blocked, "fixture failed to block input");
+            controlled
+                .expect("lifecycle control queued behind blocked input")
+                .unwrap();
+            assert!(
+                written.expect("input did not unblock").is_err(),
+                "an interrupted write must not report success"
+            );
+        }
+    }
+
+    fn populate_history(engine: &Engine) {
+        let guard = engine.lock_session();
+        let session = guard.as_ref().unwrap();
+        let mut state = session.state.lock().unwrap();
+        for index in 0..32 {
+            state.emu.process(format!("\x1b[H{index:02}").as_bytes());
+            state.screen_dirty = true;
+            capture_visual_state(&mut state, true);
+            state.screen_history.pin_current();
+        }
+    }
+
+    fn trace_engine(name: &str, mode: TraceMode) -> (Engine, ExecutionContext, PathBuf) {
+        let root = allocate_artifact_directory(&std::env::temp_dir()).unwrap();
+        let engine = Engine::new(
+            name.into(),
+            Arc::new(Logger::disabled()),
+            root.join("automatic.cast"),
+        );
+        let context = ExecutionContext {
+            trace: Some(TraceOptions {
+                mode,
+                directory: root.join("traces"),
+            }),
+            ..Default::default()
+        };
+        (engine, context, root)
+    }
+
+    struct PanickingTraceEmulator(AlacrittyEmu);
+
+    impl Emulator for PanickingTraceEmulator {
+        fn process(&mut self, bytes: &[u8]) {
+            self.0.process(bytes);
+        }
+        fn take_pending_writes(&mut self) -> Vec<u8> {
+            self.0.take_pending_writes()
+        }
+        fn mode(&self, mode: TerminalMode) -> bool {
+            self.0.mode(mode)
+        }
+        fn resize(&mut self, cols: u16, rows: u16) {
+            self.0.resize(cols, rows);
+        }
+        fn size(&self) -> (u16, u16) {
+            self.0.size()
+        }
+        fn scroll(&mut self, target: ScrollTarget) {
+            self.0.scroll(target);
+        }
+        fn viewport(&self) -> crate::api::Viewport {
+            self.0.viewport()
+        }
+        fn cursor(&self) -> (u16, u16) {
+            self.0.cursor()
+        }
+        fn title(&self) -> Option<String> {
+            self.0.title()
+        }
+        fn cursor_shape(&self) -> CursorShape {
+            self.0.cursor_shape()
+        }
+        fn viewable_rows(&self) -> Vec<Vec<EmuCell>> {
+            panic!("injected trace capture failure")
+        }
+        fn full_rows(&self) -> Vec<Vec<EmuCell>> {
+            self.viewable_rows()
+        }
+        fn active_rows(&self) -> Vec<Vec<EmuCell>> {
+            self.viewable_rows()
+        }
+        fn color(&self, slot: crate::profile::ColorSlot) -> crate::profile::Rgb {
+            self.0.color(slot)
+        }
+    }
+
+    #[test]
+    fn diagnostic_capture_panics_remain_internal_errors_and_allow_recovery() {
+        for screen_dirty in [false, true] {
+            let engine = Engine::new(
+                "diagnostic-panic".into(),
+                Arc::new(Logger::disabled()),
+                PathBuf::new(),
+            );
+            engine
+                .execute(Operation::Run(sleeping_program(false)))
+                .unwrap();
+            {
+                let guard = engine.lock_session();
+                let session = guard.as_ref().unwrap();
+                let mut state = session.state.lock().unwrap();
+                state.emu = Box::new(PanickingTraceEmulator(AlacrittyEmu::new(
+                    80,
+                    24,
+                    &Profile::default(),
+                )));
+                // Cover both the pre-operation screen capture and the failure
+                // observation path when the cached screen does not need capture.
+                state.screen_dirty = screen_dirty;
+            }
+            for operation in [
+                Operation::ExpectBellCount {
+                    count: 1,
+                    timeout_ms: Some(0),
+                },
+                Operation::State,
+                Operation::WaitIdle {
+                    timeout_ms: Some(0),
+                },
+            ] {
+                let error = engine.execute(operation).unwrap_err();
+                assert_eq!(error.kind, ErrorKind::Internal);
+                assert!(error.message.contains("injected trace capture failure"));
+            }
+            let status = engine.status();
+            assert_eq!((status.cols, status.rows), (Some(80), Some(24)));
+            assert!(engine.is_open());
+            engine.execute(Operation::Close).unwrap();
+            assert!(!engine.is_open());
+
+            engine
+                .execute(Operation::Run(sleeping_program(false)))
+                .unwrap();
+            assert!(matches!(
+                engine.execute(Operation::State).unwrap(),
+                OperationResult::State(_)
+            ));
+            engine.execute(Operation::Close).unwrap();
+        }
+    }
+
+    #[test]
+    fn trace_capture_panics_do_not_skip_close_or_escape_drop() {
+        for close in [true, false] {
+            let (engine, context, root) = trace_engine("trace-panic", TraceMode::On);
+            engine
+                .execute_with_context(Operation::Run(sleeping_program(false)), context)
+                .unwrap();
+            {
+                let guard = engine.lock_session();
+                let session = guard.as_ref().unwrap();
+                let mut state = session.state.lock().unwrap();
+                state.emu = Box::new(PanickingTraceEmulator(AlacrittyEmu::new(
+                    80,
+                    24,
+                    &Profile::default(),
+                )));
+                state.screen_dirty = true;
+            }
+            let closed = if close {
+                let error = engine.execute(Operation::Close).unwrap_err();
+                assert_eq!(error.kind, ErrorKind::Internal);
+                assert!(error.message.contains("injected trace capture failure"));
+                Some(!engine.is_open())
+            } else {
+                None
+            };
+            let dropped = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(engine)));
+            std::fs::remove_dir_all(root).unwrap();
+            assert_ne!(
+                closed,
+                Some(false),
+                "trace capture must not prevent closing"
+            );
+            assert!(dropped.is_ok(), "trace capture must not panic during drop");
+        }
+    }
+
+    #[test]
+    fn trace_failure_preserves_startup_context_and_operation_overrides() {
+        let (engine, mut context, root) = trace_engine("trace-context", TraceMode::OnFailure);
+        context
+            .diagnostic_context
+            .insert("test".into(), "case".into());
+        context
+            .diagnostic_context
+            .insert("phase".into(), "startup".into());
+        engine
+            .execute_with_context(Operation::Run(sleeping_program(false)), context)
+            .unwrap();
+        let error = engine
+            .execute_with_context(
+                Operation::WaitLocator {
+                    query: LocatorQuery::text("missing trace marker"),
+                    not: false,
+                    timeout_ms: Some(0),
+                },
+                ExecutionContext {
+                    diagnostic_context: [("phase".into(), "assertion".into())].into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap_err();
+        let manifest: crate::diagnostics::FailureArtifactManifest = serde_json::from_slice(
+            &std::fs::read(error.artifact.unwrap().manifest.unwrap()).unwrap(),
+        )
+        .unwrap();
+        engine.execute(Operation::Close).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+        assert_eq!(
+            manifest.details.context.get("test").map(String::as_str),
+            Some("case")
+        );
+        assert_eq!(
+            manifest.details.context.get("phase").map(String::as_str),
+            Some("assertion")
+        );
+    }
+
+    #[test]
+    fn trace_context_merge_preserves_the_context_budget() {
+        let trace = TraceState {
+            context: (0..16)
+                .map(|index| (format!("session-{index}"), "startup".into()))
+                .collect(),
+            ..Default::default()
+        };
+        let context = ExecutionContext {
+            diagnostic_context: (0..16)
+                .map(|index| (format!("operation-{index}"), "x".repeat(512)))
+                .collect(),
+            ..Default::default()
+        };
+        let merged = trace.diagnostic_context(&context);
+        assert_eq!(merged.len(), 16);
+        assert!(merged.values().all(|value| value.len() <= 259));
+    }
+
+    #[test]
+    fn failed_startup_final_outcome_controls_on_failure_evidence() {
+        for failed in [false, true] {
+            let (engine, mut context, root) =
+                trace_engine("startup-retention", TraceMode::OnFailure);
+            context.artifact = Some(crate::diagnostics::FailureArtifactOptions {
+                directory: root.join("explicit-failures"),
+                mode: crate::diagnostics::FailureArtifactMode::Text,
+                include_recording: false,
+            });
+            let recording_directory = root.join("recordings");
+            let mut options = sleeping_program(true);
+            options.recording.directory = Some(recording_directory.clone());
+            let error = engine
+                .execute_with_context(Operation::Run(options), context)
+                .unwrap_err();
+            assert_eq!(error.kind, ErrorKind::Assertion);
+            assert!(!engine.is_open());
+            assert!(error.observation.is_none());
+            let failure_manifest = error.artifact.unwrap().manifest.unwrap();
+            let failure_bytes = std::fs::read(&failure_manifest).unwrap();
+            let trace_artifact = engine.trace.lock().unwrap().artifact.clone().unwrap();
+            let trace_manifest = trace_artifact.manifest.unwrap();
+            let trace_bytes = std::fs::read(&trace_manifest).unwrap();
+            let trace_recording = trace_artifact.recording.unwrap();
+            let trace_recording_bytes = std::fs::read(&trace_recording).unwrap();
+            let recording_path = engine.recording_path().unwrap();
+            assert!(recording_path.starts_with(&recording_directory));
+            let recording_bytes = std::fs::read(&recording_path).unwrap();
+            let unrelated = recording_directory.join("keep.txt");
+            std::fs::write(&unrelated, "not owned by the engine").unwrap();
+
+            engine.execute(Operation::FinishTrace { failed }).unwrap();
+            engine.execute(Operation::FinishTrace { failed }).unwrap();
+            assert_eq!(std::path::Path::new(&trace_manifest).is_file(), failed);
+            assert_eq!(recording_path.is_file(), failed);
+            engine.execute(Operation::Close).unwrap();
+            engine.execute(Operation::Close).unwrap();
+            drop(engine);
+
+            assert_eq!(std::fs::read(&failure_manifest).unwrap(), failure_bytes);
+            assert_eq!(
+                std::fs::read_to_string(&unrelated).unwrap(),
+                "not owned by the engine"
+            );
+            if failed {
+                assert_eq!(std::fs::read(&trace_manifest).unwrap(), trace_bytes);
+                assert_eq!(
+                    std::fs::read(&trace_recording).unwrap(),
+                    trace_recording_bytes
+                );
+                assert_eq!(std::fs::read(&recording_path).unwrap(), recording_bytes);
+            } else {
+                assert!(!std::path::Path::new(&trace_manifest).exists());
+                assert!(!std::path::Path::new(&trace_recording).exists());
+                assert!(!recording_path.exists());
+            }
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn failed_startup_outcomes_preserve_explicit_recording_policies() {
+        for mode in [
+            AutomaticRecordingMode::Disabled,
+            AutomaticRecordingMode::OnFailure,
+            AutomaticRecordingMode::Always,
+        ] {
+            for failed in [false, true] {
+                let (engine, _, root) = trace_engine("startup-recording", TraceMode::Off);
+                let path = root.join("automatic.cast");
+                let mut options = sleeping_program(true);
+                options.recording.mode = mode;
+                if mode == AutomaticRecordingMode::Disabled {
+                    std::fs::write(&path, "not owned by the engine").unwrap();
+                }
+                engine.execute(Operation::Run(options)).unwrap_err();
+                assert!(!engine.is_open());
+                let bytes = std::fs::read(&path).unwrap();
+                engine.execute(Operation::FinishTrace { failed }).unwrap();
+                engine.execute(Operation::Close).unwrap();
+                drop(engine);
+                if mode == AutomaticRecordingMode::OnFailure && !failed {
+                    assert!(!path.exists());
+                } else {
+                    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+                }
+                std::fs::remove_dir_all(root).unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn failed_startup_recording_cleanup_errors_are_reported_and_retryable() {
+        let (engine, _, root) = trace_engine("startup-cleanup-error", TraceMode::Off);
+        let mut options = sleeping_program(true);
+        options.recording.mode = AutomaticRecordingMode::OnFailure;
+        engine.execute(Operation::Run(options)).unwrap_err();
+        let path = engine.recording_path().unwrap();
+        let bytes = std::fs::read(&path).unwrap();
+        std::fs::remove_file(&path).unwrap();
+        std::fs::create_dir(&path).unwrap();
+
+        let error = engine
+            .execute(Operation::FinishTrace { failed: false })
+            .unwrap_err();
+        assert_eq!(error.kind, ErrorKind::Internal);
+        assert!(error
+            .message
+            .contains("failed to discard automatic recording"));
+        assert!(path.is_dir());
+        assert!(engine.recording.lock().unwrap().failed);
+
+        std::fs::remove_dir(&path).unwrap();
+        std::fs::write(&path, bytes).unwrap();
+        engine
+            .execute(Operation::FinishTrace { failed: false })
+            .unwrap();
+        assert!(!path.exists());
+        engine.execute(Operation::Close).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn failed_startup_retention_does_not_change_normal_close_contract() {
+        let (engine, context, root) = trace_engine("closed-retention", TraceMode::OnFailure);
+        engine
+            .execute_with_context(Operation::Run(sleeping_program(false)), context)
+            .unwrap();
+        let error = engine
+            .execute(Operation::WaitLocator {
+                query: LocatorQuery::text("missing trace marker"),
+                not: false,
+                timeout_ms: Some(0),
+            })
+            .unwrap_err();
+        engine.execute(Operation::Close).unwrap();
+        let trace_manifest = error.artifact.unwrap().manifest.unwrap();
+        let trace_bytes = std::fs::read(&trace_manifest).unwrap();
+        let recording_path = engine.recording_path().unwrap();
+        let recording_bytes = std::fs::read(&recording_path).unwrap();
+        engine
+            .execute(Operation::FinishTrace { failed: false })
+            .unwrap();
+        drop(engine);
+        assert_eq!(std::fs::read(&trace_manifest).unwrap(), trace_bytes);
+        assert_eq!(std::fs::read(&recording_path).unwrap(), recording_bytes);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn trace_retention_does_not_override_explicit_failure_exports() {
+        for (include_recording, shared_directory) in [(false, false), (true, false), (false, true)]
+        {
+            let (engine, context, root) = trace_engine("trace-exports", TraceMode::OnFailure);
+            let trace_directory = context.trace.as_ref().unwrap().directory.clone();
+            let failure_directory = if shared_directory {
+                trace_directory.clone()
+            } else {
+                root.join("failures")
+            };
+            engine
+                .execute_with_context(Operation::Run(sleeping_program(false)), context)
+                .unwrap();
+            let error = engine
+                .execute_with_context(
+                    Operation::WaitLocator {
+                        query: LocatorQuery::text("missing export marker"),
+                        not: false,
+                        timeout_ms: Some(0),
+                    },
+                    ExecutionContext {
+                        artifact: Some(crate::diagnostics::FailureArtifactOptions {
+                            directory: failure_directory.clone(),
+                            mode: crate::diagnostics::FailureArtifactMode::Text,
+                            include_recording,
+                        }),
+                        ..Default::default()
+                    },
+                )
+                .unwrap_err();
+            let artifact = error.artifact.unwrap();
+            let manifest_path = artifact.manifest.unwrap();
+            let manifest: crate::diagnostics::FailureArtifactManifest =
+                serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+            let trace_manifest = engine
+                .trace
+                .lock()
+                .unwrap()
+                .artifact
+                .as_ref()
+                .unwrap()
+                .manifest
+                .clone()
+                .unwrap();
+            assert_eq!(error.kind, ErrorKind::Assertion);
+            assert!(std::path::Path::new(&manifest_path).starts_with(&failure_directory));
+            assert!(std::path::Path::new(&manifest_path).ends_with("failure.json"));
+            assert!(manifest.details.outcome.is_none());
+            assert!(artifact.screen_text.is_some());
+            assert!(artifact.screen_svg.is_none());
+            assert_eq!(
+                manifest.files.iter().any(|file| file.kind == "recording"),
+                include_recording
+            );
+            assert!(std::path::Path::new(&trace_manifest).starts_with(&trace_directory));
+            assert!(std::path::Path::new(&trace_manifest).ends_with("trace.json"));
+            let trace_report: crate::diagnostics::FailureArtifactManifest =
+                serde_json::from_slice(&std::fs::read(&trace_manifest).unwrap()).unwrap();
+            assert_eq!(trace_report.details.outcome, Some(TraceOutcome::Failed));
+            assert!(trace_report
+                .files
+                .iter()
+                .any(|file| file.kind == "recording"));
+            if !include_recording {
+                assert!(manifest.details.recording.unwrap().path.is_none());
+            }
+            engine
+                .execute(Operation::FinishTrace { failed: false })
+                .unwrap();
+            engine.execute(Operation::Close).unwrap();
+            assert!(std::path::Path::new(&manifest_path).is_file());
+            assert!(!std::path::Path::new(&trace_manifest).exists());
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn trace_and_explicit_failure_export_errors_are_independent() {
+        for fail_trace in [false, true] {
+            let (engine, context, root) = trace_engine("trace-export-errors", TraceMode::OnFailure);
+            let trace_directory = context.trace.as_ref().unwrap().directory.clone();
+            let failure_directory = root.join("failures");
+            std::fs::write(
+                if fail_trace {
+                    &trace_directory
+                } else {
+                    &failure_directory
+                },
+                "not a directory",
+            )
+            .unwrap();
+            engine
+                .execute_with_context(Operation::Run(sleeping_program(false)), context)
+                .unwrap();
+            let error = engine
+                .execute_with_context(
+                    Operation::WaitLocator {
+                        query: LocatorQuery::text("missing export marker"),
+                        not: false,
+                        timeout_ms: Some(0),
+                    },
+                    ExecutionContext {
+                        artifact: Some(crate::diagnostics::FailureArtifactOptions {
+                            directory: failure_directory.clone(),
+                            mode: crate::diagnostics::FailureArtifactMode::Text,
+                            include_recording: false,
+                        }),
+                        ..Default::default()
+                    },
+                )
+                .unwrap_err();
+            let artifact = error.artifact.unwrap();
+            let trace = engine.trace.lock().unwrap().artifact.clone().unwrap();
+            engine.execute(Operation::Close).unwrap();
+            std::fs::remove_dir_all(root).unwrap();
+            assert_eq!(error.kind, ErrorKind::Assertion);
+            assert!(std::path::Path::new(&artifact.directory).starts_with(&failure_directory));
+            assert_eq!(artifact.manifest.is_some(), fail_trace);
+            assert_eq!(trace.manifest.is_some(), !fail_trace);
+            if fail_trace {
+                assert_eq!(artifact.status, FailureArtifactStatus::Partial);
+                assert!(artifact
+                    .errors
+                    .iter()
+                    .any(|error| error.contains("trace export")));
+            }
+            let failed_export = if fail_trace { trace } else { *artifact };
+            assert_eq!(failed_export.status, FailureArtifactStatus::Failed);
+            assert!(!failed_export.errors.is_empty());
+        }
+    }
+
+    #[test]
+    fn trace_final_outcome_still_controls_retention_after_caught_failures() {
+        for mode in [TraceMode::Off, TraceMode::On, TraceMode::OnFailure] {
+            for failed in [false, true] {
+                let (engine, context, root) = trace_engine("trace-retention", mode);
+                let directory = context.trace.as_ref().unwrap().directory.clone();
+                engine
+                    .execute_with_context(Operation::Run(sleeping_program(false)), context)
+                    .unwrap();
+                for _ in 0..2 {
+                    engine
+                        .execute(Operation::WaitLocator {
+                            query: LocatorQuery::text("missing trace marker"),
+                            not: false,
+                            timeout_ms: Some(0),
+                        })
+                        .unwrap_err();
+                }
+                engine.execute(Operation::FinishTrace { failed }).unwrap();
+                engine.execute(Operation::Close).unwrap();
+                engine.execute(Operation::Close).unwrap();
+                let bundles: Vec<_> = if directory.exists() {
+                    std::fs::read_dir(&directory)
+                        .unwrap()
+                        .map(|entry| entry.unwrap().path())
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                let retained = mode == TraceMode::On || (mode == TraceMode::OnFailure && failed);
+                assert_eq!(
+                    bundles.len(),
+                    if retained {
+                        if failed {
+                            2
+                        } else {
+                            1
+                        }
+                    } else {
+                        0
+                    }
+                );
+                for bundle in bundles {
+                    let manifest: crate::diagnostics::FailureArtifactManifest =
+                        serde_json::from_slice(&std::fs::read(bundle.join("trace.json")).unwrap())
+                            .unwrap();
+                    assert_eq!(
+                        manifest.details.outcome,
+                        Some(if failed {
+                            TraceOutcome::Failed
+                        } else {
+                            TraceOutcome::Passed
+                        })
+                    );
+                }
+                std::fs::remove_dir_all(root).unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn failure_recording_boundary_does_not_limit_session_traces() {
+        let (engine, context, root) = trace_engine("trace-boundary", TraceMode::OnFailure);
+        engine
+            .execute_with_context(Operation::Run(sleeping_program(false)), context)
+            .unwrap();
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let observation = capture_failure_observation(session);
+            {
+                let mut state = session.state.lock().unwrap();
+                state.emu.process(b"later output");
+                state.visual_revision += 1;
+                state.screen_dirty = true;
+                capture_visual_state(&mut state, true);
+            }
+            let mut details = FailureReport::new(
+                "locator.wait",
+                Some(0),
+                FailureReason::TimedOut,
+                "missing trace marker",
+            );
+            details.recording = Some(engine.recording_diagnostics(&observation));
+            let prepared =
+                engine.prepare_recording_artifact(session, &observation, &root, &mut details);
+            assert!(prepared.is_none());
+            assert_eq!(
+                details.recording.as_ref().unwrap().status,
+                RecordingStatus::Omitted
+            );
+            details.outcome = Some(TraceOutcome::Failed);
+            let prepared =
+                engine.prepare_recording_artifact(session, &observation, &root, &mut details);
+            let prepared = prepared.expect("a session trace can extend beyond its failure offset");
+            std::fs::remove_file(prepared.temporary_path).unwrap();
+        }
+        engine.execute(Operation::Close).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn returned_failures_release_private_observations_including_failed_open() {
+        let root =
+            std::env::temp_dir().join(format!("termprobe-error-memory-{}", std::process::id()));
+        let context = ExecutionContext {
+            artifact: Some(crate::diagnostics::FailureArtifactOptions {
+                directory: root.clone(),
+                mode: crate::diagnostics::FailureArtifactMode::Text,
+                include_recording: false,
+            }),
+            ..Default::default()
+        };
+        let engine = Engine::new(
+            "error-memory".into(),
+            Arc::new(Logger::disabled()),
+            root.join("unused.cast"),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        populate_history(&engine);
+        for _ in 0..3 {
+            let error = engine
+                .execute_with_context(
+                    Operation::WaitLocator {
+                        query: LocatorQuery::text("missing diagnostic marker"),
+                        not: false,
+                        timeout_ms: Some(0),
+                    },
+                    context.clone(),
+                )
+                .unwrap_err();
+            assert!(error.observation.is_none());
+            assert!(error.details.is_some());
+            assert!(error.report.is_none());
+            assert!(error.artifact.as_ref().unwrap().manifest.is_some());
+            let cloned = error.clone();
+            assert!(cloned.observation.is_none());
+            assert_eq!(cloned.details, error.details);
+            assert_eq!(cloned.artifact, error.artifact);
+        }
+        engine.execute(Operation::Close).unwrap();
+
+        let failed_open = engine
+            .execute_with_context(Operation::Run(sleeping_program(true)), context)
+            .unwrap_err();
+        assert!(failed_open.observation.is_none());
+        assert!(failed_open.artifact.is_some());
+        let details = failed_open.details.unwrap();
+        assert!(!details.summary.is_empty());
+        assert!(failed_open.report.is_none());
+        let report: crate::diagnostics::FailureArtifactManifest = serde_json::from_slice(
+            &std::fs::read(failed_open.artifact.unwrap().manifest.unwrap()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            report.details.operation.failed_screen_sequence,
+            report
+                .details
+                .recent_operations
+                .last()
+                .unwrap()
+                .screen_at_return
+        );
+        engine.execute(Operation::Close).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn successful_snapshots_preserve_the_compared_screen() {
+        let root =
+            std::env::temp_dir().join(format!("termprobe-snapshot-memory-{}", std::process::id()));
+        let directory = allocate_artifact_directory(&root).unwrap();
+        let engine = Engine::new(
+            "snapshot-memory".into(),
+            Arc::new(Logger::disabled()),
+            root.join("unused.cast"),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        populate_history(&engine);
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let cwd = Some(directory.to_string_lossy().into_owned());
+            for update in [true, false] {
+                let result =
+                    do_snapshot(session, "compared", update, false, false, cwd.clone()).unwrap();
+                assert!(matches!(
+                    result,
+                    SnapshotResult::Written | SnapshotResult::Passed
+                ));
+            }
+            let captured = capture_failure_observation(session);
+            {
+                let mut state = session.state.lock().unwrap();
+                state.emu.process(b"\x1b[HLATER OUTPUT");
+                state.screen_dirty = true;
+                capture_visual_state(&mut state, true);
+            }
+            assert!(!rows_to_strings(&captured.rows)
+                .join(
+                    "
+"
+                )
+                .contains("LATER OUTPUT"));
+            assert!(!captured
+                .terminal()
+                .screen_history
+                .screens
+                .last()
+                .unwrap()
+                .text
+                .contains("LATER OUTPUT"));
+            let result = do_snapshot(session, "compared", true, false, false, cwd).unwrap();
+            assert!(matches!(result, SnapshotResult::Updated));
+        }
+        engine.execute(Operation::Close).unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn successful_open_stores_the_complete_spawn_spec_and_tracks_resize() {
+        let recording_path = std::env::current_dir()
+            .unwrap()
+            .join(format!("restart-spec-{}.cast", std::process::id()));
+        let engine = Engine::new(
+            "restart-spec".to_string(),
+            Arc::new(Logger::disabled()),
+            recording_path,
+        );
+        let cwd = std::env::current_dir()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        let profile = Profile {
+            scrollback: 321,
+            colors: crate::profile::Colors {
+                foreground: crate::profile::Rgb::new(1, 2, 3),
+                ..crate::profile::Colors::default()
+            },
+        };
+        let options = OpenOptions {
+            backend: crate::Backend::Alacritty,
+            shell: None,
+            profile,
+            style: crate::render::style::Style::default(),
+            cols: 87,
+            rows: 29,
+            cwd: Some(cwd.clone()),
+            env: vec![("RESTART_SPEC".to_string(), "preserved".to_string())],
+            wait_ready: Some(false),
+            restart: false,
+            timeouts: Timeouts {
+                text: Some(11),
+                idle: Some(12),
+                command: Some(13),
+                exit: Some(14),
+                ready: Some(15),
+            },
+            recording: AutomaticRecording {
+                mode: AutomaticRecordingMode::Disabled,
+                directory: None,
+            },
+        };
+
+        engine
+            .execute(Operation::Open(options.clone()))
+            .expect("open session");
+        engine
+            .execute(Operation::Resize { cols: 99, rows: 31 })
+            .expect("resize session");
+
+        let stored = engine
+            .spawn_spec
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .expect("stored spawn spec");
+        assert_eq!(stored.resolved_cwd, Some(PathBuf::from(&cwd)));
+        let SpawnCommand::Open(stored) = stored.command else {
+            panic!("expected stored open options");
+        };
+        assert_eq!(stored.backend, options.backend);
+        assert_eq!(stored.shell, options.shell);
+        assert_eq!(stored.profile, options.profile);
+        assert_eq!((stored.cols, stored.rows), (99, 31));
+        assert_eq!(stored.cwd, Some(cwd));
+        assert_eq!(stored.env, options.env);
+        assert_eq!(stored.wait_ready, options.wait_ready);
+        assert_eq!(stored.timeouts, options.timeouts);
+        assert_eq!(stored.recording, options.recording);
+
+        engine.execute(Operation::Close).expect("close session");
+    }
+
+    #[test]
+    fn an_svg_snapshot_freezes_grid_palette_and_cursor_together() {
+        let mut emu = AlacrittyEmu::new(2, 2, &Profile::default());
+        emu.process(b"X\x1b[1G\x1b]12;#010203\x07");
+        let snapshot = svg_snapshot_from(&emu, false);
+
+        // Change every piece that used to be read after the grid lock was
+        // released. Rendering the captured value must still show the old
+        // character, visible cursor position, shape, and color.
+        emu.process(b"Y\x1b[2;2H\x1b[?25l\x1b[6 q\x1b]12;#ff00ff\x07");
+        let svg = crate::render::svg::render_svg(
+            &snapshot.rows,
+            snapshot.cols,
+            &snapshot.render_state,
+            snapshot.cursor,
+            snapshot.title.as_deref(),
+            &crate::render::style::Style::default(),
+            1.0,
+            None,
+        );
+
+        assert_eq!(svg.matches('X').count(), 2, "text plus block redraw: {svg}");
+        assert!(!svg.contains('Y'), "later grid contents leaked in: {svg}");
+        assert!(
+            svg.contains("#010203"),
+            "captured cursor color is used: {svg}"
+        );
+        assert!(
+            !svg.contains("#ff00ff"),
+            "later cursor state must not leak in: {svg}"
+        );
+    }
+
+    /// `OSC 10/11/12` move the three defaults, and each reset frees only its
+    /// own slot back to the profile.
+    #[test]
+    fn reported_colors_follow_the_dynamic_color_sequences() {
+        let profile = Profile::default();
+        let mut emu = AlacrittyEmu::new(10, 2, &profile);
+        let before = colors_of(&emu, &profile);
+
+        emu.process(b"\x1b]10;#111111\x07\x1b]11;#222222\x07\x1b]12;#333333\x07");
+        let set = colors_of(&emu, &profile);
+        assert_eq!(set.foreground, "#111111");
+        assert_eq!(set.background, "#222222");
+        assert_eq!(set.cursor, "#333333");
+
+        emu.process(b"\x1b]111\x07");
+        let reset = colors_of(&emu, &profile);
+        assert_eq!(
+            reset.background, before.background,
+            "111 restores the profile background"
+        );
+        assert_eq!(reset.foreground, "#111111", "and leaves the others alone");
+        assert_eq!(reset.cursor, "#333333");
+    }
+
+    /// The palette is reported as what a program changed, so an untouched
+    /// terminal reports nothing and `OSC 104` empties it again.
+    #[test]
+    fn reported_palette_names_only_the_entries_a_program_moved() {
+        let profile = Profile::default();
+        let mut emu = AlacrittyEmu::new(10, 2, &profile);
+        assert!(
+            colors_of(&emu, &profile).palette.is_empty(),
+            "nothing has overridden the palette yet"
+        );
+
+        emu.process(b"\x1b]4;1;#00ff00\x07");
+        assert_eq!(
+            colors_of(&emu, &profile).palette,
+            [(1, "#00ff00".to_string())].into_iter().collect(),
+            "only the slot that moved is named"
+        );
+
+        emu.process(b"\x1b]104\x07");
+        assert!(
+            colors_of(&emu, &profile).palette.is_empty(),
+            "104 restores the whole palette"
+        );
+    }
+
+    /// A caller names a color the same way `--fg` lets them, and an index
+    /// resolves through this session's palette rather than a fixed table.
+    #[test]
+    fn an_expected_color_accepts_hex_and_an_ansi_index() {
+        let profile = Profile::default();
+        let emu = AlacrittyEmu::new(10, 2, &profile);
+        assert_eq!(
+            resolve_expected_color("#010203", &emu).unwrap(),
+            crate::profile::Rgb::new(1, 2, 3)
+        );
+        assert_eq!(
+            resolve_expected_color("1", &emu).unwrap(),
+            emu.color(crate::profile::ColorSlot::Indexed(1)),
+            "an index reads the session's own palette"
+        );
+    }
+
+    /// `default` is the one spelling that cannot mean anything here: these
+    /// slots *are* the defaults, so there is nothing for it to refer to.
+    #[test]
+    fn default_is_rejected_as_a_terminal_color() {
+        let emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        let error = resolve_expected_color("default", &emu).unwrap_err();
+        assert!(format!("{error:?}").contains("no meaning"), "{error:?}");
+    }
+
+    #[test]
+    fn screenshot_format_defaults_to_svg_and_rejects_unknown_extensions() {
+        assert_eq!(
+            ScreenshotFormat::infer("screen").unwrap(),
+            ScreenshotFormat::Svg
+        );
+        assert_eq!(
+            ScreenshotFormat::infer("screen.SVG").unwrap(),
+            ScreenshotFormat::Svg
+        );
+        assert_eq!(
+            ScreenshotFormat::infer("screen.PNG").unwrap(),
+            ScreenshotFormat::Png
+        );
+        let error = ScreenshotFormat::infer("screen.gif").unwrap_err();
+        assert_eq!(error.kind, ErrorKind::Usage);
+        assert!(error.message.contains(".gif"));
+        assert!(error.message.contains(".svg"));
+        assert!(error.message.contains(".png"));
+    }
+
+    #[test]
+    fn cell_model_reports_the_whole_vocabulary() {
+        let cell = EmuCell {
+            ch: "x".into(),
+            fg: Some(Color::Named(NamedColor::Red)),
+            bg: Some(Color::Idx(196)),
+            underline: UnderlineStyle::Curly,
+            underline_color: Some(Color::Rgb(1, 2, 3)),
+            attrs: Attrs::all(),
+            hyperlink: Some(std::sync::Arc::new(crate::terminal::cell::Hyperlink {
+                id: Some("anchor".into()),
+                uri: "https://example.com".into(),
+            })),
+        };
+        let value = cell_model(3, 4, &cell);
+        assert_eq!(value.x, 3);
+        assert_eq!(value.char, "x");
+        assert_eq!(value.fg, CellColor::Indexed(1));
+        assert_eq!(value.bg, CellColor::Indexed(196));
+        assert!(value.bold);
+        assert!(value.dim);
+        assert!(value.italic);
+        assert!(value.inverse);
+        assert!(value.invisible);
+        assert!(value.strike);
+        assert!(value.blink);
+        assert!(value.underline);
+        assert_eq!(value.underline_style, "curly");
+        assert_eq!(value.underline_color, CellColor::Rgb(1, 2, 3));
+    }
+
+    #[test]
+    fn cell_model_underline_fields_are_never_absent() {
+        let value = cell_model(0, 0, &EmuCell::blank());
+        assert!(!value.underline);
+        assert_eq!(value.underline_style, "none");
+        assert_eq!(value.underline_color, CellColor::Default);
+        assert!(!value.blink);
+
+        let cell = EmuCell {
+            underline: UnderlineStyle::Single,
+            underline_color: None,
+            ..EmuCell::blank()
+        };
+        let value = cell_model(0, 0, &cell);
+        assert!(value.underline);
+        assert_eq!(value.underline_style, "single");
+        assert_eq!(value.underline_color, CellColor::Default);
+    }
+
+    #[test]
+    fn style_locators_resolve_palette_colors() {
+        let emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        let cell = EmuCell {
+            ch: "x".into(),
+            fg: Some(Color::Named(NamedColor::Red)),
+            ..EmuCell::blank()
+        };
+        assert!(cell_matches_style(
+            &cell,
+            &TextStyle {
+                foreground: Some("#800000".into()),
+                ..TextStyle::default()
+            },
+            &emu,
+        ));
+        assert!(!cell_matches_style(
+            &cell,
+            &TextStyle {
+                foreground: Some("#ff0000".into()),
+                ..TextStyle::default()
+            },
+            &emu,
+        ));
+        let evaluation = evaluate_cell_style(
+            &cell,
+            &TextStyle {
+                foreground: Some("#ff0000".into()),
+                bold: Some(true),
+                ..TextStyle::default()
+            },
+            &emu,
+            3,
+            4,
+            usize::MAX,
+        );
+        assert!(!evaluation.matched);
+        assert_eq!(evaluation.mismatches.len(), 2);
+        assert_eq!(evaluation.mismatches[0].location.row, 4);
+        assert!(evaluation
+            .mismatches
+            .iter()
+            .any(|mismatch| mismatch.property == "foreground"));
+        assert!(evaluation
+            .mismatches
+            .iter()
+            .any(|mismatch| mismatch.property == "bold"));
+    }
+
+    #[test]
+    fn style_mismatch_evidence_respects_the_requested_budget() {
+        let emu = AlacrittyEmu::new(80, 24, &Profile::default());
+        let cell = EmuCell::blank();
+        let style = TextStyle {
+            bold: Some(true),
+            ..TextStyle::default()
+        };
+        assert!(!cell_matches_style(&cell, &style, &emu));
+        let boolean = evaluate_cell_style(&cell, &style, &emu, 0, 0, 0);
+        assert!(!boolean.matched);
+        assert!(boolean.mismatches.is_empty());
+        assert!(boolean.mismatches_truncated);
+        let limited = evaluate_cell_style(
+            &cell,
+            &TextStyle {
+                bold: Some(true),
+                italic: Some(true),
+                dim: Some(true),
+                ..TextStyle::default()
+            },
+            &emu,
+            0,
+            0,
+            1,
+        );
+        assert!(!limited.matched);
+        assert_eq!(limited.mismatches.len(), 1);
+        assert!(limited.mismatches_truncated);
+    }
+
+    #[test]
+    fn ambiguous_text_anchors_report_conflicting_locations() {
+        for occurrence in [
+            crate::api::MatchOccurrence::Any,
+            crate::api::MatchOccurrence::Unique,
+        ] {
+            for before in [false, true] {
+                let mut emu = AlacrittyEmu::new(80, 2, &Profile::default());
+                emu.process(b"ANCHOR target ANCHOR");
+                let anchor = crate::api::TextAnchor {
+                    text: "ANCHOR".into(),
+                    regex: false,
+                    occurrence: occurrence.clone(),
+                };
+                let mut selector = TextSelector::new("target");
+                if before {
+                    selector.scope.before = Some(anchor);
+                } else {
+                    selector.scope.after = Some(anchor);
+                }
+                let query = LocatorQuery::text(selector);
+                let evaluation = locator::evaluate_query(
+                    &emu.viewable_rows(),
+                    &query,
+                    false,
+                    &mut |cell, style, x, y, budget| {
+                        evaluate_cell_style(cell, style, &emu, x, y, budget)
+                    },
+                )
+                .unwrap();
+                let message = locator_failure_message(&query, &evaluation.diagnostics);
+                let error = locator_failure_error(
+                    "locator.find",
+                    None,
+                    message,
+                    EvaluatedLocator {
+                        evaluation,
+                        screen_sequence: 1,
+                        visible_rows: 2,
+                        scrolled: false,
+                    },
+                    Vec::new(),
+                    false,
+                    None,
+                );
+                let report = error.report.unwrap();
+                assert_eq!(report.reason, FailureReason::LocatorAmbiguous);
+                let failure = report.failure_details().locator.unwrap();
+                assert_eq!(failure.reason, Some(LocatorFailureReason::AnchorAmbiguous));
+                assert_eq!(
+                    failure.locations,
+                    vec![
+                        crate::api::TextPosition { column: 0, row: 0 },
+                        crate::api::TextPosition { column: 14, row: 0 },
+                    ],
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn compact_failure_preserves_url_and_style_mismatch_location() {
+        let mut emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        emu.process(b"\x1b]8;;test:docs\x07docs\x1b]8;;\x07");
+        let mut query = LocatorQuery::style(TextStyle {
+            bold: Some(true),
+            ..TextStyle::default()
+        });
+        query.within = Some(Box::new(LocatorQuery::link("test:docs")));
+        let evaluation = locator::evaluate_query(
+            &emu.viewable_rows(),
+            &query,
+            false,
+            &mut |cell, style, x, y, budget| evaluate_cell_style(cell, style, &emu, x, y, budget),
+        )
+        .unwrap();
+        let mut report = FailureReport::new(
+            "locator.resolve",
+            None,
+            FailureReason::LocatorNoMatch,
+            "style mismatch",
+        );
+        report.locator = Some(evaluation.diagnostics);
+        let details = report.failure_details();
+        let failure = details.locator.unwrap();
+        assert_eq!(
+            failure.reason,
+            Some(LocatorFailureReason::StyleFilterRemovedAll)
+        );
+        assert!(failure
+            .selectors
+            .iter()
+            .any(|selector| selector.contains("test:docs")));
+        assert_eq!(failure.mismatches[0].property, "bold");
+        assert_eq!(failure.mismatches[0].expected, "true");
+        assert_eq!(failure.mismatches[0].actual, "false");
+        assert_eq!(
+            failure.mismatches[0].location,
+            crate::api::TextPosition { column: 0, row: 0 }
+        );
+        assert!(!diagnostic_hints(&report)[0].message.contains("text"));
+    }
+
+    /// A link is matched by where it points, so a locator can find the cells
+    /// of one link and ignore an identical-looking one pointing elsewhere.
+    #[test]
+    fn link_locators_match_a_cell_by_its_link() {
+        let emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        let linked = EmuCell {
+            ch: "x".into(),
+            hyperlink: Some(std::sync::Arc::new(crate::terminal::cell::Hyperlink {
+                id: None,
+                uri: "https://example.com".into(),
+            })),
+            ..EmuCell::blank()
+        };
+
+        let rows = vec![vec![linked]];
+        for (uri, count) in [("https://example.com", 1), ("https://other.example", 0)] {
+            let found =
+                locator::locate_query(&rows, &LocatorQuery::link(uri), &mut |cell, style| {
+                    cell_matches_style(cell, style, &emu)
+                })
+                .unwrap();
+            assert_eq!(found.len(), count);
+        }
+    }
+
+    /// An empty link is a real requirement, not an absent one: it asks for a
+    /// cell that links nowhere, which is how a test asserts that a link was
+    /// closed rather than merely that some other link was not found.
+    #[test]
+    fn an_empty_link_requires_a_cell_that_links_nowhere() {
+        let emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        let plain = EmuCell {
+            ch: "x".into(),
+            ..EmuCell::blank()
+        };
+        let linked = EmuCell {
+            hyperlink: Some(std::sync::Arc::new(crate::terminal::cell::Hyperlink {
+                id: None,
+                uri: "https://example.com".into(),
+            })),
+            ..plain.clone()
+        };
+        let found = locator::locate_query(
+            &[vec![plain, linked]],
+            &LocatorQuery::link(""),
+            &mut |cell, style| cell_matches_style(cell, style, &emu),
+        )
+        .unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].value.spans[0].end, 1);
+    }
+
+    #[test]
+    fn appearance_matches_independently_of_links() {
+        let emu = AlacrittyEmu::new(10, 2, &Profile::default());
+        let linked = EmuCell {
+            ch: "x".into(),
+            attrs: Attrs::BOLD,
+            hyperlink: Some(std::sync::Arc::new(crate::terminal::cell::Hyperlink {
+                id: None,
+                uri: "https://example.com".into(),
+            })),
+            ..EmuCell::blank()
+        };
+        assert!(cell_matches_style(
+            &linked,
+            &TextStyle {
+                bold: Some(true),
+                ..TextStyle::default()
+            },
+            &emu,
+        ));
+    }
+
+    #[test]
+    fn highlight_maps_full_grid_cells_into_the_viewport() {
+        let mut rows = vec![vec![EmuCell::blank(); 3]; 2];
+        let highlight = TextHighlight {
+            cells: vec![(1, 4)],
+            viewport_offset: 3,
+        };
+        apply_highlight(&mut rows, Some(&highlight), false);
+        assert!(rows[1][1].has(Attrs::INVERSE));
+        assert!(!rows[0][1].has(Attrs::INVERSE));
+    }
+
+    #[test]
+    fn highlight_uses_absolute_rows_for_full_grid_renders() {
+        let mut rows = vec![vec![EmuCell::blank(); 3]; 5];
+        let highlight = TextHighlight {
+            cells: vec![(1, 4)],
+            viewport_offset: 3,
+        };
+        apply_highlight(&mut rows, Some(&highlight), true);
+        assert!(rows[4][1].has(Attrs::INVERSE));
+        assert!(!rows[1][1].has(Attrs::INVERSE));
+    }
+
+    #[test]
+    fn locator_clicks_the_middle_match_cell() {
+        let matched = locator::LocatedMatch {
+            value: TextMatch {
+                text: "save".into(),
+                start: TextPosition { row: 2, column: 4 },
+                end: TextPosition { row: 2, column: 8 },
+                spans: vec![TextSpan {
+                    row: 2,
+                    start: 4,
+                    end: 8,
+                }],
+            },
+            cells: (4..8)
+                .map(|x| locator::MatchedCell {
+                    x,
+                    y: 2,
+                    cell: EmuCell::blank(),
+                })
+                .collect(),
+            source_start: 4,
+            source_end: 8,
+        };
+        assert_eq!(matched_center(&matched), Some((6, 2)));
+    }
+
+    #[test]
+    fn full_grid_clicks_map_visible_rows_to_viewport_coordinates() {
+        let rows = ["old", "older", "history", "prompt", "row save"]
+            .into_iter()
+            .map(|line| {
+                line.chars()
+                    .map(|ch| EmuCell {
+                        ch: ch.to_string().into(),
+                        ..EmuCell::blank()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let mut parent = TextSelector::new("row save");
+        parent.full = true;
+        let query = LocatorQuery {
+            selector: LocatorSelector::Text(TextSelector::new("save")),
+            occurrence: crate::api::MatchOccurrence::Unique,
+            within: Some(Box::new(LocatorQuery::text(parent))),
+            direction: crate::api::LocatorDirection::Within,
+            style: Default::default(),
+        };
+        let candidates = locator::locate_query(&rows, &query, &mut |_, _| false).unwrap();
+        assert_eq!(
+            click_point_from_candidates(candidates, "save", true, 3, 2, false).unwrap(),
+            Some((6, 1))
+        );
+    }
+
+    #[test]
+    fn full_grid_clicks_reject_matches_above_the_viewport() {
+        let rows = ["save", "history", "prompt"]
+            .into_iter()
+            .map(|line| {
+                line.chars()
+                    .map(|ch| EmuCell {
+                        ch: ch.to_string().into(),
+                        ..EmuCell::blank()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let mut selector = TextSelector::new("save");
+        selector.full = true;
+        let mut query = LocatorQuery::text(selector);
+        query.occurrence = crate::api::MatchOccurrence::Unique;
+        let candidates = locator::locate_query(&rows, &query, &mut |_, _| false).unwrap();
+        let error = click_point_from_candidates(candidates, "save", true, 1, 2, false).unwrap_err();
+        assert!(error.message.contains("outside the visible viewport"));
+    }
+
+    #[test]
+    fn panic_payloads_become_internal_errors() {
+        let error = std::panic::catch_unwind(|| panic!("ffi-panic"))
+            .map_err(|payload| {
+                TermprobeError::internal(format!(
+                    "native terminal operation panicked: {}",
+                    panic_message(payload.as_ref())
+                ))
+            })
+            .unwrap_err();
+        assert_eq!(error.kind, ErrorKind::Internal);
+        assert!(error.message.contains("ffi-panic"));
+    }
+
+    #[test]
+    fn clean_screen_boundaries_reuse_the_grid_but_flush_dirty_output() {
+        let engine = Engine::new(
+            "cached-screen".into(),
+            Arc::new(Logger::disabled()),
+            std::env::temp_dir().join("unused-cached-screen.cast"),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        {
+            let guard = engine.lock_session();
+            let session = guard.as_ref().unwrap();
+            let mut state = session.state.lock().unwrap();
+            let sequence = capture_visual_state(&mut state, true);
+            state.screen_history.pin_current();
+            let frozen = state.screen_history.clone();
+            let sample_time = state.last_screen_sample;
+            let repeat_count = frozen.snapshot().screens.last().unwrap().repeat_count;
+            for _ in 0..1000 {
+                assert_eq!(capture_visual_state(&mut state, true), sequence);
+            }
+            assert_eq!(state.last_screen_sample, sample_time);
+            assert_eq!(
+                state
+                    .screen_history
+                    .snapshot()
+                    .screens
+                    .last()
+                    .unwrap()
+                    .repeat_count,
+                repeat_count + 1000,
+            );
+            assert_eq!(
+                frozen.snapshot().screens.last().unwrap().repeat_count,
+                repeat_count
+            );
+            state.emu.process(b"\x1b[HFRESH OUTPUT");
+            state.screen_dirty = true;
+            let changed = capture_visual_state(&mut state, true);
+            assert_ne!(changed, sequence);
+            assert!(!state.screen_dirty);
+            assert!(state
+                .screen_history
+                .snapshot()
+                .screens
+                .last()
+                .unwrap()
+                .text
+                .contains("FRESH OUTPUT"));
+        }
+        engine.execute(Operation::Close).unwrap();
+    }
+
+    #[test]
+    fn resolving_a_unique_locator_pins_an_assertion_checkpoint() {
+        let engine = Engine::new(
+            "resolve-checkpoint".into(),
+            Arc::new(Logger::disabled()),
+            std::env::temp_dir().join("unused-resolve-checkpoint.cast"),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        let mut query = LocatorQuery::style(TextStyle {
+            bold: Some(false),
+            ..TextStyle::default()
+        });
+        query.occurrence = crate::api::MatchOccurrence::First;
+        engine.execute(Operation::ResolveLocator { query }).unwrap();
+        let event = engine
+            .operation_history
+            .lock()
+            .unwrap()
+            .snapshot()
+            .pop()
+            .unwrap();
+        let checkpoints = engine
+            .lock_session()
+            .as_ref()
+            .unwrap()
+            .state
+            .lock()
+            .unwrap()
+            .screen_history
+            .snapshot()
+            .checkpoints;
+        engine.execute(Operation::Close).unwrap();
+        assert!(event.is_assertion);
+        assert!(checkpoints
+            .iter()
+            .any(|frame| frame.sequence == event.screen_at_return));
+    }
+
+    #[test]
+    fn startup_readiness_failures_distinguish_timeout_from_process_exit() {
+        let engine = Engine::new(
+            "startup-readiness".into(),
+            Arc::new(Logger::disabled()),
+            std::env::current_dir()
+                .unwrap()
+                .join("unused-startup-readiness.cast"),
+        );
+        let timed_out = engine
+            .execute(Operation::Run(sleeping_program(true)))
+            .unwrap_err();
+        assert!(!engine.is_open());
+        let details = timed_out.details.unwrap();
+        assert_eq!(details.operation, "run");
+        assert_eq!(details.reason, FailureReason::TimedOut);
+        assert!(details.summary.contains("reported no prompt within 20ms"));
+
+        let mut options = sleeping_program(true);
+        let (program, args) = if cfg!(windows) {
+            ("cmd.exe", vec!["/D", "/C", "exit 7"])
+        } else {
+            ("sh", vec!["-c", "exit 7"])
+        };
+        options.program = program.into();
+        options.args = args.into_iter().map(str::to_string).collect();
+        options.timeouts.ready = Some(15_000);
+        let exited = engine.execute(Operation::Run(options)).unwrap_err();
+        assert!(!engine.is_open());
+        let details = exited.details.unwrap();
+        assert_eq!(details.operation, "run");
+        assert_eq!(details.reason, FailureReason::SessionExited);
+    }
+
+    #[test]
+    fn startup_readiness_failures_preserve_observed_exit_and_cancellation() {
+        let engine = Engine::new(
+            "startup-readiness-reasons".into(),
+            Arc::new(Logger::disabled()),
+            std::env::current_dir()
+                .unwrap()
+                .join("unused-startup-readiness-reasons.cast"),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        let mut observation = {
+            let guard = engine.lock_session();
+            capture_failure_observation(guard.as_ref().unwrap())
+        };
+        engine.execute(Operation::Close).unwrap();
+        for (cancelled, exit_code, reason) in [
+            (false, None, FailureReason::TimedOut),
+            (false, Some(7), FailureReason::SessionExited),
+            (true, None, FailureReason::Cancelled),
+            (true, Some(7), FailureReason::Cancelled),
+        ] {
+            observation.process.cancelled = cancelled;
+            observation.process.exit_code = exit_code;
+            let error = startup_readiness_error("open", 25);
+            let report = error.report.as_ref().unwrap();
+            assert_eq!(report.operation.timeout_ms, Some(25));
+            assert_eq!(failure_reason(&error, Some(&observation)), reason);
+        }
+    }
+
+    #[test]
+    fn closing_a_session_preserves_the_operation_clock() {
+        let engine = Engine::new(
+            "close-clock".into(),
+            Arc::new(Logger::disabled()),
+            std::env::current_dir()
+                .unwrap()
+                .join("unused-close-clock.cast"),
+        );
+        engine
+            .execute(Operation::Run(sleeping_program(false)))
+            .unwrap();
+        engine
+            .lock_session()
+            .as_ref()
+            .unwrap()
+            .state
+            .lock()
+            .unwrap()
+            .started_at = Instant::now() - Duration::from_secs(10);
+        engine.execute(Operation::Close).unwrap();
+        let event = engine
+            .operation_history
+            .lock()
+            .unwrap()
+            .snapshot()
+            .pop()
+            .unwrap();
+        assert_eq!(event.name, "close");
+        assert!(event.started_ms >= 10_000);
+        assert!(event.ended_ms >= event.started_ms);
+    }
+
+    #[test]
+    fn pending_startup_events_keep_the_allocated_sequence_after_history_reset() {
+        let mut history = OperationHistory::new();
+        let previous = history.begin("close".into(), 100, 5, "close".into(), false, None);
+        history.finish(previous, Some(110), 0, "ok", None);
+        let pending = history.begin("run".into(), 110, 5, "run".into(), false, None);
+        let metadata = OperationMetadata {
+            sequence: pending.sequence(),
+            interrupt_generation: 0,
+            name: "run".into(),
+            timeout_ms: None,
+            started_at: Instant::now(),
+            started_ms: 110,
+            screen_before: 5,
+            safe_summary: "run".into(),
+            is_assertion: false,
+            expectation: None,
+            input: None,
+        };
+        history.reset_session();
+        assert!(history.snapshot().is_empty());
+        let metadata = OperationMetadata {
+            started_ms: 0,
+            screen_before: 0,
+            ..metadata
+        };
+        let reported = metadata.pending_event("assertion", 1);
+        history.finish(pending, Some(reported.ended_ms), 1, "assertion", None);
+        assert_eq!(reported.sequence, 2);
+        assert_eq!(reported, history.snapshot()[0]);
+    }
+
+    #[test]
+    fn concurrent_history_and_failure_finalization_do_not_deadlock() {
+        const CHILD: &str = "TERMPROBE__HISTORY_LOCK_CHILD";
+        if std::env::var_os(CHILD).is_none() {
+            let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "engine::tests::concurrent_history_and_failure_finalization_do_not_deadlock",
+                ])
+                .env(CHILD, "1")
+                .spawn()
+                .unwrap();
+            let started = Instant::now();
+            loop {
+                if let Some(status) = child.try_wait().unwrap() {
+                    assert!(status.success());
+                    return;
+                }
+                if started.elapsed() > Duration::from_secs(10) {
+                    child.kill().unwrap();
+                    child.wait().unwrap();
+                    panic!("operation history and failure finalization deadlocked");
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+        let engine = Arc::new(Engine::new(
+            "history-lock".into(),
+            Arc::new(Logger::disabled()),
+            std::env::temp_dir().join("unused-history-lock.cast"),
+        ));
+        let barrier = Arc::new(std::sync::Barrier::new(2));
+        let reporter = {
+            let engine = engine.clone();
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                let metadata = OperationMetadata {
+                    sequence: 0,
+                    interrupt_generation: 0,
+                    name: "test.failure".into(),
+                    timeout_ms: None,
+                    started_at: Instant::now(),
+                    started_ms: 0,
+                    screen_before: 0,
+                    safe_summary: "synthetic failure".into(),
+                    is_assertion: false,
+                    expectation: None,
+                    input: None,
+                };
+                let context = ExecutionContext {
+                    artifact: Some(crate::diagnostics::FailureArtifactOptions {
+                        directory: std::env::temp_dir().join("unused-history-lock"),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                };
+                barrier.wait();
+                for _ in 0..2000 {
+                    let mut error = TermprobeError::internal("synthetic failure");
+                    engine.finalize_failure(&mut error, &context, &metadata);
+                }
+            })
+        };
+        barrier.wait();
+        for _ in 0..2000 {
+            engine.execute(Operation::Close).unwrap();
+        }
+        reporter.join().unwrap();
+    }
+}
