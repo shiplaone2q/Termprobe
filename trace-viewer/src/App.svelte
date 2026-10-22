@@ -68,3 +68,42 @@
 
   <TerminalViewer frame={selected.frame} action={selected.action} missingScreen={view.missingScreen}
     sharesFailure={selected.sharesFailure} isFailure={selected.isFailure} result={model.result}
+    {actions} frameCount={model.frames.length} zoom={view.zoom} playing={!!playback}
+    image={selected.frame && resources.images[selected.frame.index]}
+    imageFailed={!!selected.frame && view.failedImages.includes(selected.frame.index)}
+    geometry={model.geometry} mismatches={selected.mismatches} cell={view.cell}
+    onaction={(delta) => send({ type: "navigate-action", delta })}
+    onframe={(index) => send({ type: "select-frame", index })}
+    onplay={() => send({ type: "toggle-playback" })}
+    onzoom={(value) => send({ type: "zoom", value })}
+    oninspect={(x, y) => send({ type: "inspect", x, y, activate: true })}
+    onmove={(dx, dy) => send({ type: "move-cell", dx, dy })}
+    onimageerror={(index) => send({ type: "image-failed", index })} />
+
+  <BottomNav active={view.detailsTab} hasFailure={model.hasFailure} onselect={(tab) => send({ type: "select-tab", tab })}>
+    {#snippet resultPanel()}
+      <ResultTab result={model.result} hasFailure={model.hasFailure} />
+    {/snippet}
+    {#snippet cellPanel()}
+      <CellTab {inspection} frame={selected.frame} column={view.column} row={view.row}
+        oncoordinate={(axis, value) => send({ type: "coordinate", axis, value })}
+        oninspect={() => send({ type: "inspect", x: view.column === "" ? NaN : Number(view.column),
+          y: view.row === "" ? NaN : Number(view.row), activate: false })} />
+    {/snippet}
+    {#snippet callPanel()}
+      <CallTab action={selected.action} frame={selected.frame} missingScreen={view.missingScreen} />
+    {/snippet}
+    {#snippet attachmentsPanel()}
+      <AttachmentsTab files={model.attachments} urls={resources.attachments} unavailableFiles={model.unavailableFiles}
+        recordingNote={model.recordingNote} selected={view.attachmentId} failedImages={view.failedAttachments}
+        onselect={(id) => send({ type: "preview-attachment", id })}
+        onimageerror={(id) => send({ type: "attachment-image-failed", id })} />
+    {/snippet}
+  </BottomNav>
+</main>
+
+<style>
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: clamp(300px, 34vw, 620px) minmax(0, 1fr); grid-template-rows: minmax(180px, 1fr) 285px; }
+  @media (max-width: 850px) { main { grid-template-columns: 190px minmax(0, 1fr); } }
+  @media (max-width: 600px) { main { grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: minmax(150px, 1fr) 260px; } }
+</style>
