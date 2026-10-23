@@ -71,3 +71,27 @@ export function update(model, state, event) {
         y: Math.max(0, Math.min(frame.rows - 1, (state.cell?.y ?? 0) + event.dy)) });
     }
     case "zoom": return { ...state, zoom: event.value };
+    case "preview-attachment": return model.attachments[event.id] ? { ...state, attachmentId: event.id } : state;
+    case "image-failed": return state.failedImages.includes(event.index) ? state
+      : { ...state, failedImages: [...state.failedImages, event.index] };
+    case "attachment-image-failed": return state.failedAttachments.includes(event.id) ? state
+      : { ...state, failedAttachments: [...state.failedAttachments, event.id] };
+    case "pause": return state.playback ? { ...state, playback: undefined } : state;
+    case "toggle-playback": {
+      if (state.playback) return { ...state, playback: undefined };
+      const index = state.frameIndex;
+      if (index === undefined || index >= model.frames.length - 1) return state;
+      const action = visibleActions(model, state).find((action) =>
+        (action.assertion || action.failed) && action.frameIndex !== undefined && action.frameIndex > index);
+      return { ...state, playback: { target: action?.frameIndex ?? model.frames.length - 1, actionId: action?.id } };
+    }
+    case "tick": {
+      if (!state.playback || state.frameIndex === undefined) return state;
+      const { target, actionId } = state.playback;
+      const index = Math.min(state.frameIndex + 1, target);
+      if (index >= target && actionId !== undefined) return update(model, state, { type: "select-action", id: actionId });
+      const next = select(model, state, index);
+      return { ...next, playback: index >= target ? undefined : state.playback };
+    }
+  }
+}

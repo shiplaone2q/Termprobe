@@ -24,3 +24,4 @@ pub use runtime::{
     global_registry, Locator, LocatorClickOptions, LocatorExpectOptions, LocatorFilterOptions,
     Session, SessionHandle, SessionRegistry,
 };
+pub use terminal::backend::Backend;
