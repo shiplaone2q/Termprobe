@@ -15,3 +15,4 @@
     : { operation: action?.evidence, missing_screen_sequence: missingScreen }));
 </script>
 
+<LocatorBlock id="call-locator" locator={action?.locator} />
