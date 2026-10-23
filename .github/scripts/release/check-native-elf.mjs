@@ -47,3 +47,6 @@ function main() {
     checkSymbols(readelf("--dyn-syms", "--wide"));
   }
   console.log(`Native dependencies and ABI checks passed: ${args.target}`);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();

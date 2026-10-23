@@ -56,3 +56,4 @@ export function makeError(kind: ErrorKind, message: string): TermprobeError {
     default:
       throw new TypeError(`unknown native error kind ${JSON.stringify(kind)}`);
   }
+}
