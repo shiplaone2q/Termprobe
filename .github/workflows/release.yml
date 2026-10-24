@@ -229,3 +229,498 @@ jobs:
           esac
           node .github/scripts/release/package-native.mjs native \
             --library "target/${{ matrix.target }}/release/$library" \
+            --target "${{ matrix.target }}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-${{ matrix.target }}
+          path: target/native-packages/*
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: node-${{ matrix.target }}
+          path: |
+            bindings/js/native/*.so
+            bindings/js/native/*.dylib
+            bindings/js/native/*.dll
+          if-no-files-found: error
+
+  package-node:
+    needs: build-native
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/js/package-lock.json
+
+      - run: npm ci
+        working-directory: bindings/js
+
+      - run: npm run build:ts
+        working-directory: bindings/js
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: node-*
+          path: bindings/js/artifacts
+          merge-multiple: true
+
+      - name: Pack Node packages
+        run: node .github/scripts/release/package-node.mjs
+
+      - name: Test native build options and Node packaging
+        run: node --test .github/scripts/release/build-native.test.mjs .github/scripts/release/package-node.test.mjs
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "20"
+
+      - name: Test packed Node package with Node 20
+        shell: bash
+        run: |
+          node="$(command -v node)"
+          version="$RELEASE_TAG"
+          mkdir package-test
+          cd package-test
+          npm init -y >/dev/null
+          npm install --ignore-scripts \
+            "$GITHUB_WORKSPACE/package-artifacts/npm/microsoft-termprobe-linux-x64-gnu-${version}.tgz"
+          npm install --ignore-scripts \
+            "$GITHUB_WORKSPACE/package-artifacts/npm/microsoft-termprobe-${version}.tgz"
+          cd "$GITHUB_WORKSPACE"
+          PATH="/usr/bin:/bin" \
+          TERMPROBE__BIN="$GITHUB_WORKSPACE/package-test/missing-termprobe" \
+          TERMPROBE__TEST_PACKAGE_ROOT="$GITHUB_WORKSPACE/package-test" \
+            "$node" --test bindings/js/test/package.integration.test.mjs
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-packages
+          path: package-artifacts/npm/*.tgz
+          if-no-files-found: error
+
+  package-go:
+    needs: build-native
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: bindings/go/go.mod
+          cache-dependency-path: bindings/go/go.sum
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install maintenance script dependencies
+        run: npm ci --prefix .github/scripts --ignore-scripts
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: native-*
+          path: target/native-packages
+          merge-multiple: true
+
+      - name: Test release scripts
+        run: npm test --prefix .github/scripts
+
+      - name: Assemble Go module
+        run: node .github/scripts/release/package-native.mjs go --artifacts target/native-packages
+
+      - name: Test assembled Go module
+        working-directory: target/go-package
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: Test external Go consumer and README example
+        run: node .github/scripts/test-go-embedded.mjs target/go-package
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-package
+          path: |
+            target/termprobe-go-*.tar.gz
+            target/termprobe-go-*.tar.gz.sha256
+          if-no-files-found: error
+
+  build-python:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            wheel: cp311-manylinux_x86_64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            wheel: cp311-manylinux_aarch64
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            wheel: cp311-musllinux_x86_64
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+            wheel: cp311-musllinux_aarch64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            wheel: cp311-macosx_x86_64
+            deployment-target: "10.12"
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            wheel: cp311-macosx_arm64
+            deployment-target: "11.0"
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            wheel: cp311-win_amd64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+
+      - name: Set up Rust for host wheel builds
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add ${{ matrix.target }}
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        if: runner.os != 'Linux'
+        with:
+          version: "0.16.0"
+          cache-key: ${{ matrix.target }}
+
+      - name: Build Python wheel
+        uses: pypa/cibuildwheel@b9e566a2b284570af229f6c2a33673410d0389a3 # v4.3.4
+        with:
+          package-dir: bindings/python
+          output-dir: bindings/python/dist
+          only: ${{ matrix.wheel }}
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+          CIBW_ENVIRONMENT_PASS_LINUX: CARGO_BUILD_TARGET
+          CIBW_ENVIRONMENT_LINUX: PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=${{ matrix.deployment-target }}
+          CIBW_BEFORE_ALL_LINUX: bash {project}/.github/scripts/release/prepare-linux.sh
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
+          CIBW_MUSLLINUX_X86_64_IMAGE: musllinux_1_2
+          CIBW_MUSLLINUX_AARCH64_IMAGE: musllinux_1_2
+          CIBW_TEST_COMMAND: python {project}/bindings/python/examples/shared_library.py
+
+      - name: Build Python sdist
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          python -m pip install --disable-pip-version-check build
+          python -m build --sdist bindings/python --outdir bindings/python/dist
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        with:
+          python-version: "3.8"
+
+      - name: Test Python wheel with Python 3.8
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          wheels=(bindings/python/dist/*.whl)
+          test "${#wheels[@]}" -eq 1
+          [[ "${wheels[0]}" == *py3-none* ]]
+          python -m venv package-test-python-38
+          package-test-python-38/bin/python -m pip install \
+            --disable-pip-version-check bindings/python/dist/*.whl
+          ! PATH="$GITHUB_WORKSPACE/package-test-python-38/bin:/usr/bin:/bin" \
+            command -v termprobe
+          PATH="$GITHUB_WORKSPACE/package-test-python-38/bin:/usr/bin:/bin" \
+          TERMPROBE__BIN="$GITHUB_WORKSPACE/package-test-python-38/missing-termprobe" \
+            "$GITHUB_WORKSPACE/package-test-python-38/bin/python" \
+            bindings/python/tests/test_integration.py \
+            IntegrationTests.test_echo_roundtrip
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python-wheel-${{ matrix.target }}
+          path: bindings/python/dist/*.whl
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        with:
+          name: python-sdist
+          path: bindings/python/dist/*.tar.gz
+          if-no-files-found: error
+
+  publish-npm:
+    needs:
+      - package-node
+      - release
+    if: always() && needs.package-node.result == 'success' && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-packages
+          path: npm-packages
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Publish native and root packages
+        shell: bash
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+        run: |
+          version="$RELEASE_TAG"
+          npm_tag=latest
+          if [[ "$version" == *-beta.* ]]; then
+            npm_tag=beta
+          fi
+          packages=(
+            termprobe-darwin-arm64
+            termprobe-darwin-x64
+            termprobe-linux-arm64-gnu
+            termprobe-linux-arm64-musl
+            termprobe-linux-x64-gnu
+            termprobe-linux-x64-musl
+            termprobe-win32-x64-msvc
+            termprobe
+          )
+
+          for package in "${packages[@]}"; do
+            name="@microsoft/$package"
+            tarball="$GITHUB_WORKSPACE/npm-packages/microsoft-${package}-${version}.tgz"
+            if [[ ! -f "$tarball" ]]; then
+              echo "Missing npm package tarball: $tarball" >&2
+              exit 1
+            fi
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already published"
+            else
+              npm publish "$tarball" --access public --provenance --tag "$npm_tag"
+            fi
+          done
+
+  publish-pypi:
+    needs:
+      - build-python
+      - release
+    if: always() && needs.build-python.result == 'success' && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/termprobe
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: python-wheel-*
+          path: dist
+          merge-multiple: true
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: python-sdist
+          path: dist
+
+      - name: Publish termprobe to PyPI
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          skip-existing: true
+
+  publish-crates:
+    needs:
+      - verify
+      - release
+    if: always() && needs.verify.result == 'success' && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: crates-io
+      url: https://crates.io/crates/termprobe-rs
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - run: |
+          rustup toolchain install stable --profile default
+          rustup default stable
+
+      # Match this workflow and environment in the crate's trusted publisher settings.
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+
+      - name: Publish termprobe-rs to crates.io
+        run: cargo publish --locked --package termprobe-rs
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  publish-go:
+    needs:
+      - package-go
+      - release
+    if: always() && needs.package-go.result == 'success' && (needs.release.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install maintenance script dependencies
+        run: npm ci --prefix .github/scripts --ignore-scripts
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: go-package
+          path: target
+
+      - name: Restore assembled Go module
+        shell: bash
+        run: |
+          cd target
+          sha256sum --check "termprobe-go-${RELEASE_TAG}.tar.gz.sha256"
+          mkdir go-package
+          tar -xzf "termprobe-go-${RELEASE_TAG}.tar.gz" -C go-package
+
+      - name: Publish immutable Go module tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          source="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          test "$(git rev-parse HEAD)" = "$source"
+          test -z "$(git status --porcelain --untracked-files=all -- bindings/go bindings/js/package.json LICENSE)"
+          node .github/scripts/release/package-native.mjs verify --version "$RELEASE_TAG" --package target/go-package
+          cp -a target/go-package/. bindings/go/
+          git add --force -- bindings/go
+          expected="$(git write-tree)"
+          tag="bindings/go/v$RELEASE_TAG"
+          existing="$(git ls-remote --tags origin "refs/tags/$tag")"
+          if [[ -n "$existing" ]]; then
+            git fetch --no-tags origin "refs/tags/$tag"
+            if [[ "$(git show -s --format=%P 'FETCH_HEAD^{commit}')" != "$source" ]] ||
+               [[ "$(git rev-parse 'FETCH_HEAD^{tree}')" != "$expected" ]]; then
+              echo "$tag already exists with different content or source; refusing to replace it" >&2
+              exit 1
+            fi
+            echo "$tag already contains the expected Go module"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -s -m "build(go): bundle native libraries for $RELEASE_TAG"
+          git tag "$tag"
+          git push origin "refs/tags/$tag:refs/tags/$tag"
+
+  release:
+    needs:
+      - build-cli
+      - package-node
+      - package-go
+      - build-python
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: artifacts
+          pattern: termprobe-*
+          merge-multiple: true
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: artifacts
+          pattern: native-*
+          merge-multiple: true
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: artifacts
+          name: go-package
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          release_args=(--generate-notes)
+          if [[ "$RELEASE_TAG" == *-beta.* ]]; then
+            release_args+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" "${release_args[@]}" artifacts/*
+
+  update-homebrew:
+    name: Prepare Homebrew formula update
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Update Homebrew formula
+        shell: bash
+        run: |
+          gh release view "$RELEASE_TAG" --json assets |
+            node .github/scripts/release/update-homebrew-formula.mjs "$RELEASE_TAG"
+
+      - name: Push Homebrew update branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="homebrew-update/$RELEASE_TAG-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          title="chore(homebrew): update formula to $RELEASE_TAG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add Formula/termprobe.rb
+          git commit -s -m "$title"
+          git push origin "$branch"
+          echo "[Create a Homebrew formula PR for $RELEASE_TAG]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$branch?expand=1)" >> "$GITHUB_STEP_SUMMARY"
