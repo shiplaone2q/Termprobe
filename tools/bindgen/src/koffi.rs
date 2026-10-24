@@ -87,3 +87,100 @@ pub fn generate(
             .into_iter()
             .map(type_reference)
             .collect::<Result<Vec<_>>>()?
+            .join(", ");
+        let result = match &function.sig.output {
+            ReturnType::Default => "\"void\"".into(),
+            ReturnType::Type(_, ty) => type_reference(ty)?,
+        };
+        writeln!(
+            js,
+            "functions.{id} = library.func({id:?}, {result}, [{args}]);"
+        )?;
+        if asynchronous(function) {
+            writeln!(
+                js,
+                "functions.{id}_start = library.func({:?}, 'void *', [{args}]);",
+                format!("{id}_start")
+            )?;
+            let params = function.sig.inputs.to_token_stream().to_string();
+            let names = function
+                .sig
+                .inputs
+                .iter()
+                .map(|arg| match arg {
+                    FnArg::Typed(arg) => Ok(arg.pat.to_token_stream().to_string()),
+                    _ => bail!("C receiver"),
+                })
+                .collect::<Result<Vec<_>>>()?
+                .join(", ");
+            let call = if function.sig.unsafety.is_some() {
+                format!("unsafe {{ {id}({names}) }}")
+            } else {
+                format!("{id}({names})")
+            };
+            writeln!(wrappers, "#[no_mangle]\n/// Start a typed call after copying all borrowed inputs.\n/// # Safety\n/// Inputs follow the synchronous function contract through this call only.\npub unsafe extern \"C\" fn {id}_start({params}) -> *mut TuiTask {{ tasks::start(|| {call}) }}")?;
+        }
+    }
+    let tasks = syn::parse_file(&fs::read_to_string(
+        root.join("crates/termprobe-ffi/src/tasks.rs"),
+    )?)?;
+    for item in tasks.items {
+        if let Item::Fn(function) = item {
+            if !function
+                .attrs
+                .iter()
+                .any(|a| a.path().is_ident("no_mangle"))
+            {
+                continue;
+            }
+            let id = function.sig.ident.to_string();
+            let args = arguments(&function)?
+                .into_iter()
+                .map(type_reference)
+                .collect::<Result<Vec<_>>>()?
+                .join(", ");
+            let result = match &function.sig.output {
+                ReturnType::Default => "\"void\"".into(),
+                ReturnType::Type(_, ty) => type_reference(ty)?,
+            };
+            writeln!(
+                js,
+                "functions.{id} = library.func({id:?}, {result}, [{args}]);"
+            )?;
+        }
+    }
+    js.push_str("return functions;\n}\n");
+    emit(root, "bindings/js/native/abi.js", &js, check)?;
+    emit(
+        root,
+        "crates/termprobe-ffi/src/tasks_generated.rs",
+        &format_source("rustfmt", &["--edition", "2021"], &wrappers)?,
+        check,
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn c_types_drive_koffi_layouts() {
+        assert_eq!(
+            ffi_type(&syn::parse_str("u64").unwrap()).unwrap(),
+            "uint64_t"
+        );
+        assert_eq!(
+            descriptor(&syn::parse_str("*const TuiCell").unwrap()).unwrap(),
+            "*TuiCell"
+        );
+        assert!(ffi_type(&syn::parse_str("String").unwrap()).is_err());
+        assert_eq!(
+            type_reference(&syn::parse_str("TuiString").unwrap()).unwrap(),
+            "types.TuiString"
+        );
+        assert_eq!(
+            type_reference(&syn::parse_str("*mut TuiResult").unwrap()).unwrap(),
+            "\"void *\""
+        );
+    }
+}
