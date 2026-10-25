@@ -269,3 +269,4 @@ fn pending_wait_cannot_observe_a_replacement_session() {
     let error = finished_rx
         .recv_timeout(Duration::from_secs(1))
         .unwrap()
+        .unwrap_err();
