@@ -16,3 +16,5 @@
 </script>
 
 <LocatorBlock id="call-locator" locator={action?.locator} />
+<PropertyList id="call-properties" values={properties} />
+<details><summary>Operation and frame metadata</summary><pre id="frame-details">{evidence}</pre></details>
