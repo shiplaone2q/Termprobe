@@ -142,3 +142,184 @@ mod tests {
     /// uses rather than a stand-in that could drift from it.
     fn emu_with(colors: Colors) -> AlacrittyEmu {
         AlacrittyEmu::new(
+            10,
+            2,
+            &Profile {
+                colors,
+                ..Default::default()
+            },
+        )
+    }
+
+    #[test]
+    fn parse_forms() {
+        assert!(matches!(
+            Expected::parse("9").unwrap(),
+            Expected::Ansi256(9)
+        ));
+        assert!(matches!(
+            Expected::parse("#ff0000").unwrap(),
+            Expected::Hex(255, 0, 0)
+        ));
+        assert!(matches!(
+            Expected::parse("255,0,0").unwrap(),
+            Expected::Rgb(255, 0, 0)
+        ));
+    }
+
+    #[test]
+    fn malformed_unicode_hex_colors_return_errors() {
+        for color in ["#aéabc", "#界abc", "#a💩a", "#ééé", "#gg0000"] {
+            let error = Expected::parse(color).unwrap_err();
+            assert!(error.to_string().contains("color must be"), "{color}");
+        }
+        assert!(matches!(
+            Expected::parse("#aBcD09").unwrap(),
+            Expected::Hex(0xab, 0xcd, 9)
+        ));
+    }
+
+    #[test]
+    fn matches_palette_and_default() {
+        let c = emu_with(Colors::default());
+        let idx = |i| Some(Color::from_index(i));
+        assert!(matches(idx(9), &Expected::Ansi256(9), &c, true));
+        assert!(!matches(idx(2), &Expected::Ansi256(9), &c, true));
+        assert!(matches(idx(196), &Expected::Ansi256(196), &c, true));
+        assert!(matches(
+            Some(Color::Rgb(255, 0, 0)),
+            &Expected::Rgb(255, 0, 0),
+            &c,
+            true
+        ));
+    }
+
+    #[test]
+    fn default_color_matches_its_resolved_foreground_or_background() {
+        let c = emu_with(Colors::default());
+        assert!(!matches(None, &Expected::Ansi256(0), &c, true));
+        assert!(matches(None, &Expected::Hex(192, 192, 192), &c, true));
+        assert!(matches(None, &Expected::Hex(0, 0, 0), &c, false));
+        assert!(!matches(None, &Expected::Hex(0, 0, 0), &c, true));
+        assert!(matches(None, &Expected::Default, &c, true));
+        assert_eq!(
+            describe_cell(None, &Expected::Hex(0, 0, 0), &c, true),
+            "#c0c0c0"
+        );
+    }
+
+    #[test]
+    fn default_color_assertions_follow_runtime_changes() {
+        let mut c = emu_with(Colors::default());
+        c.process(b"\x1b]10;#010203\x07\x1b]11;#040506\x07");
+        assert!(matches(None, &Expected::Hex(1, 2, 3), &c, true));
+        assert!(matches(None, &Expected::Hex(4, 5, 6), &c, false));
+    }
+
+    #[test]
+    fn a_colored_cell_is_not_default() {
+        let c = emu_with(Colors::default());
+        let red = Some(Color::from_index(1));
+        assert!(!matches(red, &Expected::Default, &c, true));
+        assert!(matches(red, &Expected::Ansi256(1), &c, true));
+        assert!(matches!(
+            Expected::parse("default").unwrap(),
+            Expected::Default
+        ));
+        assert!(matches!(
+            Expected::parse("DEFAULT").unwrap(),
+            Expected::Default
+        ));
+        assert_eq!(describe_cell(red, &Expected::Default, &c, true), "1");
+    }
+
+    /// The regression test for the bug this module used to carry: the color a
+    /// screenshot paints and the color an assertion matches are now the same
+    /// value for every slot, because both come from the profile.
+    #[test]
+    fn an_assertion_matches_the_color_a_screenshot_paints() {
+        let colors = emu_with(Colors::default());
+        for index in 0u8..=255 {
+            let cell = Some(Color::from_index(index));
+            let painted = colors.resolve(cell, true);
+            assert!(
+                matches(
+                    cell,
+                    &Expected::Hex(painted.r, painted.g, painted.b),
+                    &colors,
+                    true
+                ),
+                "slot {index} paints {} but does not match it",
+                painted.to_hex()
+            );
+        }
+    }
+
+    /// An assertion compares against what the terminal is *currently*
+    /// showing, so a program that recolors a slot changes what matches.
+    ///
+    /// This is the other half of the screenshot test: both read the same
+    /// state, so a colour a screenshot paints is a colour an assertion
+    /// matches, at every point in a session rather than only at the start.
+    #[test]
+    fn an_assertion_follows_a_color_a_program_set() {
+        use crate::terminal::emu::Emulator;
+        let mut emu = emu_with(Colors::default());
+        let red = Some(Color::from_index(1));
+        let configured = Colors::default().red;
+
+        assert!(matches(
+            red,
+            &Expected::Hex(configured.r, configured.g, configured.b),
+            &emu,
+            true
+        ));
+
+        emu.process(b"\x1b]4;1;#22c55e\x07");
+        assert!(
+            matches(red, &Expected::Hex(0x22, 0xc5, 0x5e), &emu, true),
+            "the assertion follows the colour the program set"
+        );
+        assert!(
+            !matches(
+                red,
+                &Expected::Hex(configured.r, configured.g, configured.b),
+                &emu,
+                true
+            ),
+            "the configured colour is no longer what slot 1 shows"
+        );
+        assert!(
+            matches(red, &Expected::Ansi256(1), &emu, true),
+            "the index is unaffected: it names a slot, not a colour"
+        );
+
+        emu.process(b"\x1b]104;1\x07");
+        assert!(
+            matches(
+                red,
+                &Expected::Hex(configured.r, configured.g, configured.b),
+                &emu,
+                true
+            ),
+            "a reset restores the configured colour"
+        );
+    }
+
+    /// A profile's palette is what an assertion compares against, so two
+    /// profiles genuinely disagree rather than sharing one hardcoded table.
+    #[test]
+    fn a_recolored_profile_moves_what_an_assertion_matches() {
+        let colors = emu_with(Colors {
+            red: crate::profile::Rgb::new(1, 2, 3),
+            ..Default::default()
+        });
+        let red = Some(Color::from_index(1));
+        assert!(matches(red, &Expected::Hex(1, 2, 3), &colors, true));
+        assert!(!matches(red, &Expected::Hex(128, 0, 0), &colors, true));
+        assert!(
+            matches(red, &Expected::Ansi256(1), &colors, true),
+            "the index is unaffected by the palette"
+        );
+    }
+}

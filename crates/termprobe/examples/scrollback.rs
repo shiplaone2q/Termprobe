@@ -66,3 +66,40 @@ fn demonstrate(backend: Backend) -> Result<()> {
             .get_by_text("received: hello")
             .wait_with_timeout(Some(5_000))?;
         let OperationResult::Viewport(viewport) = session.execute(Operation::GetViewport)? else {
+            bail!("unexpected viewport result");
+        };
+        ensure!(
+            viewport.offset == 0,
+            "keyboard input did not return to live output"
+        );
+        println!(
+            "{} after input:\n{}",
+            backend.as_str(),
+            text(&session, false)?
+        );
+        Ok(())
+    })();
+    let closed = session.close();
+    result?;
+    closed?;
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    if std::env::args().nth(1).as_deref() == Some("--child") {
+        for row in 0..20 {
+            println!("row{row:02}");
+        }
+        println!("READY");
+        io::stdout().flush()?;
+        for line in io::stdin().lock().lines() {
+            println!("received: {}", line?);
+            io::stdout().flush()?;
+        }
+        return Ok(());
+    }
+    for &backend in Backend::ALL {
+        demonstrate(backend)?;
+    }
+    Ok(())
+}
