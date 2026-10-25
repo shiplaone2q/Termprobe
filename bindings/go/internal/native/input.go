@@ -86,3 +86,36 @@ func nativeFloat(value *float64) abiOptionalF64 {
 }
 
 func (memory *nativeMemory) query(expression LocatorExpression) (abiQuery, error) {
+	if len(expression.Nodes) == 0 {
+		return abiQuery{}, &Error{Kind: UsageError, Message: "locator requires at least one stage"}
+	}
+	value, err := json.Marshal(expression)
+	if err != nil {
+		return abiQuery{}, &Error{Kind: InternalError, Message: "encode locator expression: " + err.Error()}
+	}
+	return abiQuery{json: memory.text(string(value))}, nil
+}
+
+func nativeMouse(options MouseButtonOptions) (abiMouseOptions, error) {
+	result := abiMouseOptions{alt: options.Alt, ctrl: options.Ctrl, shift: options.Shift}
+	switch options.Button {
+	case "", Left:
+	case Middle:
+		result.button = 1
+	case Right:
+		result.button = 2
+	default:
+		return result, &Error{Kind: UsageError, Message: "unknown mouse button"}
+	}
+	return result, nil
+}
+
+func nativeClicks(clicks *uint32) (uint8, error) {
+	if clicks == nil {
+		return 1, nil
+	}
+	if *clicks > 255 {
+		return 0, &Error{Kind: UsageError, Message: "clicks must be between 0 and 255"}
+	}
+	return uint8(*clicks), nil
+}
