@@ -126,3 +126,305 @@ fn emit(root: &Path, path: &str, content: &str, check: bool) -> Result<()> {
 fn format_source(command: &str, args: &[&str], content: &str) -> Result<String> {
     use std::io::Write;
     let mut child = Command::new(command)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .with_context(|| format!("start {command}"))?;
+    let mut stdin = child.stdin.take().context("formatter stdin")?;
+    let input = content.as_bytes().to_vec();
+    // Read stdout while writing stdin so large generated files cannot fill both pipes.
+    let writer = std::thread::spawn(move || stdin.write_all(&input));
+    let output = child.wait_with_output()?;
+    writer
+        .join()
+        .map_err(|_| anyhow::anyhow!("formatter input thread panicked"))??;
+    if !output.status.success() {
+        bail!("{command} failed: {}", output.status);
+    }
+    Ok(String::from_utf8(output.stdout)?)
+}
+
+fn name(ty: &Type) -> Result<String> {
+    match ty {
+        Type::Path(path) if path.qself.is_none() => Ok(path
+            .path
+            .segments
+            .last()
+            .context("type path")?
+            .ident
+            .to_string()),
+        _ => bail!("unsupported ABI type: {}", ty.to_token_stream()),
+    }
+}
+
+fn camel(value: &str, upper: bool) -> String {
+    value
+        .split('_')
+        .enumerate()
+        .map(|(i, word)| {
+            if i == 0 && !upper {
+                word.to_owned()
+            } else {
+                match word {
+                    "id" => "ID".into(),
+                    "pid" => "PID".into(),
+                    "ms" => "MS".into(),
+                    _ => {
+                        let mut chars = word.chars();
+                        chars
+                            .next()
+                            .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+                            .unwrap_or_default()
+                    }
+                }
+            }
+        })
+        .collect()
+}
+
+fn go_type(ty: &Type) -> Result<String> {
+    if let Type::Ptr(pointer) = ty {
+        if matches!(pointer.elem.as_ref(), Type::Path(_)) && name(&pointer.elem)? == "c_void" {
+            return Ok("unsafe.Pointer".into());
+        }
+        return Ok(format!("*{}", go_type(&pointer.elem)?));
+    }
+    let name = name(ty)?;
+    Ok(match name.as_str() {
+        "u8" => "uint8".into(),
+        "u16" => "uint16".into(),
+        "u32" => "uint32".into(),
+        "u64" => "uint64".into(),
+        "i32" => "int32".into(),
+        "usize" => "uintptr".into(),
+        "f64" => "float64".into(),
+        "bool" => "bool".into(),
+        _ if name.starts_with("Tui") => format!("abi{}", &name[3..]),
+        _ => bail!("unsupported Go ABI type: {name}"),
+    })
+}
+
+fn go_types(structs: &[&ItemStruct], version: &str) -> Result<String> {
+    let mut out = format!("// {NOTICE}\npackage native\n\nimport (\"structs\"; \"unsafe\")\n\nconst abiVersion = {version}\n\n");
+    for item in structs {
+        writeln!(
+            out,
+            "type abi{} struct {{\n_ structs.HostLayout",
+            item.ident.to_string().trim_start_matches("Tui")
+        )?;
+        for field in &item.fields {
+            writeln!(
+                out,
+                "{} {}",
+                camel(
+                    &field.ident.as_ref().context("named field")?.to_string(),
+                    false
+                ),
+                go_type(&field.ty)?
+            )?;
+        }
+        out.push_str("}\n");
+    }
+    Ok(out)
+}
+
+fn arguments(function: &ItemFn) -> Result<Vec<&Type>> {
+    function
+        .sig
+        .inputs
+        .iter()
+        .map(|arg| match arg {
+            FnArg::Typed(arg) => Ok(arg.ty.as_ref()),
+            _ => bail!("unexpected receiver in C function"),
+        })
+        .collect()
+}
+
+fn go_function_name(function: &ItemFn) -> String {
+    camel(
+        function
+            .sig
+            .ident
+            .to_string()
+            .trim_start_matches("tui_")
+            .trim_end_matches("_ptr"),
+        true,
+    )
+}
+
+fn go_functions(functions: &[&ItemFn]) -> Result<String> {
+    let names: BTreeSet<_> = functions.iter().map(|f| f.sig.ident.to_string()).collect();
+    let functions: Vec<_> = functions
+        .iter()
+        .copied()
+        .filter(|function| !names.contains(&format!("{}_ptr", function.sig.ident)))
+        .collect();
+    let mut out = format!("// {NOTICE}\npackage native\n\ntype nativeFunctionTable struct {{\n");
+    for function in &functions {
+        let args = arguments(function)?
+            .into_iter()
+            .map(go_type)
+            .collect::<Result<Vec<_>>>()?
+            .join(", ");
+        let result = match &function.sig.output {
+            ReturnType::Default => String::new(),
+            ReturnType::Type(_, ty) => go_type(ty)?,
+        };
+        writeln!(out, "{} func({args}) {result}", go_function_name(function))?;
+    }
+    out.push_str("}\n\nfunc nativeRegistrations(table *nativeFunctionTable) []nativeRegistration {\nreturn []nativeRegistration{\n");
+    for function in &functions {
+        writeln!(
+            out,
+            "{{symbol: {:?}, target: &table.{}}},",
+            function.sig.ident.to_string(),
+            go_function_name(function)
+        )?;
+    }
+    out.push_str("}\n}\n");
+    Ok(out)
+}
+
+fn python_type(ty: &Type) -> Result<String> {
+    if let Type::Ptr(pointer) = ty {
+        if matches!(pointer.elem.as_ref(), Type::Path(_)) && name(&pointer.elem)? == "c_void" {
+            return Ok("ctypes.c_void_p".into());
+        }
+        return Ok(format!("ctypes.POINTER({})", python_type(&pointer.elem)?));
+    }
+    let name = name(ty)?;
+    Ok(match name.as_str() {
+        "u8" => "ctypes.c_uint8".into(),
+        "u16" => "ctypes.c_uint16".into(),
+        "u32" => "ctypes.c_uint32".into(),
+        "u64" => "ctypes.c_uint64".into(),
+        "i32" => "ctypes.c_int32".into(),
+        "usize" => "ctypes.c_size_t".into(),
+        "f64" => "ctypes.c_double".into(),
+        "bool" => "ctypes.c_bool".into(),
+        _ if name.starts_with("Tui") => name,
+        _ => bail!("unsupported Python ABI type: {name}"),
+    })
+}
+
+fn python(structs: &[&ItemStruct], functions: &[&ItemFn], version: &str) -> Result<String> {
+    let mut out = format!("# {NOTICE}\nimport ctypes\n\nABI_VERSION = {version}\n");
+    for item in structs {
+        writeln!(out, "\n\nclass {}(ctypes.Structure):\n    pass", item.ident)?;
+    }
+    let mut emitted = BTreeSet::new();
+    while emitted.len() != structs.len() {
+        let before = emitted.len();
+        for item in structs {
+            let item_name = item.ident.to_string();
+            if emitted.contains(&item_name) {
+                continue;
+            }
+            let mut ready = true;
+            for field in &item.fields {
+                if let Type::Path(_) = &field.ty {
+                    let field_name = name(&field.ty)?;
+                    if field_name.starts_with("Tui") && !emitted.contains(&field_name) {
+                        ready = false;
+                    }
+                }
+            }
+            if !ready {
+                continue;
+            }
+            writeln!(out, "\n\n{item_name}._fields_ = [")?;
+            for field in &item.fields {
+                writeln!(
+                    out,
+                    "    ({:?}, {}),",
+                    field.ident.as_ref().context("named field")?.to_string(),
+                    python_type(&field.ty)?
+                )?;
+            }
+            out.push_str("]\n");
+            emitted.insert(item_name);
+        }
+        if before == emitted.len() {
+            bail!("cyclic or missing by-value ABI type");
+        }
+    }
+    out.push_str("\n\ndef configure(library):\n");
+    for function in functions {
+        let args = arguments(function)?
+            .into_iter()
+            .map(python_type)
+            .collect::<Result<Vec<_>>>()?
+            .join(", ");
+        let result = match &function.sig.output {
+            ReturnType::Default => "None".into(),
+            ReturnType::Type(_, ty) => python_type(ty)?,
+        };
+        writeln!(
+            out,
+            "    library.{}.argtypes = [{args}]\n    library.{}.restype = {result}",
+            function.sig.ident, function.sig.ident
+        )?;
+    }
+    Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn go_prefers_pointer_entrypoints() {
+        let value = syn::parse_str::<ItemFn>(
+            "pub unsafe extern \"C\" fn tui_screenshot(options: TuiScreenshotOptions) {}",
+        )
+        .unwrap();
+        let pointer = syn::parse_str::<ItemFn>(
+            "pub unsafe extern \"C\" fn tui_screenshot_ptr(options: *const TuiScreenshotOptions) {}",
+        ).unwrap();
+        let output = go_functions(&[&value, &pointer]).unwrap();
+        assert!(output.contains("Screenshot func(*abiScreenshotOptions)"));
+        assert!(output.contains("symbol: \"tui_screenshot_ptr\""));
+        assert!(!output.contains("symbol: \"tui_screenshot\""));
+    }
+
+    #[test]
+    fn python_defines_embedded_structures_before_use() {
+        let source = syn::parse_file("pub struct TuiOuter { pub value: TuiInner, pub next: *const TuiOuter } pub struct TuiInner { pub value: u64 }").unwrap();
+        let structs: Vec<_> = source
+            .items
+            .iter()
+            .filter_map(|item| {
+                if let Item::Struct(item) = item {
+                    Some(item)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let output = python(&structs, &[], "3").unwrap();
+        assert!(
+            output.find("TuiInner._fields_").unwrap() < output.find("TuiOuter._fields_").unwrap()
+        );
+        assert!(output.contains("ctypes.POINTER(TuiOuter)"));
+    }
+
+    #[test]
+    fn unsupported_abi_types_fail_generation() {
+        let ty = syn::parse_str::<Type>("String").unwrap();
+        assert!(go_type(&ty).is_err());
+        assert!(python_type(&ty).is_err());
+    }
+
+    #[test]
+    fn check_accepts_windows_checkout_line_endings() {
+        let directory = boundaries::tests::directory();
+        fs::write(
+            directory.path().join("generated.txt"),
+            "first\r\nsecond\r\n",
+        )
+        .unwrap();
+        emit(directory.path(), "generated.txt", "first\nsecond\n", true).unwrap();
+        assert!(emit(directory.path(), "generated.txt", "changed\n", true).is_err());
+    }
+}
