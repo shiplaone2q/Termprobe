@@ -250,3 +250,478 @@ fn split_font_stack(stack: &str) -> Vec<String> {
             '\'' | '"' if quote == Some(character) => quote = None,
             '\'' | '"' if quote.is_none() => quote = Some(character),
             ',' if quote.is_none() => families.push(std::mem::take(&mut current)),
+            _ => current.push(character),
+        }
+    }
+    families.push(current);
+    families
+        .into_iter()
+        .map(|family| family.trim().to_string())
+        .filter(|family| !family.is_empty() && !is_css_generic(family))
+        .collect()
+}
+
+fn is_css_generic(family: &str) -> bool {
+    matches!(
+        family.to_ascii_lowercase().as_str(),
+        "serif"
+            | "sans-serif"
+            | "monospace"
+            | "cursive"
+            | "fantasy"
+            | "system-ui"
+            | "ui-serif"
+            | "ui-sans-serif"
+            | "ui-monospace"
+            | "ui-rounded"
+            | "math"
+            | "emoji"
+            | "fangsong"
+    )
+}
+
+fn preferred_families(font: &FontFamilies, bold: bool, italic: bool) -> Vec<String> {
+    // Explicit style fonts take priority over the environment variable.
+    let named = if font == &FontFamilies::default() {
+        Vec::new()
+    } else {
+        let resolved = font.resolve(bold, italic);
+        let mut stacks = vec![resolved];
+        if resolved != font.family {
+            stacks.push(font.family.as_str());
+        }
+        stacks.into_iter().flat_map(split_font_stack).collect()
+    };
+    let configured = std::env::var("TERMPROBE__RECORDING_FONT_FAMILIES")
+        .ok()
+        .into_iter()
+        .flat_map(|value| {
+            value
+                .split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        });
+    named
+        .into_iter()
+        .chain(configured)
+        .chain(
+            [
+                FAMILY,
+                "Cascadia Mono",
+                "Cascadia Code",
+                "Consolas",
+                "Menlo",
+                "DejaVu Sans Mono",
+                "Noto Sans Mono",
+                "Segoe UI Emoji",
+                "Segoe UI Symbol",
+                "Noto Sans CJK SC",
+                "Microsoft YaHei UI",
+                "Yu Gothic UI",
+                "Malgun Gothic",
+                "PingFang SC",
+                "Apple Color Emoji",
+                "Noto Color Emoji",
+            ]
+            .into_iter()
+            .map(str::to_string),
+        )
+        .fold(Vec::new(), |mut families, family| {
+            if !families
+                .iter()
+                .any(|existing: &String| existing.eq_ignore_ascii_case(&family))
+            {
+                families.push(family);
+            }
+            families
+        })
+}
+
+fn face_score(
+    face: &fontdb::FaceInfo,
+    preferred: &[String],
+    bold: bool,
+    italic: bool,
+) -> (usize, usize, usize, u16, usize) {
+    let family = preferred
+        .iter()
+        .position(|preferred| {
+            face.families
+                .iter()
+                .any(|(family, _)| family.eq_ignore_ascii_case(preferred))
+        })
+        .unwrap_or(if face.monospaced { 1_000 } else { 2_000 });
+    let exact_jetbrains_style = usize::from(!is_exact_jetbrains_style(face, bold, italic));
+    let wants_italic = italic;
+    let is_italic = face.style != fontdb::Style::Normal;
+    let style = usize::from(wants_italic != is_italic);
+    let desired_weight = if bold {
+        fontdb::Weight::BOLD.0
+    } else {
+        fontdb::Weight::NORMAL.0
+    };
+    (
+        family,
+        exact_jetbrains_style,
+        style,
+        face.weight.0.abs_diff(desired_weight),
+        usize::from(!face.monospaced),
+    )
+}
+
+fn is_exact_jetbrains_style(face: &fontdb::FaceInfo, bold: bool, italic: bool) -> bool {
+    if !face
+        .families
+        .iter()
+        .any(|(family, _)| family.eq_ignore_ascii_case(FAMILY))
+    {
+        return false;
+    }
+    let expected = match (bold, italic) {
+        (false, false) => "JetBrainsMono-Regular",
+        (true, false) => "JetBrainsMono-Bold",
+        (false, true) => "JetBrainsMono-Italic",
+        (true, true) => "JetBrainsMono-BoldItalic",
+    };
+    face.post_script_name.eq_ignore_ascii_case(expected)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct FontFiles(std::path::PathBuf);
+
+    impl FontFiles {
+        fn new(name: &str) -> Self {
+            let path =
+                std::path::PathBuf::from(format!(".font-review-{name}-{}", std::process::id()));
+            std::fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+
+        fn write(&self, name: &str, bytes: Option<u64>) -> std::path::PathBuf {
+            let path = self.0.join(name);
+            std::fs::write(&path, crate::render::nerd_font::FONT_DATA).unwrap();
+            if let Some(bytes) = bytes {
+                File::options()
+                    .write(true)
+                    .open(&path)
+                    .unwrap()
+                    .set_len(bytes)
+                    .unwrap();
+            }
+            path
+        }
+    }
+
+    impl Drop for FontFiles {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.0).unwrap();
+        }
+    }
+
+    #[test]
+    fn repeated_custom_font_paths_load_only_one_copy() {
+        let files = FontFiles::new("duplicates");
+        let path = files.write("font.ttf", None);
+        let font = FontFamilies {
+            files: vec![path.clone(), path.canonicalize().unwrap(), path],
+            ..FontFamilies::default()
+        };
+        let original = font.clone();
+        let catalog = catalog_for(&font).unwrap();
+        let mut expected = base_database().clone();
+        expected.load_font_data(crate::render::nerd_font::FONT_DATA.to_vec());
+        assert_eq!(catalog.database.len(), expected.len());
+        assert_eq!(font, original);
+    }
+
+    #[test]
+    fn custom_font_files_share_a_total_byte_budget() {
+        let files = FontFiles::new("budget");
+        let style = crate::render::style::Style {
+            font: FontFamilies {
+                files: vec![
+                    files.write("one.ttf", Some(MAX_FONT_FILE_BYTES / 2)),
+                    files.write("two.ttf", Some(MAX_FONT_FILE_BYTES / 2 + 1)),
+                ],
+                ..FontFamilies::default()
+            },
+            ..crate::render::style::Style::default()
+        };
+        let original = style.clone();
+        let error = crate::render::raster::GridRenderer::with_zoom(1, 1, 1.0, style.clone())
+            .err()
+            .expect("custom font files above the total byte limit must fail");
+        assert!(error.to_string().contains("custom font"));
+        assert!(error.to_string().contains(&MAX_FONT_FILE_BYTES.to_string()));
+        assert_eq!(style, original);
+        files.write("two.ttf", None);
+        assert!(
+            catalog_for(&style.font).is_ok(),
+            "a failed load is not cached"
+        );
+    }
+
+    #[test]
+    fn custom_fonts_at_the_byte_limit_load_and_duplicates_cost_nothing() {
+        let files = FontFiles::new("exact-budget");
+        let first = files.write("one.ttf", Some(MAX_FONT_FILE_BYTES / 2));
+        let second = files.write("two.ttf", Some(MAX_FONT_FILE_BYTES / 2));
+        let font = FontFamilies {
+            files: vec![first.clone(), second, first.canonicalize().unwrap()],
+            ..FontFamilies::default()
+        };
+        assert!(catalog_for(&font).is_ok());
+    }
+
+    #[test]
+    fn a_single_oversized_custom_font_reports_the_byte_limit() {
+        let files = FontFiles::new("oversized");
+        let font = FontFamilies {
+            files: vec![files.write("font.ttf", Some(MAX_FONT_FILE_BYTES + 1))],
+            ..FontFamilies::default()
+        };
+        let error = catalog_for(&font).err().expect("oversized font must fail");
+        assert!(error.to_string().contains(&MAX_FONT_FILE_BYTES.to_string()));
+    }
+
+    #[test]
+    fn unused_catalogs_are_released() {
+        let font = FontFamilies {
+            family: "unused catalog regression".into(),
+            ..FontFamilies::default()
+        };
+        let renderer = crate::render::raster::GridRenderer::with_zoom(
+            1,
+            1,
+            1.0,
+            crate::render::style::Style {
+                font: font.clone(),
+                ..crate::render::style::Style::default()
+            },
+        )
+        .unwrap();
+        let catalog = catalog_for(&font).unwrap();
+        let weak = Arc::downgrade(&catalog);
+        drop(catalog);
+        assert!(weak.upgrade().is_some(), "the renderer owns its catalog");
+        drop(renderer);
+        assert!(weak.upgrade().is_none());
+        let _next = catalog_for(&FontFamilies::default()).unwrap();
+        assert!(!CATALOGS.get().unwrap().lock().unwrap().contains_key(&font));
+    }
+
+    #[test]
+    fn catalog_contains_the_bundled_nerd_face() {
+        let catalog = catalog_for(&FontFamilies::default()).unwrap();
+        assert!(!catalog.nerd_faces.is_empty());
+    }
+
+    #[test]
+    fn selected_font_tier_has_the_expected_face_count() {
+        let expected = if cfg!(feature = "recording-font-jetbrains-mono-full") {
+            16
+        } else if cfg!(feature = "recording-font-jetbrains-mono-styles") {
+            4
+        } else if cfg!(feature = "recording-font-jetbrains-mono") {
+            1
+        } else {
+            0
+        };
+        assert_eq!(bundled_font_count(), expected);
+    }
+
+    #[cfg(feature = "recording-font-jetbrains-mono")]
+    #[test]
+    fn bundled_regular_font_is_the_full_official_face() {
+        let face = ttf_parser::Face::parse(REGULAR_FONTS[0], 0).unwrap();
+        assert!(face.number_of_glyphs() >= 1_700);
+    }
+
+    #[cfg(feature = "recording-font-jetbrains-mono-styles")]
+    #[test]
+    fn styled_tier_contains_bold_italic_and_bold_italic_faces() {
+        let metadata = font_metadata(STYLED_FONTS);
+        assert!(metadata.contains("JetBrainsMono-Bold"));
+        assert!(metadata.contains("JetBrainsMono-Italic"));
+        assert!(metadata.contains("JetBrainsMono-BoldItalic"));
+    }
+
+    #[cfg(feature = "recording-font-jetbrains-mono-full")]
+    #[test]
+    fn full_tier_contains_every_remaining_static_family_face() {
+        let metadata = font_metadata(FULL_FAMILY_FONTS);
+        assert_eq!(metadata.len(), 12);
+        for face in [
+            "JetBrainsMono-Thin",
+            "JetBrainsMono-ThinItalic",
+            "JetBrainsMono-ExtraLight",
+            "JetBrainsMono-ExtraLightItalic",
+            "JetBrainsMono-Light",
+            "JetBrainsMono-LightItalic",
+            "JetBrainsMono-Medium",
+            "JetBrainsMono-MediumItalic",
+            "JetBrainsMono-SemiBold",
+            "JetBrainsMono-SemiBoldItalic",
+            "JetBrainsMono-ExtraBold",
+            "JetBrainsMono-ExtraBoldItalic",
+        ] {
+            assert!(metadata.contains(face));
+        }
+    }
+
+    #[cfg(feature = "recording-font-jetbrains-mono")]
+    #[test]
+    fn bundled_font_includes_its_ofl_license_and_source() {
+        let license = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/jetbrains-mono/OFL.txt"
+        ));
+        let source = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/jetbrains-mono/SOURCE"
+        ));
+        assert!(license.contains("SIL OPEN FONT LICENSE"));
+        assert!(source.contains("JetBrains/JetBrainsMono"));
+        assert!(source.contains("full-glyph"));
+    }
+
+    fn bundled_font_count() -> usize {
+        let count = 0;
+        #[cfg(feature = "recording-font-jetbrains-mono")]
+        let count = count + REGULAR_FONTS.len();
+        #[cfg(feature = "recording-font-jetbrains-mono-styles")]
+        let count = count + STYLED_FONTS.len();
+        #[cfg(feature = "recording-font-jetbrains-mono-full")]
+        let count = count + FULL_FAMILY_FONTS.len();
+        count
+    }
+
+    #[cfg(feature = "recording-font-jetbrains-mono-styles")]
+    fn font_metadata(fonts: &[&[u8]]) -> HashSet<String> {
+        let mut database = fontdb::Database::new();
+        load_font_data(&mut database, fonts);
+        database
+            .faces()
+            .map(|face| face.post_script_name.clone())
+            .collect()
+    }
+
+    /// The raster path used to pick faces with no reference to the style, so a
+    /// screenshot and a recording of the same session disagreed about the font.
+    #[test]
+    fn a_configured_family_outranks_the_environment_and_the_defaults() {
+        let font = FontFamilies {
+            family: "Berkeley Mono".into(),
+            bold: Some("Berkeley Mono Bold".into()),
+            ..FontFamilies::default()
+        };
+
+        let plain = preferred_families(&font, false, false);
+        assert_eq!(plain.first().map(String::as_str), Some("Berkeley Mono"));
+
+        // A family is a CSS font stack, so face selection has to read it the
+        // same way the SVG does rather than as one unmatchable string.
+        let stack = preferred_families(
+            &FontFamilies {
+                family: "'Berkeley Mono', Menlo, monospace".into(),
+                ..FontFamilies::default()
+            },
+            false,
+            false,
+        );
+        assert_eq!(
+            &stack[..2],
+            &["Berkeley Mono".to_string(), "Menlo".to_string()],
+            "quotes and spacing are stripped and the generic name dropped"
+        );
+
+        let bold = preferred_families(&font, true, false);
+        assert_eq!(
+            bold.first().map(String::as_str),
+            Some("Berkeley Mono Bold"),
+            "a bold run prefers the family named for it"
+        );
+        assert_eq!(
+            bold.get(1).map(String::as_str),
+            Some("Berkeley Mono"),
+            "and falls back to the base family before anything built in"
+        );
+
+        // A style naming nothing must leave the existing order alone, which is
+        // what keeps TERMPROBE__RECORDING_FONT_FAMILIES authoritative.
+        let default = preferred_families(&FontFamilies::default(), false, false);
+        assert_eq!(default.first().map(String::as_str), Some(FAMILY));
+    }
+
+    #[test]
+    fn catalogs_are_cached_per_style_and_differ_between_them() {
+        let one = catalog_for(&FontFamilies::default()).unwrap();
+        let again = catalog_for(&FontFamilies::default()).unwrap();
+        assert!(
+            Arc::ptr_eq(&one, &again),
+            "the same fonts reuse the catalog rather than rescanning"
+        );
+
+        let other = catalog_for(&FontFamilies {
+            family: "Berkeley Mono".into(),
+            ..FontFamilies::default()
+        })
+        .unwrap();
+        assert!(
+            !Arc::ptr_eq(&one, &other),
+            "and different fonts get their own"
+        );
+    }
+
+    /// A config file is found in the working directory, so checking out an
+    /// untrusted repository must not let it name a path that never ends.
+    #[test]
+    fn a_font_file_that_is_not_a_regular_file_is_not_read() {
+        let mut database = fontdb::Database::new();
+        let before = database.len();
+        let mut remaining = MAX_FONT_FILE_BYTES;
+
+        // Reading either of these to the end never terminates. fontdb would.
+        for path in ["/dev/zero", "/dev/urandom"] {
+            let path = Path::new(path);
+            if path.exists() {
+                load_named_font(&mut database, path, &mut remaining).unwrap();
+            }
+        }
+        load_named_font(
+            &mut database,
+            Path::new("/definitely/not/here.ttf"),
+            &mut remaining,
+        )
+        .unwrap();
+        load_named_font(&mut database, Path::new("/"), &mut remaining).unwrap();
+
+        assert_eq!(
+            database.len(),
+            before,
+            "a device, a directory and a missing path all load nothing"
+        );
+    }
+
+    #[test]
+    fn a_font_file_that_is_a_real_file_is_read() {
+        let dir = std::env::temp_dir().join(format!("termprobe-font-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("bundled.ttf");
+        // A real face, so this proves the bounded read still produces a font
+        // rather than only proving that nothing loads.
+        std::fs::write(&path, crate::render::nerd_font::FONT_DATA).unwrap();
+
+        let mut database = fontdb::Database::new();
+        let mut remaining = MAX_FONT_FILE_BYTES;
+        load_named_font(&mut database, &path, &mut remaining).unwrap();
+        assert!(!database.is_empty(), "a regular font file still loads");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}
