@@ -6,3 +6,4 @@ install/install.ps1 linguist-detectable=false
 # `detectable=false` because that is what they are, and it also collapses the
 # minified bundle in diffs.
 crates/termprobe/assets/xtermjs/xterm-headless.js linguist-vendored=true
+crates/termprobe/assets/xtermjs/addon-unicode11.js linguist-vendored=true
