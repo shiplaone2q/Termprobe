@@ -746,3 +746,7 @@ fn on_failure_recording_is_kept_only_after_an_operation_failure() {
         })
         .unwrap();
     let success_path = std::path::PathBuf::from(opened.recording);
+    success.close().unwrap();
+    assert!(!success_path.exists());
+
+    let failed = registry.session("recording-failed");
