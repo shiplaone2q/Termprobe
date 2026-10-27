@@ -7,3 +7,4 @@ files: official full-glyph static faces, not unicode subsets
 Feature tiers:
 - recording-font-jetbrains-mono: Regular
 - recording-font-jetbrains-mono-styles: Regular, Bold, Italic, Bold Italic
+- recording-font-jetbrains-mono-full: all 16 non-NL static family faces
