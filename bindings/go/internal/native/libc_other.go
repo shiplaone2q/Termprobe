@@ -2,3 +2,4 @@
 
 package native
 
+func nativeLibc() string { return "" }

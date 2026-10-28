@@ -27,3 +27,4 @@
   [data-outcome="failed"] strong { color: var(--red); }
   [data-outcome="passed"] { border-color: var(--green); }
   [data-outcome="passed"] strong { color: var(--green); }
+</style>
