@@ -34,3 +34,4 @@ termprobe = { workspace = true, features = [
 windows-sys = { workspace = true, features = ["Win32_System_Console", "Win32_System_Pipes"] }
 
 [dev-dependencies]
+png.workspace = true
