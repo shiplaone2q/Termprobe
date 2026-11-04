@@ -36,6 +36,18 @@ impl AutomaticRecording {
                 "automatic recording directory must not be empty",
             ));
         }
+        // The artefact directory is written to as configured, so a parent
+        // traversal here would place recordings outside the workspace the
+        // caller believes it is using.
+        if self.directory.as_ref().is_some_and(|directory| {
+            directory
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir))
+        }) {
+            return Err(TermprobeError::usage(
+                "automatic recording directory must not contain '..'",
+            ));
+        }
         Ok(())
     }
 }
@@ -1324,6 +1336,25 @@ pub enum MouseAction {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn automatic_recording_rejects_parent_traversal() {
+        let recording = AutomaticRecording {
+            mode: AutomaticRecordingMode::Always,
+            directory: Some(PathBuf::from("artifacts/../../etc")),
+        };
+        let error = recording.validate().expect_err("traversal must be refused");
+        assert!(format!("{error}").contains("must not contain '..'"));
+    }
+
+    #[test]
+    fn automatic_recording_accepts_a_nested_directory() {
+        let recording = AutomaticRecording {
+            mode: AutomaticRecordingMode::Always,
+            directory: Some(PathBuf::from("artifacts/run")),
+        };
+        assert!(recording.validate().is_ok());
+    }
 
     #[test]
     fn capture_background_accepts_hex_rgb_and_transparency() {
