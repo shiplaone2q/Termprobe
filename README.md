@@ -468,3 +468,8 @@ This project may contain trademarks or logos for projects, products, or services
 kind = "mlx"
 model = "mlx-community/Llama-3.2-3B"
 ```
+
+
+## Exit codes
+
+The recording stores keystrokes and output. The runner asserts the exit status, which is why a suite that checks it spawns once more.
